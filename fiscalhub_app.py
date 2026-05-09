@@ -1248,58 +1248,70 @@ def pantalla_wizard():
 
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("📄 Generar PDF", use_container_width=True, type="primary", key="wz4_pdf"):
-                try:
-                    from fiscal_export import generar_pdf_global
-                    filas = _construir_filas_export(df_inm)
-                    totales = _construir_totales_export(m)
-                    pdf = generar_pdf_global(filas, totales,
-                                             nombre_propietario=cliente["nombre"],
-                                             nombre_asesoria=nombre_asesor,
-                                             año_fiscal=2025)
-                    if pdf:
-                        st.session_state["fh_pdf_export"] = pdf.getvalue()
-                        st.session_state["fh_pdf_nombre"] = f"ModeloIRPF_{cliente['nombre'].replace(' ','_')}_2025.pdf"
-                        st.rerun()
-                except Exception as e:
-                    st.error(f"Error PDF: {e}")
+            gen_pdf = st.button("📄 Generar PDF", use_container_width=True,
+                                type="primary", key="wz4_pdf")
+            if gen_pdf or "fh_pdf_export" in st.session_state:
+                if gen_pdf:
+                    try:
+                        from fiscal_export import generar_pdf_global
+                        filas = _construir_filas_export(df_inm)
+                        totales = _construir_totales_export(m)
+                        pdf = generar_pdf_global(filas, totales,
+                                                 nombre_propietario=cliente["nombre"],
+                                                 nombre_asesoria=nombre_asesor,
+                                                 año_fiscal=2025)
+                        if pdf:
+                            st.session_state["fh_pdf_export"] = pdf.getvalue()
+                            st.session_state["fh_pdf_nombre"] = \
+                                f"ModeloIRPF_{cliente['nombre'].replace(' ','_')}_2025.pdf"
+                            st.success("✓ PDF generado")
+                        else:
+                            st.error("El PDF no se generó — verifica fiscal_export.py")
+                    except Exception as e:
+                        st.error(f"Error PDF: {e}")
 
-            if "fh_pdf_export" in st.session_state:
-                st.download_button(
-                    "⬇️ Descargar PDF",
-                    data=st.session_state["fh_pdf_export"],
-                    file_name=st.session_state.get("fh_pdf_nombre", "IRPF_2025.pdf"),
-                    mime="application/pdf",
-                    use_container_width=True,
-                    key="wz4_pdf_dl"
-                )
+                if "fh_pdf_export" in st.session_state:
+                    st.download_button(
+                        "⬇️ Descargar PDF",
+                        data=st.session_state["fh_pdf_export"],
+                        file_name=st.session_state.get("fh_pdf_nombre", "IRPF_2025.pdf"),
+                        mime="application/pdf",
+                        use_container_width=True,
+                        key="wz4_pdf_dl"
+                    )
 
         with col2:
-            if st.button("📊 Generar Excel", use_container_width=True, key="wz4_xlsx"):
-                try:
-                    from fiscal_export import generar_excel_asesor
-                    filas = _construir_filas_export(df_inm)
-                    totales = _construir_totales_export(m)
-                    xlsx = generar_excel_asesor(filas, totales,
-                                                nombre_propietario=cliente["nombre"],
-                                                nombre_asesoria=nombre_asesor,
-                                                año_fiscal=2025)
-                    if xlsx:
-                        st.session_state["fh_xlsx_export"] = xlsx.getvalue()
-                        st.session_state["fh_xlsx_nombre"] = f"IRPF_{cliente['nombre'].replace(' ','_')}_2025.xlsx"
-                        st.rerun()
-                except Exception as e:
-                    st.error(f"Error Excel: {e}")
+            gen_xlsx = st.button("📊 Generar Excel", use_container_width=True,
+                                 key="wz4_xlsx")
+            if gen_xlsx or "fh_xlsx_export" in st.session_state:
+                if gen_xlsx:
+                    try:
+                        from fiscal_export import generar_excel_asesor
+                        filas = _construir_filas_export(df_inm)
+                        totales = _construir_totales_export(m)
+                        xlsx = generar_excel_asesor(filas, totales,
+                                                    nombre_propietario=cliente["nombre"],
+                                                    nombre_asesoria=nombre_asesor,
+                                                    año_fiscal=2025)
+                        if xlsx:
+                            st.session_state["fh_xlsx_export"] = xlsx.getvalue()
+                            st.session_state["fh_xlsx_nombre"] = \
+                                f"IRPF_{cliente['nombre'].replace(' ','_')}_2025.xlsx"
+                            st.success("✓ Excel generado")
+                        else:
+                            st.error("El Excel no se generó")
+                    except Exception as e:
+                        st.error(f"Error Excel: {e}")
 
-            if "fh_xlsx_export" in st.session_state:
-                st.download_button(
-                    "⬇️ Descargar Excel",
-                    data=st.session_state["fh_xlsx_export"],
-                    file_name=st.session_state.get("fh_xlsx_nombre", "IRPF_2025.xlsx"),
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                    key="wz4_xlsx_dl"
-                )
+                if "fh_xlsx_export" in st.session_state:
+                    st.download_button(
+                        "⬇️ Descargar Excel",
+                        data=st.session_state["fh_xlsx_export"],
+                        file_name=st.session_state.get("fh_xlsx_nombre", "IRPF_2025.xlsx"),
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        key="wz4_xlsx_dl"
+                    )
 
         c1, c2 = st.columns(2)
         st.markdown('<div class="wz-foot">', unsafe_allow_html=True)
