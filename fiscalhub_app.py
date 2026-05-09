@@ -34,71 +34,77 @@ def _h(token=None):
         "Prefer": "return=representation",
     }
 
-# ── CSS completo basado en Portal_Asesor.html ────────────────────
+# ── CSS pastel azul/gris/blanco ─────────────────────────────────
 CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Serif+Display&display=swap');
 
 :root{
-  --pa-bg:#111318; --pa-bg-deep:#0B0D11; --pa-surface:#1C1F26;
-  --pa-surface-2:#23272F; --pa-surface-hover:#272B34;
-  --pa-border:#2A2F39; --pa-border-strong:#3A4150;
-  --pa-text:#E8E8E8; --pa-text-strong:#F5F5F5;
-  --pa-text-mute:#8B92A0; --pa-text-dim:#5C6371;
-  --pa-accent:#C8A96E; --pa-accent-dim:#8E7848;
-  --pa-accent-faint:rgba(200,169,110,0.10);
-  --pa-critical:#E05252; --pa-critical-bg:rgba(224,82,82,0.10);
-  --pa-warn:#D4914A; --pa-warn-bg:rgba(212,145,74,0.10);
-  --pa-ok:#5C9E6E; --pa-ok-bg:rgba(92,158,110,0.10);
-  --pa-info:#5B8AB8;
+  --pa-bg:#F0F4F8; --pa-bg-deep:#F7F9FC; --pa-surface:#FFFFFF;
+  --pa-surface-2:#F7F9FC; --pa-surface-hover:#EEF3F9;
+  --pa-border:rgba(100,130,170,0.15); --pa-border-strong:rgba(100,130,170,0.28);
+  --pa-text:#1E2A3A; --pa-text-strong:#111827;
+  --pa-text-mute:#5A6A7E; --pa-text-dim:#8A9BB0;
+  --pa-accent:#4A7AB5; --pa-accent-dim:#2E5A8A;
+  --pa-accent-faint:rgba(74,122,181,0.08);
+  --pa-critical:#A32D2D; --pa-critical-bg:#FDF0F0;
+  --pa-warn:#7A5500; --pa-warn-bg:#FDF6E8;
+  --pa-ok:#2A6040; --pa-ok-bg:#EDF7F1;
+  --pa-info:#4A7AB5;
   --pa-font-ui:'IBM Plex Sans','Inter',sans-serif;
   --pa-font-mono:'IBM Plex Mono',monospace;
   --pa-font-display:'DM Serif Display',Georgia,serif;
+  --pa-sb:#1E3A5F; --pa-sb2:#162E4D;
+  --pa-sb-text:#E8EFF8; --pa-sb-mute:#7A9BBF;
+  --pa-gold:#C8A96E;
 }
 
 /* ── Reset Streamlit ── */
 .stApp { background: var(--pa-bg) !important; color: var(--pa-text) !important; font-family: var(--pa-font-ui) !important; }
-section[data-testid="stSidebar"] { background: var(--pa-bg-deep) !important; border-right: 1px solid var(--pa-border) !important; }
-section[data-testid="stSidebar"] * { color: var(--pa-text) !important; font-family: var(--pa-font-ui) !important; }
+section[data-testid="stSidebar"] { background: var(--pa-sb) !important; border-right: 1px solid rgba(255,255,255,0.06) !important; }
+section[data-testid="stSidebar"] * { color: var(--pa-sb-text) !important; font-family: var(--pa-font-ui) !important; }
 .block-container { padding: 0 !important; max-width: 100% !important; }
 div[data-testid="stVerticalBlock"] { gap: 0 !important; }
 .stButton > button {
-  background: var(--pa-surface) !important; border: 1px solid var(--pa-border) !important;
+  background: var(--pa-surface) !important; border: 0.5px solid var(--pa-border-strong) !important;
   color: var(--pa-text) !important; font-family: var(--pa-font-ui) !important;
-  font-size: 12px !important; border-radius: 4px !important; padding: 6px 12px !important;
+  font-size: 12px !important; border-radius: 6px !important; padding: 6px 12px !important;
   transition: background .12s, border-color .12s !important;
 }
-.stButton > button:hover { background: var(--pa-surface-hover) !important; border-color: var(--pa-border-strong) !important; }
+.stButton > button:hover { background: var(--pa-surface-hover) !important; border-color: var(--pa-accent) !important; }
 .stTextInput > div > div > input, .stSelectbox > div > div {
-  background: var(--pa-surface) !important; border: 1px solid var(--pa-border) !important;
+  background: var(--pa-surface) !important; border: 0.5px solid var(--pa-border-strong) !important;
   color: var(--pa-text) !important; font-family: var(--pa-font-ui) !important;
-  border-radius: 4px !important;
+  border-radius: 6px !important; font-size: 13px !important;
 }
-.stTextInput > div > div > input:focus { border-color: var(--pa-accent-dim) !important; }
+.stTextInput > div > div > input:focus { border-color: var(--pa-accent) !important; box-shadow: 0 0 0 2px var(--pa-accent-faint) !important; }
 .stDataFrame { background: var(--pa-surface) !important; }
 hr { border-color: var(--pa-border) !important; }
 h1,h2,h3 { font-family: var(--pa-font-display) !important; color: var(--pa-text-strong) !important; }
 p, li { color: var(--pa-text) !important; }
-label { color: var(--pa-text-mute) !important; }
-.stTabs [data-baseweb="tab-list"] { background: var(--pa-surface) !important; border-bottom: 1px solid var(--pa-border) !important; gap: 0 !important; }
+label { color: var(--pa-text-mute) !important; font-size: 12px !important; }
+.stTabs [data-baseweb="tab-list"] { background: var(--pa-surface) !important; border-bottom: 0.5px solid var(--pa-border-strong) !important; gap: 0 !important; }
 .stTabs [data-baseweb="tab"] { background: transparent !important; color: var(--pa-text-mute) !important; border-bottom: 2px solid transparent !important; font-family: var(--pa-font-ui) !important; font-size: 12px !important; padding: 10px 18px !important; }
 .stTabs [aria-selected="true"] { color: var(--pa-accent) !important; border-bottom-color: var(--pa-accent) !important; background: transparent !important; }
-.stMetric { background: var(--pa-surface) !important; border: 1px solid var(--pa-border) !important; border-radius: 4px !important; padding: 14px 16px !important; }
-.stMetric label { font-size: 10px !important; letter-spacing: 0.14em !important; text-transform: uppercase !important; color: var(--pa-text-dim) !important; }
-.stMetric [data-testid="stMetricValue"] { font-family: var(--pa-font-mono) !important; font-size: 26px !important; font-weight: 600 !important; color: var(--pa-text-strong) !important; }
+.stMetric { background: var(--pa-surface) !important; border: 0.5px solid var(--pa-border-strong) !important; border-radius: 8px !important; padding: 12px 14px !important; }
+.stMetric label { font-size: 10px !important; letter-spacing: 0.12em !important; text-transform: uppercase !important; color: var(--pa-text-dim) !important; }
+.stMetric [data-testid="stMetricValue"] { font-family: var(--pa-font-mono) !important; font-size: 22px !important; font-weight: 500 !important; color: var(--pa-text-strong) !important; }
 div[data-testid="stSidebarUserContent"] { padding: 0 !important; }
+.stRadio > div { flex-direction: row !important; gap: 8px !important; }
+.stRadio label { color: var(--pa-text-mute) !important; font-size: 12px !important; }
 
 /* ── Componentes custom ── */
-.fh-brand { padding: 18px 20px 16px; border-bottom: 1px solid var(--pa-border); }
-.fh-nc { width: 28px; height: 28px; border: 1px solid var(--pa-accent); color: var(--pa-accent);
+.fh-brand { padding: 16px 14px 12px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.fh-nc { width: 26px; height: 26px; border: 1.5px solid var(--pa-gold); color: var(--pa-gold);
   display: inline-flex; align-items: center; justify-content: center;
-  font-family: var(--pa-font-display); font-size: 14px; letter-spacing: -1px; }
-.fh-wordmark { font-family: var(--pa-font-display); font-size: 18px; color: var(--pa-text-strong); }
-.fh-sub { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pa-text-mute); margin-top: 6px; padding-left: 38px; }
-.fh-advisor { padding: 14px 20px; border-bottom: 1px solid var(--pa-border); }
-.fh-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--pa-surface-2);
+  font-family: var(--pa-font-display); font-size: 12px; border-radius: 4px; }
+.fh-wordmark { font-family: var(--pa-font-display); font-size: 16px; color: #F0F6FF; }
+.fh-sub { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pa-sb-mute); margin-top: 5px; padding-left: 36px; }
+.fh-advisor { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.fh-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(200,169,110,0.18);
+  border: 1.5px solid rgba(200,169,110,0.35);
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 600; color: var(--pa-accent); border: 1px solid var(--pa-border-strong); }
+  font-size: 10px; font-weight: 600; color: var(--pa-gold); }
 
 .fh-page { padding: 24px 28px 60px; }
 .fh-page-title { font-family: var(--pa-font-display); font-size: 26px; color: var(--pa-text-strong); line-height: 1.1; letter-spacing: -0.01em; margin: 0 0 4px; }
@@ -265,6 +271,14 @@ div[data-testid="stSidebarUserContent"] { padding: 0 !important; }
   background: var(--pa-ok-bg); color: var(--pa-ok);
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 30px; border: 2px solid var(--pa-ok); margin-bottom: 18px; }
+
+/* Fichas inmuebles — pills gastos */
+.chk-ok-pill { display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;
+  padding:2px 7px;border-radius:10px;background:#EDF7F1;color:#2A6040;
+  border:0.5px solid rgba(42,96,64,0.15); }
+.chk-no-pill { display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;
+  padding:2px 7px;border-radius:10px;background:#FDF0F0;color:#A32D2D;
+  border:0.5px solid rgba(163,45,45,0.15); }
 
 /* Login */
 .fh-login { max-width: 400px; margin: 80px auto; }
@@ -651,59 +665,74 @@ def render_sidebar():
 # ── PANTALLA: Login / Registro ───────────────────────────────────
 def pantalla_login():
     st.markdown(CSS, unsafe_allow_html=True)
-    st.markdown("""
-    <div class="fh-login">
-      <div class="fh-login-card">
-        <div class="fh-login-logo">
-          <div class="fh-nc">NC</div>
-          <div>
-            <div class="fh-wordmark">FiscalHub</div>
-            <div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--pa-text-mute);">Portal Asesoría Fiscal</div>
+
+    # Centrar con columnas
+    _, col, _ = st.columns([1, 1.2, 1])
+    with col:
+        st.markdown("""
+        <div style="text-align:center;margin-bottom:20px;padding-top:40px;">
+          <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:32px;height:32px;border:2px solid #C8A96E;border-radius:6px;
+              display:flex;align-items:center;justify-content:center;
+              font-family:'DM Serif Display',serif;font-size:14px;color:#C8A96E;">NC</div>
+            <span style="font-family:'DM Serif Display',serif;font-size:22px;color:#1E2A3A;">FiscalHub</span>
+          </div>
+          <div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#8A9BB0;">
+            Portal Asesoría Fiscal · Nolasco Capital
           </div>
         </div>
-    """, unsafe_allow_html=True)
+        <div style="background:#fff;border:0.5px solid rgba(100,130,170,0.2);border-radius:12px;
+          padding:24px 24px 20px;box-shadow:0 4px 20px rgba(30,58,95,0.07);">
+        """, unsafe_allow_html=True)
 
-    tab_login, tab_reg = st.tabs(["Acceder", "Registrarse"])
+        tab_login, tab_reg = st.tabs(["Acceder", "Registrarse"])
 
-    with tab_login:
-        email = st.text_input("Email", key="li_email", placeholder="tu@despacho.es")
-        pwd   = st.text_input("Contraseña", type="password", key="li_pwd")
-        if st.button("Entrar →", key="li_btn", use_container_width=True, type="primary"):
-            if email and pwd:
-                with st.spinner("Verificando..."):
-                    res = login_asesor(email, pwd)
-                if res["ok"]:
-                    st.session_state.fh_logged   = True
-                    st.session_state.fh_user_id  = res["user_id"]
-                    st.session_state.fh_token    = res["token"]
-                    st.session_state.fh_asesor   = get_asesor_info(res["user_id"])
-                    st.session_state.fh_menu     = "cartera"
-                    st.rerun()
-                else:
-                    st.error(res.get("error", "Credenciales incorrectas"))
-            else:
-                st.warning("Introduce email y contraseña")
-
-    with tab_reg:
-        nombre   = st.text_input("Nombre completo", key="rg_nombre")
-        despacho = st.text_input("Nombre del despacho", key="rg_despacho")
-        email_r  = st.text_input("Email profesional", key="rg_email")
-        pwd_r    = st.text_input("Contraseña (mín. 8 caracteres)", type="password", key="rg_pwd")
-        if st.button("Crear cuenta →", key="rg_btn", use_container_width=True, type="primary"):
-            if all([nombre, despacho, email_r, pwd_r]):
-                if len(pwd_r) < 8:
-                    st.error("La contraseña debe tener al menos 8 caracteres")
-                else:
-                    with st.spinner("Creando cuenta..."):
-                        res = registrar_asesor(email_r, pwd_r, nombre, despacho)
+        with tab_login:
+            email = st.text_input("Email", key="li_email", placeholder="tu@despacho.es",
+                                   label_visibility="collapsed")
+            pwd   = st.text_input("Contraseña", type="password", key="li_pwd",
+                                   placeholder="Contraseña", label_visibility="collapsed")
+            if st.button("Entrar →", key="li_btn", use_container_width=True, type="primary"):
+                if email and pwd:
+                    with st.spinner("Verificando..."):
+                        res = login_asesor(email, pwd)
                     if res["ok"]:
-                        st.success("✅ Cuenta creada. Revisa tu email para confirmar y luego accede.")
+                        st.session_state.fh_logged   = True
+                        st.session_state.fh_user_id  = res["user_id"]
+                        st.session_state.fh_token    = res["token"]
+                        st.session_state.fh_asesor   = get_asesor_info(res["user_id"])
+                        st.session_state.fh_menu     = "cartera"
+                        st.rerun()
                     else:
-                        st.error(res.get("error", "Error al registrar"))
-            else:
-                st.warning("Completa todos los campos")
+                        st.error(res.get("error", "Credenciales incorrectas"))
+                else:
+                    st.warning("Introduce email y contraseña")
 
-    st.markdown("</div></div>", unsafe_allow_html=True)
+        with tab_reg:
+            c1, c2 = st.columns(2)
+            with c1:
+                nombre   = st.text_input("Nombre", key="rg_nombre", placeholder="Tu nombre")
+            with c2:
+                despacho = st.text_input("Despacho", key="rg_despacho", placeholder="Nombre asesoría")
+            email_r  = st.text_input("Email profesional", key="rg_email", placeholder="tu@despacho.es",
+                                      label_visibility="collapsed")
+            pwd_r    = st.text_input("Contraseña (mín. 8 caracteres)", type="password", key="rg_pwd",
+                                      placeholder="Contraseña", label_visibility="collapsed")
+            if st.button("Crear cuenta →", key="rg_btn", use_container_width=True, type="primary"):
+                if all([nombre, despacho, email_r, pwd_r]):
+                    if len(pwd_r) < 8:
+                        st.error("Mínimo 8 caracteres")
+                    else:
+                        with st.spinner("Creando cuenta..."):
+                            res = registrar_asesor(email_r, pwd_r, nombre, despacho)
+                        if res["ok"]:
+                            st.success("✅ Cuenta creada. Revisa tu email y luego accede.")
+                        else:
+                            st.error(res.get("error", "Error al registrar"))
+                else:
+                    st.warning("Completa todos los campos")
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
 # ── PANTALLA: Cartera ────────────────────────────────────────────
 def pantalla_cartera():
@@ -848,6 +877,125 @@ def pantalla_cartera():
                 st.session_state.fh_menu = "wizard"
                 st.rerun()
 
+# ── Fichas visuales de inmuebles ────────────────────────────────
+def render_fichas_inmuebles(df_inm, alertas, cliente_id):
+    """Renderiza tarjetas casita para cada inmueble del cliente."""
+    if df_inm.empty:
+        st.info("Sin inmuebles registrados para este cliente.")
+        return
+
+    col_n   = "nombre"   if "nombre"   in df_inm.columns else "Nombre"
+    col_r   = "renta"    if "renta"    in df_inm.columns else "Renta"
+    col_com = "comunidad" if "comunidad" in df_inm.columns else "Comunidad"
+    col_ibi = "ibi_anual" if "ibi_anual" in df_inm.columns else "IBI_Anual"
+    col_seg = "seguro_anual" if "seguro_anual" in df_inm.columns else "Seguro_Anual"
+    col_amort = "amortizacion_fiscal" if "amortizacion_fiscal" in df_inm.columns else "Amortizacion_Fiscal"
+    col_hip = "intereses_hipoteca" if "intereses_hipoteca" in df_inm.columns else "Intereses_Hipoteca"
+    col_tipo = "tipo_arrendamiento" if "tipo_arrendamiento" in df_inm.columns else "Tipo_Arrendamiento"
+    col_inq = "inquilino" if "inquilino" in df_inm.columns else "Inquilino"
+    col_cp  = "cp" if "cp" in df_inm.columns else "CP"
+
+    def _roof(tipo_str, nombre_str):
+        t = (str(tipo_str) + " " + str(nombre_str)).lower()
+        if any(x in t for x in ["despacho","oficina","comercial","local","salón","salon"]):
+            return "#185FA5", "Despacho"
+        if any(x in t for x in ["casa","chalet","adosado","abarqueros","villa"]):
+            return "#6B2737", "Casa"
+        if any(x in t for x in ["cochera","garaje","parking","trastero"]):
+            return "#4A5568", "Garaje"
+        return "#B8924A", "Apartamento"
+
+    cols = st.columns(min(len(df_inm), 3))
+    for i, (_, row) in enumerate(df_inm.iterrows()):
+        nombre_inm = str(row.get(col_n, ""))
+        renta      = sf(row.get(col_r, 0))
+        comunidad  = sf(row.get(col_com, 0)) * 12
+        ibi        = sf(row.get(col_ibi, 0))
+        seguro     = sf(row.get(col_seg, 0))
+        amort      = sf(row.get(col_amort, 0))
+        hipoteca   = sf(row.get(col_hip, 0))
+        tipo_arr   = str(row.get(col_tipo, "Larga Duración"))
+        inquilino  = str(row.get(col_inq, "—"))
+        cp         = str(row.get(col_cp, ""))
+
+        ingresos = renta * 12
+        gastos   = comunidad + ibi + seguro + amort + hipoteca
+        neto     = ingresos - gastos
+        rent_pct = (neto / max(ingresos, 1)) * 100
+
+        # Alertas de este inmueble
+        alertas_inm = [a for a in alertas if a.get("inmueble") == nombre_inm]
+
+        # Checks
+        chk_ibi   = ibi > 0
+        chk_com   = comunidad > 0
+        chk_seg   = seguro > 0
+        chk_amort = amort > 0
+        chk_hip   = hipoteca > 0
+
+        roof_color, roof_label = _roof(tipo_arr, nombre_inm)
+
+        def _chk_html(ok, label):
+            cls = "chk-ok-pill" if ok else "chk-no-pill"
+            icon = "✓" if ok else "✗"
+            return f'<span class="{cls}">{icon} {label}</span>'
+
+        alertas_html = ""
+        for a in alertas_inm[:3]:
+            icon = "⚠" if a["tipo"] == "crit" else "◔"
+            color = "var(--pa-critical)" if a["tipo"] == "crit" else "var(--pa-warn)"
+            alertas_html += f'<div style="display:flex;align-items:flex-start;gap:5px;padding:4px 0;border-bottom:0.5px solid var(--pa-border);font-size:11px;color:var(--pa-text-mute);"><span style="color:{color};flex-shrink:0;">{icon}</span>{a["titulo"]}</div>'
+        if not alertas_inm:
+            alertas_html = '<div style="font-size:11px;color:var(--pa-ok);padding:4px 0;">✓ Sin alertas detectadas</div>'
+
+        with cols[i % 3]:
+            st.markdown(f"""
+            <div style="background:#fff;border:0.5px solid rgba(100,130,170,0.15);border-radius:12px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 12px rgba(30,58,95,0.06);">
+              <svg viewBox="0 0 300 64" style="display:block;width:100%;margin-bottom:-1px;" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="150,5 297,64 3,64" fill="{roof_color}"/>
+                <text x="150" y="50" text-anchor="middle" font-family="IBM Plex Sans,sans-serif"
+                  font-size="13" font-weight="500" fill="white" opacity="0.95">{roof_label}</text>
+                <text x="150" y="24" text-anchor="middle" font-family="IBM Plex Sans,sans-serif"
+                  font-size="15" fill="white" opacity="0.6">⌂</text>
+              </svg>
+              <div style="padding:12px 14px;">
+                <div style="font-size:14px;font-weight:500;color:var(--pa-text-strong);margin-bottom:2px;">{nombre_inm}</div>
+                <div style="font-size:11px;color:var(--pa-text-mute);margin-bottom:10px;">{inquilino} · CP {cp} · {tipo_arr}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+                  <div style="background:#F7F9FC;border-radius:6px;padding:6px 8px;">
+                    <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--pa-text-dim);">Renta/mes</div>
+                    <div style="font-size:16px;font-weight:500;color:var(--pa-ok);font-family:monospace;">{fmt_eur(renta)}</div>
+                  </div>
+                  <div style="background:#F7F9FC;border-radius:6px;padding:6px 8px;">
+                    <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--pa-text-dim);">Gastos/año</div>
+                    <div style="font-size:16px;font-weight:500;color:var(--pa-critical);font-family:monospace;">−{fmt_eur(gastos)}</div>
+                  </div>
+                  <div style="background:#F7F9FC;border-radius:6px;padding:6px 8px;">
+                    <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--pa-text-dim);">Neto/año</div>
+                    <div style="font-size:16px;font-weight:500;color:var(--pa-text);font-family:monospace;">{fmt_eur(neto)}</div>
+                  </div>
+                  <div style="background:#F7F9FC;border-radius:6px;padding:6px 8px;">
+                    <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--pa-text-dim);">Rentabilidad</div>
+                    <div style="font-size:16px;font-weight:500;color:var(--pa-accent);font-family:monospace;">{rent_pct:.1f}%</div>
+                  </div>
+                </div>
+                <div style="height:0.5px;background:var(--pa-border);margin:8px 0;"></div>
+                <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--pa-text-dim);margin-bottom:6px;">Gastos deducibles</div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+                  {_chk_html(chk_ibi,"IBI")}
+                  {_chk_html(chk_com,"Comunidad")}
+                  {_chk_html(chk_seg,"Seguro")}
+                  {_chk_html(chk_amort,"Amortización")}
+                  {_chk_html(chk_hip,"Hipoteca")}
+                </div>
+                <div style="height:0.5px;background:var(--pa-border);margin:8px 0;"></div>
+                <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--pa-text-dim);margin-bottom:4px;">Alertas</div>
+                {alertas_html}
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+
 # ── PANTALLA: Wizard ─────────────────────────────────────────────
 def pantalla_wizard():
     cliente_id = st.session_state.get("fh_cliente_sel")
@@ -938,36 +1086,11 @@ def pantalla_wizard():
             st.markdown('<div class="wz-callout ok">✓ Sin alertas fiscales detectadas para este cliente.</div>',
                         unsafe_allow_html=True)
 
-        # Inmuebles
+        # Fichas de inmuebles
         if not df_inm.empty:
-            st.markdown('<div class="fh-section-title" style="margin-top:24px;">Inmuebles</div>',
+            st.markdown('<div class="fh-section-title" style="margin-top:20px;">Inmuebles</div>',
                         unsafe_allow_html=True)
-            col_nombre = "nombre" if "nombre" in df_inm.columns else "Nombre"
-            col_renta  = "renta"  if "renta"  in df_inm.columns else "Renta"
-            col_tipo   = "tipo_arrendamiento" if "tipo_arrendamiento" in df_inm.columns else "Tipo_Arrendamiento"
-            col_ref    = "ref_catastral" if "ref_catastral" in df_inm.columns else "Ref_Catastral"
-
-            filas = ""
-            for _, row in df_inm.iterrows():
-                n = row.get(col_nombre, "—")
-                r = sf(row.get(col_renta, 0))
-                t = str(row.get(col_tipo, "—"))
-                ref = str(row.get(col_ref, "—"))
-                filas += f"""<tr>
-                  <td>{n}</td>
-                  <td>{ref}</td>
-                  <td>{t}</td>
-                  <td style="text-align:right;" class="mono" style="color:var(--pa-ok);">{fmt_eur(r * 12)}/año</td>
-                </tr>"""
-
-            st.markdown(f"""
-            <table class="fh-table" style="margin-bottom:8px;">
-              <thead><tr>
-                <th>Inmueble</th><th>Ref. Catastral</th>
-                <th>Modalidad</th><th style="text-align:right;">Ingresos anuales</th>
-              </tr></thead>
-              <tbody>{filas}</tbody>
-            </table>""", unsafe_allow_html=True)
+            render_fichas_inmuebles(df_inm, alertas, cliente_id)
 
         st.markdown("</div>", unsafe_allow_html=True)  # wz-body
 
