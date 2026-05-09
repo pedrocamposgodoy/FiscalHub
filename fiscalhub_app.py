@@ -1170,13 +1170,59 @@ def pantalla_wizard():
         with c1:
             if st.button("📄 Generar PDF Modelo 100", use_container_width=True, type="primary"):
                 try:
-                    from fiscal_export import generar_pdf_global, calcular_resumen_global
-                    from app import calcular_modelo_100, safe_float as sf2
-                    filas, totales = calcular_resumen_global(
-                        df_inm, df_mov, sf2, calcular_modelo_100)
-                    pdf = generar_pdf_global(filas, totales,
+                    from fiscal_export import generar_pdf_global
+                    m = cliente["modelo100"]
+                    # Construir filas y totales desde modelo100 de FiscalHub
+                    filas_pdf = []
+                    for _, row in df_inm.iterrows():
+                        col_n = "nombre" if "nombre" in df_inm.columns else "Nombre"
+                        col_r = "renta"  if "renta"  in df_inm.columns else "Renta"
+                        filas_pdf.append({
+                            "inmueble":          row.get(col_n, ""),
+                            "ref_catastral":     str(row.get("ref_catastral") or row.get("Ref_Catastral","N/A")),
+                            "tipo":              str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento","Larga Duración")),
+                            "inquilino":         str(row.get("inquilino") or row.get("Inquilino","")),
+                            "nif_inquilino":     str(row.get("nif_inquilino") or row.get("NIF_Inquilino","")),
+                            "dias":              int(sf(row.get("dias_arrendados_anio") or row.get("Dias_Arrendados_Anio", 365))),
+                            "ingresos":          sf(row.get("renta") or row.get("Renta", 0)) * 12,
+                            "intereses":         sf(row.get("intereses_hipoteca") or row.get("Intereses_Hipoteca", 0)),
+                            "reparaciones":      0,
+                            "ibi":               sf(row.get("ibi_anual") or row.get("IBI_Anual", 0)),
+                            "comunidad_seguros": sf(row.get("comunidad") or row.get("Comunidad", 0)) * 12,
+                            "suministros":       0,
+                            "gastos_juridicos":  sf(row.get("gastos_juridicos") or row.get("Gastos_Juridicos", 0)),
+                            "amortizacion":      sf(row.get("amortizacion_fiscal") or row.get("Amortizacion_Fiscal", 0)),
+                            "amort_detalle":     "",
+                            "total_gastos":      0,
+                            "rend_neto":         0,
+                            "reduccion_pct":     60,
+                            "reduccion_imp":     0,
+                            "rend_final":        0,
+                            "retenciones":       sf(row.get("retenciones_irpf") or row.get("Retenciones_IRPF", 0)),
+                            "nota_reduccion":    "Validar con asesor",
+                            "ahorro_potencial":  0,
+                        })
+                    totales_pdf = {**m,
+                        "n_inmuebles": len(filas_pdf),
+                        "año_fiscal": 2025,
+                        "ingresos": m.get("ingresos", 0),
+                        "intereses": m.get("intereses", 0),
+                        "reparaciones": m.get("reparaciones", 0),
+                        "ibi": m.get("ibi", 0),
+                        "comunidad_seguros": m.get("comunidad_seguros", 0),
+                        "suministros": m.get("suministros", 0),
+                        "gastos_juridicos": m.get("gastos_juridicos", 0),
+                        "amortizacion": m.get("amortizacion", 0),
+                        "total_gastos": m.get("total_gastos", 0),
+                        "rend_neto": m.get("rend_neto", 0),
+                        "reduccion_imp": m.get("reduccion", 0),
+                        "rend_final": m.get("rend_final", 0),
+                        "retenciones": m.get("retenciones", 0),
+                    }
+                    pdf = generar_pdf_global(filas_pdf, totales_pdf,
                                              nombre_propietario=cliente["nombre"],
-                                             nombre_asesoria=nombre_asesor)
+                                             nombre_asesoria=nombre_asesor,
+                                             año_fiscal=2025)
                     if pdf:
                         st.download_button(
                             "⬇️ Descargar PDF",
@@ -1191,13 +1237,45 @@ def pantalla_wizard():
         with c2:
             if st.button("📊 Generar Excel", use_container_width=True):
                 try:
-                    from fiscal_export import generar_excel_asesor, calcular_resumen_global
-                    from app import calcular_modelo_100, safe_float as sf2
-                    filas, totales = calcular_resumen_global(
-                        df_inm, df_mov, sf2, calcular_modelo_100)
-                    xlsx = generar_excel_asesor(filas, totales,
+                    from fiscal_export import generar_excel_asesor
+                    m = cliente["modelo100"]
+                    filas_xlsx = []
+                    for _, row in df_inm.iterrows():
+                        col_n = "nombre" if "nombre" in df_inm.columns else "Nombre"
+                        filas_xlsx.append({
+                            "inmueble":          row.get(col_n, ""),
+                            "ref_catastral":     str(row.get("ref_catastral") or ""),
+                            "tipo":              str(row.get("tipo_arrendamiento") or "Larga Duración"),
+                            "inquilino":         str(row.get("inquilino") or ""),
+                            "nif_inquilino":     str(row.get("nif_inquilino") or ""),
+                            "dias":              int(sf(row.get("dias_arrendados_anio", 365) or 365)),
+                            "ingresos":          sf(row.get("renta", 0) or 0) * 12,
+                            "intereses":         sf(row.get("intereses_hipoteca", 0) or 0),
+                            "reparaciones":      0,
+                            "ibi":               sf(row.get("ibi_anual", 0) or 0),
+                            "comunidad_seguros": sf(row.get("comunidad", 0) or 0) * 12,
+                            "suministros":       0,
+                            "gastos_juridicos":  sf(row.get("gastos_juridicos", 0) or 0),
+                            "amortizacion":      sf(row.get("amortizacion_fiscal", 0) or 0),
+                            "amort_detalle":     "",
+                            "total_gastos":      0,
+                            "rend_neto":         0,
+                            "reduccion_pct":     60,
+                            "reduccion_imp":     0,
+                            "rend_final":        0,
+                            "retenciones":       sf(row.get("retenciones_irpf", 0) or 0),
+                            "nota_reduccion":    "",
+                            "ahorro_potencial":  0,
+                        })
+                    totales_xlsx = {**m,
+                        "n_inmuebles": len(filas_xlsx),
+                        "año_fiscal": 2025,
+                        "reduccion_imp": m.get("reduccion", 0),
+                    }
+                    xlsx = generar_excel_asesor(filas_xlsx, totales_xlsx,
                                                 nombre_propietario=cliente["nombre"],
-                                                nombre_asesoria=nombre_asesor)
+                                                nombre_asesoria=nombre_asesor,
+                                                año_fiscal=2025)
                     if xlsx:
                         st.download_button(
                             "⬇️ Descargar Excel",
