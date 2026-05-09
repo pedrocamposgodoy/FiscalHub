@@ -347,18 +347,30 @@ def get_clientes_vinculados(asesor_user_id):
     return r.json() or []
 
 def get_inmuebles_propietario(propietario_id):
+    """Lee inmuebles del propietario usando la service key para saltar RLS."""
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+    }
     r = requests.get(
         f"{SUPABASE_URL}/rest/v1/inmuebles?user_id=eq.{propietario_id}&select=*",
-        headers=_h()
+        headers=headers
     )
     if r.status_code == 200 and r.json():
         return pd.DataFrame(r.json())
     return pd.DataFrame()
 
 def get_movimientos_propietario(propietario_id):
+    """Lee movimientos del propietario usando la service key para saltar RLS."""
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+    }
     r = requests.get(
         f"{SUPABASE_URL}/rest/v1/movimientos?user_id=eq.{propietario_id}&select=*",
-        headers=_h()
+        headers=headers
     )
     if r.status_code == 200 and r.json():
         return pd.DataFrame(r.json())
@@ -529,7 +541,16 @@ def construir_cartera(clientes_vinculados):
     cartera = []
     for acc in clientes_vinculados:
         pid = acc.get("propietario_id") or acc.get("user_id")
-        nombre = acc.get("nombre") or acc.get("nombre_propietario", "Propietario")
+        # El nombre puede venir del email partido — intentar mejorar
+        nombre_raw = acc.get("nombre") or acc.get("nombre_propietario", "")
+        email_raw  = acc.get("email", "")
+        # Si el nombre parece un email partido (sin espacio), usar email completo
+        if nombre_raw and " " not in nombre_raw and "@" not in nombre_raw:
+            nombre = nombre_raw  # dejar como está, es lo que hay
+        elif email_raw:
+            nombre = email_raw.split("@")[0].replace(".", " ").title()
+        else:
+            nombre = nombre_raw or "Propietario"
         if not pid:
             continue
         df_inm = get_inmuebles_propietario(pid)
