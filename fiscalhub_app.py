@@ -372,14 +372,17 @@ def vincular_propietario(asesor_user_id, codigo):
     )
     if r.status_code == 200 and r.json():
         acc = r.json()[0]
-        # Añadir asesor_user_id al registro
+        propietario_id = acc.get("propietario_id")
+        nombre = acc.get("nombre") or acc.get("nombre_propietario", "Propietario")
+        if not propietario_id:
+            return {"ok": False, "error": "Código sin propietario asociado"}
+        # Registrar asesor_user_id en el registro
         requests.patch(
             f"{SUPABASE_URL}/rest/v1/accesos_asesor?id=eq.{acc['id']}",
-            headers=_h(),
+            headers={**_h(), "Prefer": "return=minimal"},
             json={"asesor_user_id": asesor_user_id}
         )
-        return {"ok": True, "propietario_id": acc["user_id"],
-                "nombre": acc.get("nombre_propietario", "Propietario")}
+        return {"ok": True, "propietario_id": propietario_id, "nombre": nombre}
     return {"ok": False, "error": "Código no válido o ya utilizado"}
 
 # ── Análisis fiscal ───────────────────────────────────────────────
@@ -525,8 +528,8 @@ def construir_cartera(clientes_vinculados):
     """Construye la lista de clientes con sus métricas fiscales."""
     cartera = []
     for acc in clientes_vinculados:
-        pid = acc.get("user_id") or acc.get("propietario_id")
-        nombre = acc.get("nombre_propietario", "Propietario")
+        pid = acc.get("propietario_id") or acc.get("user_id")
+        nombre = acc.get("nombre") or acc.get("nombre_propietario", "Propietario")
         if not pid:
             continue
         df_inm = get_inmuebles_propietario(pid)
