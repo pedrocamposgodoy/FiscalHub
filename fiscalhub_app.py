@@ -1156,144 +1156,152 @@ def pantalla_wizard():
 
     # ── PASO 4: Exportar ─────────────────────────────────────────
     elif step == 4:
+        m = cliente["modelo100"]
+        asesor = st.session_state.get("fh_asesor", {})
+        nombre_asesor = asesor.get("despacho", asesor.get("nombre", ""))
+
         st.markdown(f"""
         <div class="wz-card">
           <div class="wz-body">
             <div class="wz-title">Exportar documentos</div>
-            <div class="wz-sub">Genera el PDF y el Excel para {cliente['nombre']}.</div>
+            <div class="wz-sub">Resumen fiscal de {cliente['nombre']} · IRPF 2025</div>
         """, unsafe_allow_html=True)
 
-        asesor = st.session_state.get("fh_asesor", {})
-        nombre_asesor = asesor.get("despacho", asesor.get("nombre", ""))
-
-        c1, c2 = st.columns(2)
+        # Resumen cifras finales
+        c1, c2, c3, c4 = st.columns(4)
         with c1:
-            if st.button("📄 Generar PDF Modelo 100", use_container_width=True, type="primary"):
+            st.markdown(f"""<div class="wz-field">
+              <div class="wz-field-label">Ingresos íntegros (0102)</div>
+              <div class="wz-field-value mono" style="color:var(--pa-ok);">{fmt_eur(m.get('ingresos',0))}</div>
+            </div>""", unsafe_allow_html=True)
+        with c2:
+            st.markdown(f"""<div class="wz-field">
+              <div class="wz-field-label">Total gastos (0107)</div>
+              <div class="wz-field-value mono" style="color:var(--pa-critical);">−{fmt_eur(m.get('total_gastos',0))}</div>
+            </div>""", unsafe_allow_html=True)
+        with c3:
+            st.markdown(f"""<div class="wz-field">
+              <div class="wz-field-label">Rend. neto (0149)</div>
+              <div class="wz-field-value mono">{fmt_eur(m.get('rend_neto',0))}</div>
+            </div>""", unsafe_allow_html=True)
+        with c4:
+            st.markdown(f"""<div class="wz-field">
+              <div class="wz-field-label">Base imponible est. (0156)</div>
+              <div class="wz-field-value mono" style="color:var(--pa-accent);">{fmt_eur(m.get('rend_final',0))}</div>
+            </div>""", unsafe_allow_html=True)
+
+        st.markdown("""<div class="wz-callout warn" style="margin-top:16px;margin-bottom:20px;">
+          <strong>⚠️ Reducción orientativa</strong> — Validar porcentaje exacto antes de presentar a la AEAT.
+        </div>""", unsafe_allow_html=True)
+        st.markdown("</div></div>", unsafe_allow_html=True)
+
+        # ── Botones de export ────────────────────────────────────
+        def _construir_filas_export(df_inm):
+            filas = []
+            for _, row in df_inm.iterrows():
+                col_n = "nombre" if "nombre" in df_inm.columns else "Nombre"
+                filas.append({
+                    "inmueble":          str(row.get(col_n, "")),
+                    "ref_catastral":     str(row.get("ref_catastral") or row.get("Ref_Catastral","N/A")),
+                    "tipo":              str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento","Larga Duración")),
+                    "inquilino":         str(row.get("inquilino") or row.get("Inquilino","")),
+                    "nif_inquilino":     str(row.get("nif_inquilino") or row.get("NIF_Inquilino","")),
+                    "dias":              int(sf(row.get("dias_arrendados_anio") or row.get("Dias_Arrendados_Anio", 365) or 365)),
+                    "ingresos":          sf(row.get("renta") or row.get("Renta", 0)) * 12,
+                    "intereses":         sf(row.get("intereses_hipoteca") or row.get("Intereses_Hipoteca", 0)),
+                    "reparaciones":      0.0,
+                    "ibi":               sf(row.get("ibi_anual") or row.get("IBI_Anual", 0)),
+                    "comunidad_seguros": sf(row.get("comunidad") or row.get("Comunidad", 0)) * 12,
+                    "suministros":       0.0,
+                    "gastos_juridicos":  sf(row.get("gastos_juridicos") or row.get("Gastos_Juridicos", 0)),
+                    "amortizacion":      sf(row.get("amortizacion_fiscal") or row.get("Amortizacion_Fiscal", 0)),
+                    "amort_detalle":     "",
+                    "total_gastos":      0.0,
+                    "rend_neto":         0.0,
+                    "reduccion_pct":     60,
+                    "reduccion_imp":     0.0,
+                    "rend_final":        0.0,
+                    "retenciones":       sf(row.get("retenciones_irpf") or row.get("Retenciones_IRPF", 0)),
+                    "nota_reduccion":    "Validar con asesor",
+                    "ahorro_potencial":  0.0,
+                })
+            return filas
+
+        def _construir_totales_export(m):
+            return {
+                "n_inmuebles":       len(df_inm),
+                "año_fiscal":        2025,
+                "ingresos":          m.get("ingresos", 0),
+                "intereses":         m.get("intereses", 0),
+                "reparaciones":      m.get("reparaciones", 0),
+                "ibi":               m.get("ibi", 0),
+                "comunidad_seguros": m.get("comunidad_seguros", 0),
+                "suministros":       m.get("suministros", 0),
+                "gastos_juridicos":  m.get("gastos_juridicos", 0),
+                "amortizacion":      m.get("amortizacion", 0),
+                "total_gastos":      m.get("total_gastos", 0),
+                "rend_neto":         m.get("rend_neto", 0),
+                "reduccion_imp":     m.get("reduccion", 0),
+                "rend_final":        m.get("rend_final", 0),
+                "retenciones":       m.get("retenciones", 0),
+            }
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("📄 Generar PDF", use_container_width=True, type="primary", key="wz4_pdf"):
                 try:
                     from fiscal_export import generar_pdf_global
-                    m = cliente["modelo100"]
-                    # Construir filas y totales desde modelo100 de FiscalHub
-                    filas_pdf = []
-                    for _, row in df_inm.iterrows():
-                        col_n = "nombre" if "nombre" in df_inm.columns else "Nombre"
-                        col_r = "renta"  if "renta"  in df_inm.columns else "Renta"
-                        filas_pdf.append({
-                            "inmueble":          row.get(col_n, ""),
-                            "ref_catastral":     str(row.get("ref_catastral") or row.get("Ref_Catastral","N/A")),
-                            "tipo":              str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento","Larga Duración")),
-                            "inquilino":         str(row.get("inquilino") or row.get("Inquilino","")),
-                            "nif_inquilino":     str(row.get("nif_inquilino") or row.get("NIF_Inquilino","")),
-                            "dias":              int(sf(row.get("dias_arrendados_anio") or row.get("Dias_Arrendados_Anio", 365))),
-                            "ingresos":          sf(row.get("renta") or row.get("Renta", 0)) * 12,
-                            "intereses":         sf(row.get("intereses_hipoteca") or row.get("Intereses_Hipoteca", 0)),
-                            "reparaciones":      0,
-                            "ibi":               sf(row.get("ibi_anual") or row.get("IBI_Anual", 0)),
-                            "comunidad_seguros": sf(row.get("comunidad") or row.get("Comunidad", 0)) * 12,
-                            "suministros":       0,
-                            "gastos_juridicos":  sf(row.get("gastos_juridicos") or row.get("Gastos_Juridicos", 0)),
-                            "amortizacion":      sf(row.get("amortizacion_fiscal") or row.get("Amortizacion_Fiscal", 0)),
-                            "amort_detalle":     "",
-                            "total_gastos":      0,
-                            "rend_neto":         0,
-                            "reduccion_pct":     60,
-                            "reduccion_imp":     0,
-                            "rend_final":        0,
-                            "retenciones":       sf(row.get("retenciones_irpf") or row.get("Retenciones_IRPF", 0)),
-                            "nota_reduccion":    "Validar con asesor",
-                            "ahorro_potencial":  0,
-                        })
-                    totales_pdf = {**m,
-                        "n_inmuebles": len(filas_pdf),
-                        "año_fiscal": 2025,
-                        "ingresos": m.get("ingresos", 0),
-                        "intereses": m.get("intereses", 0),
-                        "reparaciones": m.get("reparaciones", 0),
-                        "ibi": m.get("ibi", 0),
-                        "comunidad_seguros": m.get("comunidad_seguros", 0),
-                        "suministros": m.get("suministros", 0),
-                        "gastos_juridicos": m.get("gastos_juridicos", 0),
-                        "amortizacion": m.get("amortizacion", 0),
-                        "total_gastos": m.get("total_gastos", 0),
-                        "rend_neto": m.get("rend_neto", 0),
-                        "reduccion_imp": m.get("reduccion", 0),
-                        "rend_final": m.get("rend_final", 0),
-                        "retenciones": m.get("retenciones", 0),
-                    }
-                    pdf = generar_pdf_global(filas_pdf, totales_pdf,
+                    filas = _construir_filas_export(df_inm)
+                    totales = _construir_totales_export(m)
+                    pdf = generar_pdf_global(filas, totales,
                                              nombre_propietario=cliente["nombre"],
                                              nombre_asesoria=nombre_asesor,
                                              año_fiscal=2025)
                     if pdf:
-                        st.download_button(
-                            "⬇️ Descargar PDF",
-                            data=pdf,
-                            file_name=f"ModeloIRPF_{cliente['nombre'].replace(' ','_')}_2025.pdf",
-                            mime="application/pdf",
-                            use_container_width=True,
-                        )
+                        st.session_state["fh_pdf_export"] = pdf.getvalue()
+                        st.session_state["fh_pdf_nombre"] = f"ModeloIRPF_{cliente['nombre'].replace(' ','_')}_2025.pdf"
+                        st.rerun()
                 except Exception as e:
-                    st.error(f"Error generando PDF: {e}")
+                    st.error(f"Error PDF: {e}")
 
-        with c2:
-            if st.button("📊 Generar Excel", use_container_width=True):
+            if "fh_pdf_export" in st.session_state:
+                st.download_button(
+                    "⬇️ Descargar PDF",
+                    data=st.session_state["fh_pdf_export"],
+                    file_name=st.session_state.get("fh_pdf_nombre", "IRPF_2025.pdf"),
+                    mime="application/pdf",
+                    use_container_width=True,
+                    key="wz4_pdf_dl"
+                )
+
+        with col2:
+            if st.button("📊 Generar Excel", use_container_width=True, key="wz4_xlsx"):
                 try:
                     from fiscal_export import generar_excel_asesor
-                    m = cliente["modelo100"]
-                    filas_xlsx = []
-                    for _, row in df_inm.iterrows():
-                        col_n = "nombre" if "nombre" in df_inm.columns else "Nombre"
-                        filas_xlsx.append({
-                            "inmueble":          row.get(col_n, ""),
-                            "ref_catastral":     str(row.get("ref_catastral") or ""),
-                            "tipo":              str(row.get("tipo_arrendamiento") or "Larga Duración"),
-                            "inquilino":         str(row.get("inquilino") or ""),
-                            "nif_inquilino":     str(row.get("nif_inquilino") or ""),
-                            "dias":              int(sf(row.get("dias_arrendados_anio", 365) or 365)),
-                            "ingresos":          sf(row.get("renta", 0) or 0) * 12,
-                            "intereses":         sf(row.get("intereses_hipoteca", 0) or 0),
-                            "reparaciones":      0,
-                            "ibi":               sf(row.get("ibi_anual", 0) or 0),
-                            "comunidad_seguros": sf(row.get("comunidad", 0) or 0) * 12,
-                            "suministros":       0,
-                            "gastos_juridicos":  sf(row.get("gastos_juridicos", 0) or 0),
-                            "amortizacion":      sf(row.get("amortizacion_fiscal", 0) or 0),
-                            "amort_detalle":     "",
-                            "total_gastos":      0,
-                            "rend_neto":         0,
-                            "reduccion_pct":     60,
-                            "reduccion_imp":     0,
-                            "rend_final":        0,
-                            "retenciones":       sf(row.get("retenciones_irpf", 0) or 0),
-                            "nota_reduccion":    "",
-                            "ahorro_potencial":  0,
-                        })
-                    totales_xlsx = {**m,
-                        "n_inmuebles": len(filas_xlsx),
-                        "año_fiscal": 2025,
-                        "reduccion_imp": m.get("reduccion", 0),
-                    }
-                    xlsx = generar_excel_asesor(filas_xlsx, totales_xlsx,
+                    filas = _construir_filas_export(df_inm)
+                    totales = _construir_totales_export(m)
+                    xlsx = generar_excel_asesor(filas, totales,
                                                 nombre_propietario=cliente["nombre"],
                                                 nombre_asesoria=nombre_asesor,
                                                 año_fiscal=2025)
                     if xlsx:
-                        st.download_button(
-                            "⬇️ Descargar Excel",
-                            data=xlsx,
-                            file_name=f"IRPF_{cliente['nombre'].replace(' ','_')}_2025.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            use_container_width=True,
-                        )
+                        st.session_state["fh_xlsx_export"] = xlsx.getvalue()
+                        st.session_state["fh_xlsx_nombre"] = f"IRPF_{cliente['nombre'].replace(' ','_')}_2025.xlsx"
+                        st.rerun()
                 except Exception as e:
-                    st.error(f"Error generando Excel: {e}")
+                    st.error(f"Error Excel: {e}")
 
-        st.markdown(f"""
-        <div class="wz-callout accent" style="margin-top:20px;">
-          <strong>Documentos listos para entregar al cliente o presentar a la AEAT.</strong><br>
-          Recuerda validar la reducción del 60% antes de la presentación definitiva.
-        </div>
-        </div>""", unsafe_allow_html=True)
+            if "fh_xlsx_export" in st.session_state:
+                st.download_button(
+                    "⬇️ Descargar Excel",
+                    data=st.session_state["fh_xlsx_export"],
+                    file_name=st.session_state.get("fh_xlsx_nombre", "IRPF_2025.xlsx"),
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                    key="wz4_xlsx_dl"
+                )
 
+        c1, c2 = st.columns(2)
         st.markdown('<div class="wz-foot">', unsafe_allow_html=True)
         c_l, c_r = st.columns(2)
         with c_l:
@@ -1306,9 +1314,10 @@ def pantalla_wizard():
                 st.session_state.fh_menu = "cartera"
                 st.session_state.pop("fh_cliente_sel", None)
                 st.session_state.pop("fh_wizard_step", None)
-                st.success(f"✅ {cliente['nombre']} marcado como revisado")
+                st.session_state.pop("fh_pdf_export", None)
+                st.session_state.pop("fh_xlsx_export", None)
                 st.rerun()
-        st.markdown("</div></div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 # ── PANTALLA: Alertas ────────────────────────────────────────────
 def pantalla_alertas():
