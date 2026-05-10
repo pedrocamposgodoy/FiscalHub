@@ -713,7 +713,7 @@ def pantalla_cliente():
     if df_inm.empty:
         st.info("Sin inmuebles registrados para este cliente."); return
 
-    for _, row in df_inm.iterrows():
+    for idx, (_, row) in enumerate(df_inm.iterrows()):
         nombre_inm = str(row.get(col_n,""))
         sem        = calcular_semaforo_inmueble(row)
         vld        = vlds.get(nombre_inm,{})
@@ -789,14 +789,14 @@ def pantalla_cliente():
         bc1,bc2,bc3 = st.columns([2,1,1])
         with bc1:
             if st.button(f"🔍 Revisar — {nombre_inm[:22]}",
-                         key=f"rev_{cliente_id[:8]}_{nombre_inm[:8]}", use_container_width=True):
+                         key=f"rev_{cliente_id[:8]}_{idx}", use_container_width=True):
                 st.session_state.fh_inmueble_sel = nombre_inm
                 st.session_state.fh_menu = "ficha"
                 st.rerun()
         with bc2:
             if vld_estado not in ("ok","vl") and sem["estado"] != "ok":
                 if st.button("✅ Forzar validación",
-                             key=f"vld_{cliente_id[:8]}_{nombre_inm[:8]}", use_container_width=True):
+                             key=f"vld_{cliente_id[:8]}_{idx}", use_container_width=True):
                     if "fh_validaciones" not in st.session_state: st.session_state.fh_validaciones = {}
                     if cliente_id not in st.session_state.fh_validaciones: st.session_state.fh_validaciones[cliente_id] = {}
                     st.session_state.fh_validaciones[cliente_id][nombre_inm] = {
@@ -805,7 +805,7 @@ def pantalla_cliente():
         with bc3:
             if vld_manual:
                 if st.button("↩ Desvalidar",
-                             key=f"dvl_{cliente_id[:8]}_{nombre_inm[:8]}", use_container_width=True):
+                             key=f"dvl_{cliente_id[:8]}_{idx}", use_container_width=True):
                     st.session_state.fh_validaciones[cliente_id].pop(nombre_inm, None)
                     st.rerun()
 
