@@ -1,10 +1,7 @@
 # ================================================================
 # fiscalhub_app.py — FiscalHub · Portal Asesoría Fiscal
-# Nolasco Capital ecosystem · Repo: pedrocamposgodoy/FiscalHub
-#
-# Stack: Python + Streamlit + Supabase
-# Diseño: basado en Portal_Asesor.html (Claude Design)
-# Colores: #111318 fondo · #C8A96E acento dorado
+# Nolasco Capital ecosystem
+# Diseño: degradados azul/gris pastel · sidebar azul marino
 # ================================================================
 
 import streamlit as st
@@ -13,7 +10,6 @@ import pandas as pd
 from datetime import datetime, date
 import io
 
-# ── Config ──────────────────────────────────────────────────────
 st.set_page_config(
     page_title="FiscalHub · Nolasco Capital",
     page_icon="⚖️",
@@ -21,271 +17,206 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Supabase ─────────────────────────────────────────────────────
 SUPABASE_URL = "https://odxixtgqcyddfqaapqgi.supabase.co"
 SUPABASE_KEY = "sb_publishable_Obgti7yMfXw8wCUL2FbTtA_EWeyHuM9"
 
 def _h(token=None):
     t = token or st.session_state.get("fh_token") or SUPABASE_KEY
-    return {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {t}",
-        "Content-Type": "application/json",
-        "Prefer": "return=representation",
-    }
+    return {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {t}",
+            "Content-Type": "application/json", "Prefer": "return=representation"}
 
-# ── CSS pastel azul/gris/blanco ─────────────────────────────────
+def _hd():
+    return {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "application/json"}
+
+# ── CSS ──────────────────────────────────────────────────────────
 CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Serif+Display&display=swap');
-
 :root{
-  --pa-bg:#F0F4F8; --pa-bg-deep:#F7F9FC; --pa-surface:#FFFFFF;
-  --pa-surface-2:#F7F9FC; --pa-surface-hover:#EEF3F9;
-  --pa-border:rgba(100,130,170,0.15); --pa-border-strong:rgba(100,130,170,0.28);
-  --pa-text:#1E2A3A; --pa-text-strong:#111827;
-  --pa-text-mute:#5A6A7E; --pa-text-dim:#8A9BB0;
-  --pa-accent:#4A7AB5; --pa-accent-dim:#2E5A8A;
-  --pa-accent-faint:rgba(74,122,181,0.08);
-  --pa-critical:#A32D2D; --pa-critical-bg:#FDF0F0;
-  --pa-warn:#7A5500; --pa-warn-bg:#FDF6E8;
-  --pa-ok:#2A6040; --pa-ok-bg:#EDF7F1;
-  --pa-info:#4A7AB5;
-  --pa-font-ui:'IBM Plex Sans','Inter',sans-serif;
-  --pa-font-mono:'IBM Plex Mono',monospace;
-  --pa-font-display:'DM Serif Display',Georgia,serif;
-  --pa-sb:#1E3A5F; --pa-sb2:#162E4D;
-  --pa-sb-text:#E8EFF8; --pa-sb-mute:#7A9BBF;
-  --pa-gold:#C8A96E;
+  --bg:#EEF3F9;--bg2:#E3ECF5;--sf:#FFFFFF;--sf2:#F7F9FC;--sf3:#EEF3F9;
+  --bd:rgba(74,122,181,0.15);--bd2:rgba(74,122,181,0.28);
+  --acc:#3D6FA8;--acc2:#2E5A8A;--acc-f:rgba(74,122,181,0.08);
+  --tx:#1E2A3A;--tx2:#111827;--txm:#5A6A7E;--txd:#8A9BB0;
+  --cr:#A32D2D;--cr-b:#FDF0F0;--wn:#7A5500;--wn-b:#FDF6E8;--ok:#2A6040;--ok-b:#EDF7F1;
+  --sb:#1E3A5F;--sb2:#162E4D;--sbt:#E8EFF8;--sbm:#7A9BBF;--gold:#C8A96E;
+  --fu:'IBM Plex Sans',system-ui,sans-serif;--fm:'IBM Plex Mono',monospace;--fd:'DM Serif Display',Georgia,serif;
 }
+.stApp{background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 100%) !important;color:var(--tx) !important;font-family:var(--fu) !important;}
+section[data-testid="stSidebar"]{background:linear-gradient(180deg,var(--sb) 0%,var(--sb2) 100%) !important;border-right:1px solid rgba(255,255,255,0.06) !important;}
+section[data-testid="stSidebar"] *{color:var(--sbt) !important;font-family:var(--fu) !important;}
+.block-container{padding:0 !important;max-width:100% !important;}
+div[data-testid="stVerticalBlock"]{gap:0 !important;}
+.stButton>button{background:linear-gradient(135deg,#EEF3F9 0%,#DDE8F2 100%) !important;border:0.5px solid rgba(74,122,181,0.3) !important;color:var(--acc2) !important;font-family:var(--fu) !important;font-size:12px !important;border-radius:8px !important;padding:7px 14px !important;font-weight:500 !important;transition:all .15s !important;}
+.stButton>button:hover{background:linear-gradient(135deg,#DDE8F2 0%,#C8D8EC 100%) !important;border-color:rgba(74,122,181,0.5) !important;}
+.stButton>button[kind="primary"]{background:linear-gradient(135deg,#3D6FA8 0%,#2E5A8A 100%) !important;color:white !important;border-color:transparent !important;}
+.stButton>button[kind="primary"]:hover{background:linear-gradient(135deg,#2E5A8A 0%,#1F4470 100%) !important;}
+.stTextInput>div>div>input{background:linear-gradient(135deg,#FFFFFF 0%,#F7F9FC 100%) !important;border:0.5px solid var(--bd2) !important;color:var(--tx) !important;font-family:var(--fu) !important;border-radius:8px !important;font-size:13px !important;padding:8px 12px !important;}
+.stTextInput>div>div>input::placeholder{color:var(--txd) !important;}
+.stTextInput>div>div>input:focus{border-color:var(--acc) !important;box-shadow:0 0 0 3px var(--acc-f) !important;}
+label{color:var(--txm) !important;font-size:12px !important;}
+hr{border-color:var(--bd) !important;}
+h1,h2,h3{font-family:var(--fd) !important;color:var(--tx2) !important;}
+p,li{color:var(--tx) !important;}
+.stTabs [data-baseweb="tab-list"]{background:linear-gradient(135deg,#F7F9FC 0%,#EEF3F9 100%) !important;border-bottom:0.5px solid var(--bd2) !important;gap:0 !important;}
+.stTabs [data-baseweb="tab"]{background:transparent !important;color:var(--txm) !important;border-bottom:2px solid transparent !important;font-family:var(--fu) !important;font-size:12px !important;padding:10px 18px !important;}
+.stTabs [aria-selected="true"]{color:var(--acc) !important;border-bottom-color:var(--acc) !important;}
+.stRadio>div{flex-direction:row !important;gap:8px !important;}
+.stRadio label{color:var(--txm) !important;font-size:12px !important;}
+.stSelectbox>div>div{background:linear-gradient(135deg,#FFFFFF 0%,#F7F9FC 100%) !important;border:0.5px solid var(--bd2) !important;border-radius:8px !important;}
 
-/* ── Reset Streamlit ── */
-.stApp { background: var(--pa-bg) !important; color: var(--pa-text) !important; font-family: var(--pa-font-ui) !important; }
-section[data-testid="stSidebar"] { background: var(--pa-sb) !important; border-right: 1px solid rgba(255,255,255,0.06) !important; }
-section[data-testid="stSidebar"] * { color: var(--pa-sb-text) !important; font-family: var(--pa-font-ui) !important; }
-.block-container { padding: 0 !important; max-width: 100% !important; }
-div[data-testid="stVerticalBlock"] { gap: 0 !important; }
-.stButton > button {
-  background: var(--pa-surface) !important; border: 0.5px solid var(--pa-border-strong) !important;
-  color: var(--pa-text) !important; font-family: var(--pa-font-ui) !important;
-  font-size: 12px !important; border-radius: 6px !important; padding: 6px 12px !important;
-  transition: background .12s, border-color .12s !important;
-}
-.stButton > button:hover { background: var(--pa-surface-hover) !important; border-color: var(--pa-accent) !important; }
-.stTextInput > div > div > input, .stSelectbox > div > div {
-  background: var(--pa-surface) !important; border: 0.5px solid var(--pa-border-strong) !important;
-  color: var(--pa-text) !important; font-family: var(--pa-font-ui) !important;
-  border-radius: 6px !important; font-size: 13px !important;
-}
-.stTextInput > div > div > input:focus { border-color: var(--pa-accent) !important; box-shadow: 0 0 0 2px var(--pa-accent-faint) !important; }
-.stDataFrame { background: var(--pa-surface) !important; }
-hr { border-color: var(--pa-border) !important; }
-h1,h2,h3 { font-family: var(--pa-font-display) !important; color: var(--pa-text-strong) !important; }
-p, li { color: var(--pa-text) !important; }
-label { color: var(--pa-text-mute) !important; font-size: 12px !important; }
-.stTabs [data-baseweb="tab-list"] { background: var(--pa-surface) !important; border-bottom: 0.5px solid var(--pa-border-strong) !important; gap: 0 !important; }
-.stTabs [data-baseweb="tab"] { background: transparent !important; color: var(--pa-text-mute) !important; border-bottom: 2px solid transparent !important; font-family: var(--pa-font-ui) !important; font-size: 12px !important; padding: 10px 18px !important; }
-.stTabs [aria-selected="true"] { color: var(--pa-accent) !important; border-bottom-color: var(--pa-accent) !important; background: transparent !important; }
-.stMetric { background: var(--pa-surface) !important; border: 0.5px solid var(--pa-border-strong) !important; border-radius: 8px !important; padding: 12px 14px !important; }
-.stMetric label { font-size: 10px !important; letter-spacing: 0.12em !important; text-transform: uppercase !important; color: var(--pa-text-dim) !important; }
-.stMetric [data-testid="stMetricValue"] { font-family: var(--pa-font-mono) !important; font-size: 22px !important; font-weight: 500 !important; color: var(--pa-text-strong) !important; }
-div[data-testid="stSidebarUserContent"] { padding: 0 !important; }
-.stRadio > div { flex-direction: row !important; gap: 8px !important; }
-.stRadio label { color: var(--pa-text-mute) !important; font-size: 12px !important; }
+/* Sidebar */
+.sb-brand{padding:16px 14px 12px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.sb-nc{width:26px;height:26px;border:1.5px solid var(--gold);color:var(--gold);display:inline-flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:12px;border-radius:4px;}
+.sb-wordmark{font-family:var(--fd);font-size:16px;color:#F0F6FF;}
+.sb-tag{font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--sbm);margin-top:5px;padding-left:36px;}
+.sb-advisor{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.sb-avatar{width:28px;height:28px;border-radius:50%;background:rgba(200,169,110,0.18);border:1.5px solid rgba(200,169,110,0.35);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--gold);}
+.sb-irpf{margin:8px 10px 12px;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;}
+.sb-irpf-num{font-family:var(--fm);font-size:22px;font-weight:500;line-height:1.1;}
+.sb-bar{height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:8px;}
+.sb-fill{height:100%;border-radius:2px;}
 
-/* ── Componentes custom ── */
-.fh-brand { padding: 16px 14px 12px; border-bottom: 1px solid rgba(255,255,255,0.07); }
-.fh-nc { width: 26px; height: 26px; border: 1.5px solid var(--pa-gold); color: var(--pa-gold);
-  display: inline-flex; align-items: center; justify-content: center;
-  font-family: var(--pa-font-display); font-size: 12px; border-radius: 4px; }
-.fh-wordmark { font-family: var(--pa-font-display); font-size: 16px; color: #F0F6FF; }
-.fh-sub { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pa-sb-mute); margin-top: 5px; padding-left: 36px; }
-.fh-advisor { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.07); }
-.fh-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(200,169,110,0.18);
-  border: 1.5px solid rgba(200,169,110,0.35);
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 600; color: var(--pa-gold); }
+/* Página */
+.fh-page{padding:20px 26px 60px;}
+.fh-ey{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--txd);margin-bottom:4px;}
+.fh-title{font-family:var(--fd);font-size:26px;color:var(--tx2);margin-bottom:3px;line-height:1.1;}
+.fh-sub{font-size:12px;color:var(--txm);margin-bottom:0;}
+.fh-section{font-family:var(--fd);font-size:18px;color:var(--tx2);border-left:3px solid var(--acc);padding-left:10px;margin:20px 0 14px;line-height:1.1;}
 
-.fh-page { padding: 24px 28px 60px; }
-.fh-page-title { font-family: var(--pa-font-display); font-size: 26px; color: var(--pa-text-strong); line-height: 1.1; letter-spacing: -0.01em; margin: 0 0 4px; }
-.fh-eyebrow { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pa-text-dim); margin-bottom: 4px; }
-.fh-sub-text { font-size: 12px; color: var(--pa-text-mute); margin: 0; }
-.fh-section-title { font-family: var(--pa-font-display); font-size: 18px; color: var(--pa-text-strong);
-  border-left: 2px solid var(--pa-accent); padding-left: 10px; margin: 24px 0 14px; line-height: 1.1; }
+/* KPIs */
+.kpi{background:linear-gradient(135deg,#FFFFFF 0%,#EEF3F9 100%);border:0.5px solid var(--bd2);border-radius:10px;padding:12px 14px;border-top:3px solid rgba(74,122,181,0.3);}
+.kpi.red{border-top-color:var(--cr);}
+.kpi.gold{border-top-color:var(--gold);}
+.kpi.grn{border-top-color:var(--ok);}
+.kpi-lbl{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--txd);margin-bottom:5px;}
+.kpi-val{font-family:var(--fm);font-size:22px;font-weight:500;color:var(--tx2);}
+.kpi-val.cr{color:var(--cr);}
+.kpi-val.ac{color:var(--acc);}
+.kpi-val.ok{color:var(--ok);}
+.kpi-sub{font-size:11px;color:var(--txm);margin-top:3px;}
 
-/* KPI cards */
-.fh-kpi { background: var(--pa-surface); border: 1px solid var(--pa-border); border-radius: 4px; padding: 14px 16px; }
-.fh-kpi-label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pa-text-dim); }
-.fh-kpi-value { font-family: var(--pa-font-mono); font-size: 26px; font-weight: 600; color: var(--pa-text-strong); margin-top: 6px; line-height: 1; }
-.fh-kpi-value.crit { color: var(--pa-critical); }
-.fh-kpi-value.ok { color: var(--pa-ok); }
-.fh-kpi-value.accent { color: var(--pa-accent); }
-.fh-kpi-sub { font-size: 11px; color: var(--pa-text-mute); margin-top: 6px; }
+/* Tabla */
+.fh-tbl{width:100%;background:linear-gradient(135deg,#FFFFFF 0%,#F7F9FC 100%);border:0.5px solid var(--bd2);border-radius:10px;border-collapse:separate;border-spacing:0;font-size:12px;}
+.fh-tbl thead th{background:linear-gradient(135deg,#EEF3F9 0%,#E3ECF5 100%);text-align:left;font-size:9px;letter-spacing:0.10em;text-transform:uppercase;color:var(--txd);font-weight:500;padding:9px 12px;border-bottom:0.5px solid var(--bd2);}
+.fh-tbl thead th:first-child{border-radius:10px 0 0 0;}
+.fh-tbl thead th:last-child{border-radius:0 10px 0 0;}
+.fh-tbl tbody td{padding:10px 12px;border-bottom:0.5px solid var(--bd);color:var(--tx);vertical-align:middle;}
+.fh-tbl tbody tr:last-child td{border-bottom:0;}
+.fh-tbl tbody tr:hover td{background:linear-gradient(135deg,#EEF3F9 0%,#E3ECF5 100%);}
+.fh-tbl tr.pr td{box-shadow:inset 3px 0 0 var(--cr);}
+.fh-tbl tr.wn td{box-shadow:inset 3px 0 0 var(--wn);}
+.nm{font-weight:500;color:var(--tx2);}
+.mono{font-family:var(--fm);}
 
-/* Tabla clientes */
-.fh-table { width: 100%; background: var(--pa-surface); border: 1px solid var(--pa-border);
-  border-radius: 4px; border-collapse: collapse; font-size: 13px; }
-.fh-table thead th { background: var(--pa-bg-deep); text-align: left; font-size: 10px;
-  letter-spacing: 0.10em; text-transform: uppercase; color: var(--pa-text-dim);
-  font-weight: 500; padding: 10px 14px; border-bottom: 1px solid var(--pa-border); white-space: nowrap; }
-.fh-table tbody td { padding: 12px 14px; border-bottom: 1px solid var(--pa-border); color: var(--pa-text); vertical-align: middle; }
-.fh-table tbody tr { cursor: pointer; transition: background .08s; }
-.fh-table tbody tr:hover { background: var(--pa-surface-hover); }
-.fh-table tbody tr:last-child td { border-bottom: 0; }
-.fh-table tr.is-priority { box-shadow: inset 2px 0 0 var(--pa-critical); }
-.fh-table tr.is-warn { box-shadow: inset 2px 0 0 var(--pa-warn); }
-.name-cell { font-weight: 500; color: var(--pa-text-strong); }
-.nif-cell { font-size: 10px; color: var(--pa-text-dim); font-family: var(--pa-font-mono); margin-top: 1px; }
+/* Pills */
+.pill-cr{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;background:var(--cr-b);color:var(--cr);border:0.5px solid rgba(163,45,45,0.2);}
+.pill-wn{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;background:var(--wn-b);color:var(--wn);border:0.5px solid rgba(122,85,0,0.2);}
+.pill-ok{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;background:var(--ok-b);color:var(--ok);border:0.5px solid rgba(42,96,64,0.2);}
+.pill-vl{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;background:linear-gradient(135deg,#E8F0F9,#D8E8F4);color:var(--acc2);border:0.5px solid rgba(74,122,181,0.3);}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block;}
+.bc{display:inline-block;min-width:20px;padding:1px 5px;border-radius:4px;font-family:var(--fm);font-size:10px;font-weight:600;text-align:center;background:var(--cr-b);color:var(--cr);}
+.bw{display:inline-block;min-width:20px;padding:1px 5px;border-radius:4px;font-family:var(--fm);font-size:10px;font-weight:600;text-align:center;background:var(--wn-b);color:var(--wn);}
+.bz{display:inline-block;min-width:20px;padding:1px 5px;border-radius:4px;font-size:10px;color:var(--txd);text-align:center;}
+.ck-ok{color:var(--ok);font-size:12px;font-weight:500;}
+.ck-no{color:var(--cr);font-size:12px;font-weight:500;}
 
-/* Badges */
-.badge-crit { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 3px;
-  font-family: var(--pa-font-mono); font-size: 11px; font-weight: 600; text-align: center;
-  background: var(--pa-critical-bg); color: var(--pa-critical); }
-.badge-warn { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 3px;
-  font-family: var(--pa-font-mono); font-size: 11px; font-weight: 600; text-align: center;
-  background: var(--pa-warn-bg); color: var(--pa-warn); }
-.badge-zero { display: inline-block; min-width: 22px; padding: 2px 6px; border-radius: 3px;
-  font-family: var(--pa-font-mono); font-size: 11px; color: var(--pa-text-dim); text-align: center; }
-
-/* Pills estado */
-.pill-crit { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 500;
-  padding: 2px 7px; border-radius: 10px; background: var(--pa-critical-bg); color: var(--pa-critical); border: 1px solid rgba(224,82,82,0.25); }
-.pill-warn { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 500;
-  padding: 2px 7px; border-radius: 10px; background: var(--pa-warn-bg); color: var(--pa-warn); border: 1px solid rgba(212,145,74,0.25); }
-.pill-ok { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 500;
-  padding: 2px 7px; border-radius: 10px; background: var(--pa-ok-bg); color: var(--pa-ok); border: 1px solid rgba(92,158,110,0.25); }
-.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
-
-/* Checks */
-.chk-ok { color: var(--pa-ok); font-size: 13px; }
-.chk-no { color: var(--pa-critical); font-size: 13px; }
-.chk-na { color: var(--pa-text-dim); font-size: 13px; }
-.mono { font-family: var(--pa-font-mono); }
-.impact-neg { font-family: var(--pa-font-mono); color: var(--pa-critical); font-weight: 500; }
-.impact-pos { font-family: var(--pa-font-mono); color: var(--pa-ok); font-weight: 500; }
-
-/* Alertas */
-.fh-alert { display: grid; grid-template-columns: 4px 140px 1fr 180px 100px; gap: 0;
-  align-items: center; border-bottom: 1px solid var(--pa-border);
-  background: var(--pa-surface); cursor: pointer; transition: background .1s; }
-.fh-alert:hover { background: var(--pa-surface-hover); }
-.fh-alert-rail-crit { background: var(--pa-critical); align-self: stretch; }
-.fh-alert-rail-warn { background: var(--pa-warn); align-self: stretch; }
-.fh-alert-client { padding: 14px 14px 14px 16px; font-size: 12px; }
-.fh-alert-name { color: var(--pa-text-strong); font-weight: 500; }
-.fh-alert-prop { font-size: 11px; color: var(--pa-text-dim); margin-top: 2px; }
-.fh-alert-main { padding: 14px 0; }
-.fh-alert-type { font-size: 10px; letter-spacing: 0.06em; color: var(--pa-text-dim); text-transform: uppercase; margin-bottom: 3px; }
-.fh-alert-title { font-size: 13px; font-weight: 500; color: var(--pa-text-strong); }
-.fh-alert-desc { font-size: 12px; color: var(--pa-text-mute); margin-top: 2px; }
-.fh-alert-action { padding: 14px; text-align: right; }
-.fh-alert-cta { padding: 14px 16px 14px 0; }
-
-/* Wizard */
-.wz-steps { display: flex; align-items: center; background: var(--pa-surface);
-  border: 1px solid var(--pa-border); border-radius: 4px; padding: 12px 14px; margin-bottom: 18px; gap: 0; }
-.wz-step-num { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--pa-border-strong);
-  display: inline-flex; align-items: center; justify-content: center;
-  font-family: var(--pa-font-mono); font-size: 11px; font-weight: 600; flex-shrink: 0; color: var(--pa-text-mute); }
-.wz-step-num.done { background: var(--pa-accent); border-color: var(--pa-accent); color: #1A1206; }
-.wz-step-num.current { background: var(--pa-bg-deep); border-color: var(--pa-accent); color: var(--pa-accent); box-shadow: 0 0 0 3px var(--pa-accent-faint); }
-.wz-step-label { font-size: 12px; font-weight: 500; color: var(--pa-text-mute); margin-left: 8px; }
-.wz-step-label.current { color: var(--pa-text-strong); font-weight: 600; }
-.wz-step-label.done { color: var(--pa-text); }
-.wz-line { flex: 1; height: 1px; background: var(--pa-border); margin: 0 8px; }
-.wz-line.done { background: var(--pa-accent-dim); }
-
-.wz-card { background: var(--pa-surface); border: 1px solid var(--pa-border); border-radius: 6px; }
-.wz-body { padding: 28px 32px 20px; }
-.wz-title { font-family: var(--pa-font-display); font-size: 24px; color: var(--pa-text-strong); margin: 0 0 6px; line-height: 1.1; }
-.wz-sub { font-size: 13px; color: var(--pa-text-mute); margin: 0 0 24px; }
-.wz-foot { display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 32px; border-top: 1px solid var(--pa-border);
-  background: var(--pa-bg-deep); border-radius: 0 0 6px 6px; }
-
-.wz-field { padding: 12px 14px; background: var(--pa-bg-deep); border: 1px solid var(--pa-border); border-radius: 4px; }
-.wz-field-label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pa-text-dim); margin-bottom: 6px; }
-.wz-field-value { font-size: 13px; color: var(--pa-text-strong); }
-
-.wz-callout { padding: 14px 16px; border-radius: 4px; border-left: 3px solid; margin-top: 16px; font-size: 13px; }
-.wz-callout.warn { background: var(--pa-warn-bg); border-color: var(--pa-warn); }
-.wz-callout.crit { background: var(--pa-critical-bg); border-color: var(--pa-critical); }
-.wz-callout.ok { background: var(--pa-ok-bg); border-color: var(--pa-ok); }
-.wz-callout.info { background: rgba(91,138,184,0.08); border-color: var(--pa-info); }
-.wz-callout.accent { background: var(--pa-accent-faint); border-color: var(--pa-accent); }
+/* Callout */
+.callout{padding:12px 14px;border-radius:8px;border-left:3px solid;margin:10px 0;font-size:13px;}
+.callout.cr{background:var(--cr-b);border-color:var(--cr);}
+.callout.wn{background:var(--wn-b);border-color:var(--wn);}
+.callout.ok{background:var(--ok-b);border-color:var(--ok);}
+.callout.inf{background:linear-gradient(135deg,#EEF3F9,#DDE8F2);border-color:var(--acc);}
 
 /* Panel */
-.fh-panel { background: var(--pa-surface); border: 1px solid var(--pa-border); border-radius: 4px; }
-.fh-panel-head { padding: 12px 16px; border-bottom: 1px solid var(--pa-border);
-  display: flex; justify-content: space-between; align-items: center; }
-.fh-panel-title { font-size: 12px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--pa-text); font-weight: 600; }
-.fh-panel-body { padding: 14px 16px; }
+.panel{background:linear-gradient(135deg,#FFFFFF 0%,#F7F9FC 100%);border:0.5px solid var(--bd2);border-radius:10px;}
+.panel-head{padding:10px 14px;border-bottom:0.5px solid var(--bd);background:linear-gradient(135deg,#EEF3F9 0%,#E3ECF5 100%);border-radius:10px 10px 0 0;display:flex;justify-content:space-between;align-items:center;}
+.panel-title{font-size:11px;letter-spacing:0.10em;text-transform:uppercase;color:var(--tx);font-weight:600;}
 
-/* Checklist gastos */
-.chk-item { display: flex; align-items: center; gap: 12px; padding: 9px 16px;
-  border-bottom: 1px solid var(--pa-border); font-size: 13px; }
-.chk-item:last-child { border-bottom: 0; }
-.chk-box-on { width: 14px; height: 14px; background: var(--pa-ok); border-radius: 2px;
-  display: inline-flex; align-items: center; justify-content: center; color: #0B0D11; font-size: 10px; flex-shrink: 0; }
-.chk-box-off { width: 14px; height: 14px; border: 1px solid var(--pa-critical); border-radius: 2px;
-  display: inline-flex; align-items: center; justify-content: center; color: var(--pa-critical); font-size: 10px; flex-shrink: 0; }
-.chk-box-na { width: 14px; height: 14px; border: 1px solid var(--pa-border-strong); border-radius: 2px;
-  display: inline-flex; align-items: center; justify-content: center; color: var(--pa-text-dim); font-size: 10px; flex-shrink: 0; }
-.chk-lbl { flex: 1; }
-.chk-hint { font-size: 11px; color: var(--pa-text-dim); }
-.chk-cas { font-family: var(--pa-font-mono); font-size: 10px; color: var(--pa-text-dim); min-width: 42px; }
-.chk-amount { font-family: var(--pa-font-mono); font-size: 12px; color: var(--pa-text-strong); min-width: 90px; text-align: right; }
-.chk-amount.missing { color: var(--pa-critical); }
+/* Checks */
+.chk-item{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid var(--bd);font-size:12px;}
+.chk-item:last-child{border-bottom:0;}
+.chk-item:nth-child(even){background:linear-gradient(135deg,#F7F9FC 0%,#EEF3F9 100%);}
+.chk-on{width:14px;height:14px;background:linear-gradient(135deg,#2A6040,#3B8055);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;flex-shrink:0;}
+.chk-off{width:14px;height:14px;border:1px solid var(--cr);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;color:var(--cr);font-size:10px;flex-shrink:0;}
+.chk-lbl{flex:1;}
+.chk-hint{font-size:10px;color:var(--txd);}
+.chk-cas{font-family:var(--fm);font-size:10px;color:var(--txd);min-width:40px;}
+.chk-amt{font-family:var(--fm);font-size:12px;color:var(--tx2);min-width:90px;text-align:right;}
+.chk-amt.miss{color:var(--cr);}
 
 /* Modelo 100 */
-.m100-table { width: 100%; background: var(--pa-surface); border: 1px solid var(--pa-border);
-  border-radius: 4px; border-collapse: collapse; font-size: 13px; }
-.m100-table thead th { background: var(--pa-bg-deep); text-align: left; font-size: 10px;
-  letter-spacing: 0.10em; text-transform: uppercase; color: var(--pa-text-dim);
-  font-weight: 500; padding: 10px 14px; border-bottom: 1px solid var(--pa-border); }
-.m100-table thead th.r { text-align: right; }
-.m100-table tbody td { padding: 11px 14px; border-bottom: 1px solid var(--pa-border); color: var(--pa-text); }
-.m100-table tbody td.r { text-align: right; font-family: var(--pa-font-mono); }
-.m100-table tbody tr:last-child td { border-bottom: 0; }
-.m100-table tr.sum td { background: var(--pa-bg-deep); font-weight: 600; border-top: 1px solid var(--pa-border-strong); }
-.m100-table tr.final td { background: rgba(200,169,110,0.05); font-weight: 600; color: var(--pa-accent); }
-.cas { font-family: var(--pa-font-mono); color: var(--pa-accent); font-size: 11px; letter-spacing: 0.04em; }
-.l-sub { font-size: 10px; color: var(--pa-text-dim); margin-top: 1px; }
+.m100{width:100%;background:linear-gradient(135deg,#FFFFFF 0%,#F7F9FC 100%);border:0.5px solid var(--bd2);border-radius:10px;border-collapse:separate;border-spacing:0;font-size:12px;}
+.m100 thead th{background:linear-gradient(135deg,#EEF3F9 0%,#E3ECF5 100%);font-size:9px;letter-spacing:0.10em;text-transform:uppercase;color:var(--txd);font-weight:500;padding:9px 12px;border-bottom:0.5px solid var(--bd2);}
+.m100 thead th:first-child{border-radius:10px 0 0 0;}
+.m100 thead th:last-child{border-radius:0 10px 0 0;text-align:right;}
+.m100 tbody td{padding:9px 12px;border-bottom:0.5px solid var(--bd);color:var(--tx);}
+.m100 tbody td.r{text-align:right;font-family:var(--fm);}
+.m100 tbody tr:nth-child(even) td{background:linear-gradient(135deg,#F7F9FC,#EEF3F9);}
+.m100 tbody tr.sum td{background:linear-gradient(135deg,#EEF3F9 0%,#E3ECF5 100%);font-weight:600;border-top:0.5px solid var(--bd2);}
+.m100 tbody tr.final td{background:linear-gradient(135deg,#E8F0F9 0%,#D8E8F4 100%);font-weight:600;color:var(--acc2);}
+.cas{font-family:var(--fm);color:var(--acc);font-size:10px;}
+.l-sub{font-size:10px;color:var(--txd);margin-top:1px;}
 
-/* IRPF countdown */
-.irpf-box { margin: 14px 16px 18px; padding: 12px; background: var(--pa-surface); border: 1px solid var(--pa-border); border-radius: 6px; }
-.irpf-num { font-family: var(--pa-font-mono); font-size: 24px; font-weight: 600; line-height: 1.05; margin-top: 6px; }
-.irpf-bar { height: 3px; background: var(--pa-bg-deep); border-radius: 2px; margin-top: 10px; overflow: hidden; }
-.irpf-fill { height: 100%; border-radius: 2px; }
+/* Filas de inmuebles */
+.ok-pill{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;background:linear-gradient(135deg,#EDF7F1,#D4EEE0);color:var(--ok);border:0.5px solid rgba(42,96,64,0.2);}
+.no-pill{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;background:linear-gradient(135deg,#FDF0F0,#F5D8D8);color:var(--cr);border:0.5px solid rgba(163,45,45,0.2);}
+.inm-row{display:flex;align-items:center;background:linear-gradient(135deg,#FFFFFF 0%,#F7F9FC 100%);border:0.5px solid var(--bd2);border-radius:10px;margin-bottom:8px;overflow:hidden;transition:box-shadow .15s;}
+.inm-row:hover{box-shadow:0 2px 12px rgba(74,122,181,0.1);}
+.inm-rail{width:4px;align-self:stretch;flex-shrink:0;}
+.inm-rail.cr{background:linear-gradient(180deg,var(--cr),#C03030);}
+.inm-rail.wn{background:linear-gradient(180deg,var(--wn),#9A6A00);}
+.inm-rail.ok{background:linear-gradient(180deg,var(--ok),#3B8055);}
+.inm-rail.vl{background:linear-gradient(180deg,var(--acc),var(--acc2));}
+.inm-body{flex:1;padding:10px 14px;}
+.inm-name{font-size:13px;font-weight:500;color:var(--tx2);}
+.inm-meta{font-size:10px;color:var(--txd);margin-top:1px;}
+.inm-alerts{font-size:11px;color:var(--txm);margin-top:3px;}
+.inm-metrics{display:flex;gap:16px;}
+.inm-metric-lbl{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);}
+.inm-metric-val{font-family:var(--fm);font-size:13px;font-weight:500;color:var(--tx2);}
 
-/* Vinculación código */
-.code-box { background: var(--pa-bg-deep); border: 1px solid var(--pa-accent); border-radius: 4px;
-  padding: 18px 24px; text-align: center; font-family: var(--pa-font-mono);
-  font-size: 32px; font-weight: 600; color: var(--pa-accent); letter-spacing: 0.2em; }
+/* ── Cards Alertas ── */
+.alert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:4px;}
+.alert-card{background:#FFFFFF;border:0.5px solid var(--bd2);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(30,58,95,0.06);transition:box-shadow .15s,transform .15s;}
+.alert-card:hover{box-shadow:0 6px 20px rgba(30,58,95,0.12);transform:translateY(-2px);}
+.alert-card-top{height:4px;width:100%;}
+.alert-card-top.cr{background:linear-gradient(90deg,var(--cr),#C03030);}
+.alert-card-top.wn{background:linear-gradient(90deg,var(--wn),#9A6A00);}
+.alert-card-body{padding:14px 16px 16px;}
+.alert-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.alert-card-tipo{font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:2px 7px;border-radius:10px;}
+.alert-card-tipo.cr{background:var(--cr-b);color:var(--cr);}
+.alert-card-tipo.wn{background:var(--wn-b);color:var(--wn);}
+.alert-card-imp{font-family:var(--fm);font-size:11px;font-weight:600;color:var(--acc);}
+.alert-card-client{font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:1px;}
+.alert-card-inm{font-size:10px;color:var(--txd);margin-bottom:10px;}
+.alert-card-title{font-size:13px;font-weight:500;color:var(--tx2);margin-bottom:4px;line-height:1.3;}
+.alert-card-desc{font-size:11px;color:var(--txm);line-height:1.4;margin-bottom:10px;}
+.alert-card-action{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--acc2);font-weight:500;padding-top:8px;border-top:0.5px solid var(--bd);}
 
-/* Done screen */
-.wz-done { max-width: 680px; margin: 60px auto; text-align: center;
-  background: var(--pa-surface); border: 1px solid var(--pa-border);
-  border-radius: 6px; padding: 48px 40px; }
-.wz-done-seal { width: 64px; height: 64px; border-radius: 50%;
-  background: var(--pa-ok-bg); color: var(--pa-ok);
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 30px; border: 2px solid var(--pa-ok); margin-bottom: 18px; }
-
-/* Fichas inmuebles — pills gastos */
-.chk-ok-pill { display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;
-  padding:2px 7px;border-radius:10px;background:#EDF7F1;color:#2A6040;
-  border:0.5px solid rgba(42,96,64,0.15); }
-.chk-no-pill { display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;
-  padding:2px 7px;border-radius:10px;background:#FDF0F0;color:#A32D2D;
-  border:0.5px solid rgba(163,45,45,0.15); }
-
-/* Login */
-.fh-login { max-width: 400px; margin: 80px auto; }
-.fh-login-card { background: var(--pa-surface); border: 1px solid var(--pa-border); border-radius: 6px; padding: 36px 32px; }
-.fh-login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
-.fh-btn-accent { background: var(--pa-accent) !important; color: #1A1206 !important;
-  border-color: var(--pa-accent) !important; font-weight: 500 !important; width: 100% !important; }
+/* ── Cards Resumen Global ── */
+.global-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:4px;}
+.global-card{background:#FFFFFF;border:0.5px solid var(--bd2);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(30,58,95,0.06);transition:box-shadow .15s;}
+.global-card:hover{box-shadow:0 6px 20px rgba(30,58,95,0.10);}
+.global-card-roof{height:5px;background:linear-gradient(90deg,var(--acc),var(--acc2));}
+.global-card-roof.manual{background:linear-gradient(90deg,#C8A96E,#A8893E);}
+.global-card-body{padding:14px 16px;}
+.global-card-name{font-size:14px;font-weight:600;color:var(--tx2);margin-bottom:2px;}
+.global-card-meta{font-size:10px;color:var(--txd);margin-bottom:14px;}
+.global-card-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.global-metric{background:linear-gradient(135deg,#F7F9FC,#EEF3F9);border-radius:8px;padding:8px 10px;}
+.global-metric-lbl{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin-bottom:3px;}
+.global-metric-val{font-family:var(--fm);font-size:15px;font-weight:500;}
+.global-metric-val.ok{color:var(--ok);}
+.global-metric-val.cr{color:var(--cr);}
+.global-metric-val.ac{color:var(--acc2);}
+.global-metric-val.tx{color:var(--tx2);}
+.global-card-footer{padding-top:10px;border-top:0.5px solid var(--bd);display:flex;justify-content:space-between;align-items:center;}
+.global-card-base-lbl{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);}
+.global-card-base-val{font-family:var(--fm);font-size:16px;font-weight:600;color:var(--acc2);}
+.global-card-badge{font-size:9px;padding:2px 7px;border-radius:10px;background:linear-gradient(135deg,#E8F0F9,#D8E8F4);color:var(--acc2);border:0.5px solid rgba(74,122,181,0.3);}
+.global-card-badge.manual{background:linear-gradient(135deg,#FDF6E8,#FAE8C0);color:#7A5500;border-color:rgba(200,169,110,0.4);}
 </style>
 """
 
@@ -296,25 +227,33 @@ def sf(v, d=0):
         return float(v)
     except: return float(d)
 
+def _gv(row, *keys, d=0):
+    for k in keys:
+        v = row.get(k)
+        if v is not None:
+            try:
+                f = float(v)
+                if not pd.isna(f): return f
+            except: pass
+    return float(d)
+
 def fmt_eur(n, sign=False):
     n = float(n or 0)
-    s = f"{abs(n):,.0f}".replace(",", ".")
+    s = f"{abs(n):,.0f}".replace(",",".")
     prefix = "−" if n < 0 else ("+" if sign else "")
     return f"{prefix}{s} €"
 
 def days_to_irpf():
     hoy = date.today()
     cierre = date(hoy.year, 6, 30)
-    if hoy > cierre: cierre = date(hoy.year + 1, 6, 30)
+    if hoy > cierre: cierre = date(hoy.year+1, 6, 30)
     return (cierre - hoy).days
 
-# ── Supabase Auth ────────────────────────────────────────────────
+# ── Auth ─────────────────────────────────────────────────────────
 def login_asesor(email, password):
-    r = requests.post(
-        f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
+    r = requests.post(f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
         headers={"apikey": SUPABASE_KEY, "Content-Type": "application/json"},
-        json={"email": email, "password": password}
-    )
+        json={"email": email, "password": password})
     if r.status_code == 200:
         d = r.json()
         return {"ok": True, "user_id": d["user"]["id"],
@@ -322,1327 +261,1034 @@ def login_asesor(email, password):
     return {"ok": False, "error": r.json().get("error_description", "Error de acceso")}
 
 def registrar_asesor(email, password, nombre, despacho):
-    r = requests.post(
-        f"{SUPABASE_URL}/auth/v1/signup",
+    r = requests.post(f"{SUPABASE_URL}/auth/v1/signup",
         headers={"apikey": SUPABASE_KEY, "Content-Type": "application/json"},
-        json={"email": email, "password": password}
-    )
+        json={"email": email, "password": password})
     if r.status_code == 200:
-        user_id = r.json().get("id") or r.json().get("user", {}).get("id")
-        if user_id:
-            requests.post(
-                f"{SUPABASE_URL}/rest/v1/asesores",
-                headers=_h(),
-                json={"user_id": user_id, "nombre": nombre,
-                      "despacho": despacho, "email": email}
-            )
+        uid = r.json().get("id") or r.json().get("user", {}).get("id")
+        if uid:
+            requests.post(f"{SUPABASE_URL}/rest/v1/asesores", headers=_h(),
+                json={"user_id": uid, "nombre": nombre, "despacho": despacho, "email": email})
         return {"ok": True}
     return {"ok": False, "error": r.json().get("error_description", "Error de registro")}
 
 def get_asesor_info(user_id):
-    r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/asesores?user_id=eq.{user_id}&select=*",
-        headers=_h()
-    )
-    if r.status_code == 200 and r.json():
-        return r.json()[0]
+    r = requests.get(f"{SUPABASE_URL}/rest/v1/asesores?user_id=eq.{user_id}&select=*", headers=_h())
+    if r.status_code == 200 and r.json(): return r.json()[0]
     return {"nombre": "Asesor", "despacho": "Despacho Fiscal", "email": ""}
 
-# ── Datos de clientes vinculados ─────────────────────────────────
+# ── Supabase data ─────────────────────────────────────────────────
 def get_clientes_vinculados(asesor_user_id):
-    """Obtiene propietarios que han compartido código con este asesor."""
-    r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/accesos_asesor"
-        f"?asesor_user_id=eq.{asesor_user_id}&activo=eq.true&select=*",
-        headers=_h()
-    )
-    if r.status_code != 200:
-        return []
-    return r.json() or []
+    r = requests.get(f"{SUPABASE_URL}/rest/v1/accesos_asesor"
+        f"?asesor_user_id=eq.{asesor_user_id}&activo=eq.true&select=*", headers=_h())
+    return r.json() if r.status_code == 200 else []
 
-def get_inmuebles_propietario(propietario_id):
-    """Lee inmuebles del propietario usando la service key para saltar RLS."""
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-    }
-    r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/inmuebles?user_id=eq.{propietario_id}&select=*",
-        headers=headers
-    )
-    if r.status_code == 200 and r.json():
-        return pd.DataFrame(r.json())
-    return pd.DataFrame()
+def get_inmuebles_propietario(pid):
+    r = requests.get(f"{SUPABASE_URL}/rest/v1/inmuebles?user_id=eq.{pid}&select=*", headers=_hd())
+    return pd.DataFrame(r.json()) if r.status_code == 200 and r.json() else pd.DataFrame()
 
-def get_movimientos_propietario(propietario_id):
-    """Lee movimientos del propietario usando la service key para saltar RLS."""
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-    }
-    r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/movimientos?user_id=eq.{propietario_id}&select=*",
-        headers=headers
-    )
-    if r.status_code == 200 and r.json():
-        return pd.DataFrame(r.json())
-    return pd.DataFrame()
+def get_movimientos_propietario(pid):
+    r = requests.get(f"{SUPABASE_URL}/rest/v1/movimientos?user_id=eq.{pid}&select=*", headers=_hd())
+    return pd.DataFrame(r.json()) if r.status_code == 200 and r.json() else pd.DataFrame()
 
 def vincular_propietario(asesor_user_id, codigo):
-    """Vincula un propietario al asesor mediante código de 6 dígitos."""
-    r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/accesos_asesor?codigo=eq.{codigo.upper()}&activo=eq.true&select=*",
-        headers=_h()
-    )
+    r = requests.get(f"{SUPABASE_URL}/rest/v1/accesos_asesor"
+        f"?codigo=eq.{codigo.upper()}&activo=eq.true&select=*", headers=_h())
     if r.status_code == 200 and r.json():
         acc = r.json()[0]
-        propietario_id = acc.get("propietario_id")
+        pid = acc.get("propietario_id")
         nombre = acc.get("nombre") or acc.get("nombre_propietario", "Propietario")
-        if not propietario_id:
-            return {"ok": False, "error": "Código sin propietario asociado"}
-        # Registrar asesor_user_id en el registro
-        requests.patch(
-            f"{SUPABASE_URL}/rest/v1/accesos_asesor?id=eq.{acc['id']}",
-            headers={**_h(), "Prefer": "return=minimal"},
-            json={"asesor_user_id": asesor_user_id}
-        )
-        return {"ok": True, "propietario_id": propietario_id, "nombre": nombre}
+        if not pid: return {"ok": False, "error": "Código sin propietario"}
+        requests.patch(f"{SUPABASE_URL}/rest/v1/accesos_asesor?id=eq.{acc['id']}",
+            headers={**_h(), "Prefer": "return=minimal"}, json={"asesor_user_id": asesor_user_id})
+        return {"ok": True, "propietario_id": pid, "nombre": nombre}
     return {"ok": False, "error": "Código no válido o ya utilizado"}
 
 # ── Análisis fiscal ───────────────────────────────────────────────
-def calcular_alertas_cliente(df_inm, df_mov):
-    """Calcula alertas fiscales para un propietario."""
-    alertas = []
-    if df_inm.empty:
-        return alertas
+def calcular_semaforo_inmueble(row):
+    """Evalúa un inmueble — devuelve problemas detectados y estado semáforo."""
+    problemas = []
+    renta     = _gv(row,"renta","Renta")
+    ibi       = _gv(row,"ibi_anual","IBI_Anual")
+    amort     = _gv(row,"amortizacion_fiscal","Amortizacion_Fiscal")
+    seguro    = _gv(row,"seguro_anual","Seguro_Anual")
+    comunidad = _gv(row,"comunidad","Comunidad")
+    catastral = _gv(row,"valor_catastral","Valor_Catastral")
+    precio    = _gv(row,"precio_compra","Precio_Compra")
+    tipo      = str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento","")).lower()
+    fecha_str = str(row.get("fecha_inicio_contrato") or row.get("Fecha_Inicio_Contrato","") or "")
+    ingresos  = renta * 12
 
-    for _, row in df_inm.iterrows():
-        nombre = row.get("nombre") or row.get("Nombre", "")
-        tipo = str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento", "")).lower()
-        fecha_str = str(row.get("fecha_inicio_contrato") or row.get("Fecha_Inicio_Contrato", "") or "")
-        ibi = sf(row.get("ibi_anual") or row.get("IBI_Anual", 0))
-        amort = sf(row.get("amortizacion_fiscal") or row.get("Amortizacion_Fiscal", 0))
-        seguro = sf(row.get("seguro_anual") or row.get("Seguro_Anual", 0))
-        renta = sf(row.get("renta") or row.get("Renta", 0))
-        renta_mer = sf(row.get("renta_mercado") or row.get("Renta_Mercado", 0))
+    if amort == 0 and renta > 0:
+        if catastral == 0 and precio == 0:
+            problemas.append({"tipo":"crit","titulo":"Amortización sin calcular",
+                "desc":"Falta valor catastral y precio de compra.","accion":"Solicitar escritura o consultar catastro"})
+        else:
+            problemas.append({"tipo":"crit","titulo":"Amortización a 0 — revisar",
+                "desc":f"Catastral: {fmt_eur(catastral)} · Precio compra: {fmt_eur(precio)}",
+                "accion":"Calcular 3% s/ MAX(precio compra, catastral) × % construcción"})
 
-        # Reducción 60% no aplicada (solo larga duración)
-        es_habitual = "larga" in tipo or "habitual" in tipo
-        if es_habitual:
-            try:
-                anyo = int(str(fecha_str)[:4]) if fecha_str and len(fecha_str) >= 4 else 0
-                reduccion_pct = 60 if (anyo > 0 and anyo <= 2023) else 50
-            except:
-                reduccion_pct = 50
-            if reduccion_pct == 60:
-                alertas.append({
-                    "inmueble": nombre, "tipo": "crit",
-                    "categoria": "Fiscal",
-                    "titulo": "Reducción 60% — verificar aplicación",
-                    "impacto": round(renta * 12 * 0.6 * 0.19, 0),
-                    "accion": "Confirmar en casilla 0150 del Modelo 100"
-                })
+    if ibi == 0 and renta > 0:
+        problemas.append({"tipo":"crit","titulo":"IBI no registrado",
+            "desc":"Casilla 0106 a cero.","accion":"Solicitar recibo IBI 2024 al propietario"})
 
-        # Gastos incompletos
-        gastos_faltantes = []
-        if ibi == 0: gastos_faltantes.append("IBI")
-        if amort == 0: gastos_faltantes.append("Amortización 3%")
-        if seguro == 0: gastos_faltantes.append("Seguro hogar")
-        if gastos_faltantes:
-            alertas.append({
-                "inmueble": nombre, "tipo": "crit" if "Amortización 3%" in gastos_faltantes else "warn",
-                "categoria": "Fiscal",
-                "titulo": f"Gastos sin registrar: {', '.join(gastos_faltantes)}",
-                "impacto": 0,
-                "accion": "Solicitar justificantes al propietario"
-            })
+    if seguro == 0 and renta > 0:
+        problemas.append({"tipo":"warn","titulo":"Seguro de hogar no registrado",
+            "desc":"Puede ser deducible.","accion":"Verificar si el propietario tiene póliza"})
 
-        # Renta bajo mercado
-        if renta_mer > 0 and renta < renta_mer * 0.90:
-            lucro = (renta_mer - renta) * 12
-            alertas.append({
-                "inmueble": nombre, "tipo": "warn",
-                "categoria": "Renta",
-                "titulo": f"Renta {round((1 - renta/renta_mer)*100)}% bajo mercado",
-                "impacto": lucro,
-                "accion": "Aplicar IRAV en próximo aniversario"
-            })
+    if comunidad == 0 and renta > 0:
+        problemas.append({"tipo":"warn","titulo":"Comunidad de propietarios a 0",
+            "desc":"Revisar si tiene gastos de comunidad.","accion":"Confirmar con propietario"})
 
-    return alertas
+    gastos_total = ibi + seguro + comunidad*12 + amort
+    if ingresos > 0 and gastos_total > ingresos * 0.70:
+        problemas.append({"tipo":"warn","titulo":"Gastos > 70% de los ingresos",
+            "desc":f"Gastos: {fmt_eur(gastos_total)} · Ingresos: {fmt_eur(ingresos)}",
+            "accion":"Revisar si hay gastos duplicados o importes incorrectos"})
 
-def calcular_modelo100_global(df_inm, df_mov):
-    """Calcula casillas Modelo 100 sumando todos los inmuebles."""
-    if df_inm.empty:
-        return {}
+    es_larga = "larga" in tipo or "habitual" in tipo or tipo == ""
+    if es_larga:
+        try:
+            anyo = int(fecha_str[:4]) if fecha_str and len(fecha_str) >= 4 else 0
+            if 0 < anyo <= 2023:
+                problemas.append({"tipo":"warn","titulo":"Posible reducción 60% — confirmar",
+                    "desc":f"Contrato desde {anyo}. Verificar condiciones Art. 23.2 LIRPF.",
+                    "accion":"Confirmar fecha y condiciones antes de aplicar"})
+        except: pass
 
-    ingresos = 0
-    intereses = 0
-    reparaciones = 0
-    ibi = 0
-    comunidad_seguros = 0
-    suministros = 0
-    gastos_juridicos = 0
-    amortizacion = 0
-    retenciones = 0
+    if any(p["tipo"] == "crit" for p in problemas):   estado = "cr"
+    elif any(p["tipo"] == "warn" for p in problemas):  estado = "wn"
+    else:                                               estado = "ok"
 
-    for _, row in df_inm.iterrows():
-        nombre = row.get("nombre") or row.get("Nombre", "")
-        dias = sf(row.get("dias_arrendados_anio") or row.get("Dias_Arrendados_Anio", 365))
-        factor = min(dias, 365) / 365
+    return {"problemas": problemas, "estado": estado}
 
-        renta = sf(row.get("renta") or row.get("Renta", 0))
-        ingresos += renta * 12 * factor
-        intereses += sf(row.get("intereses_hipoteca") or row.get("Intereses_Hipoteca", 0)) * factor
-        ibi += sf(row.get("ibi_anual") or row.get("IBI_Anual", 0)) * factor
-
-        comunidad = sf(row.get("comunidad") or row.get("Comunidad", 0)) * 12
-        seguro_h = sf(row.get("seguro_anual") or row.get("Seguro_Anual", 0))
-        seguro_v = sf(row.get("seguro_vida") or row.get("Seguro_Vida", 0))
-        ascensor = sf(row.get("gasto_ascensor") or row.get("Gasto_Ascensor", 0))
-        comunidad_seguros += (comunidad + seguro_h + seguro_v + ascensor) * factor
-
-        suministros += sf(row.get("servicios_suministros") or row.get("Servicios_Suministros", 0)) * factor
-        gastos_juridicos += sf(row.get("gastos_juridicos") or row.get("Gastos_Juridicos", 0)) * factor
-        retenciones += sf(row.get("retenciones_irpf") or row.get("Retenciones_IRPF", 0))
-
-        # Amortización
-        precio = sf(row.get("precio_compra") or row.get("Precio_Compra", 0))
-        impuestos = sf(row.get("impuestos_compra") or row.get("Impuestos_Compra", 0))
-        gastos_c = sf(row.get("gastos_compra") or row.get("Gastos_Compra", 0))
-        catastral = sf(row.get("valor_catastral") or row.get("Valor_Catastral", 0))
-        pct_c = sf(row.get("pct_construccion") or row.get("Pct_Construccion", 0.75))
-        base = max(precio + impuestos + gastos_c, catastral)
-        amortizacion += base * pct_c * 0.03 * factor
-
-        # Reparaciones del diario
-        if not df_mov.empty:
-            col_apt = "apartamento" if "apartamento" in df_mov.columns else "Apartamento"
-            col_tipo = "tipo" if "tipo" in df_mov.columns else "Tipo"
-            col_cat = "categoria" if "categoria" in df_mov.columns else "Categoría"
-            col_imp = "importe" if "importe" in df_mov.columns else "Importe"
-            mask = (
-                (df_mov.get(col_apt, pd.Series()) == nombre) &
-                (df_mov.get(col_tipo, pd.Series()) == "Gasto") &
-                (df_mov.get(col_cat, pd.Series()).isin(["Mantenimiento", "Reparación"]))
-            )
-            reparaciones += df_mov[mask][col_imp].sum() * factor if mask.any() else 0
-
-    total_gastos = intereses + reparaciones + ibi + comunidad_seguros + suministros + gastos_juridicos + amortizacion
-    rend_neto = ingresos - total_gastos
-    reduccion = rend_neto * 0.55  # estimación mixta
+def calcular_modelo100_inmueble(row, df_mov):
+    nombre    = str(row.get("nombre") or row.get("Nombre",""))
+    renta     = _gv(row,"renta","Renta")
+    dias      = int(_gv(row,"dias_arrendados_anio","Dias_Arrendados_Anio",d=365))
+    factor    = min(dias,365)/365
+    ingresos  = renta * 12 * factor
+    intereses = _gv(row,"intereses_hipoteca","Intereses_Hipoteca") * factor
+    ibi       = _gv(row,"ibi_anual","IBI_Anual") * factor
+    comunidad = _gv(row,"comunidad","Comunidad") * 12 * factor
+    seguro_h  = _gv(row,"seguro_anual","Seguro_Anual") * factor
+    seguro_v  = _gv(row,"seguro_vida","Seguro_Vida") * factor
+    ascensor  = _gv(row,"gasto_ascensor","Gasto_Ascensor") * factor
+    com_seg   = comunidad + seguro_h + seguro_v + ascensor
+    suministros = _gv(row,"servicios_suministros","Servicios_Suministros") * factor
+    gastos_jur  = _gv(row,"gastos_juridicos","Gastos_Juridicos") * factor
+    retenciones = _gv(row,"retenciones_irpf","Retenciones_IRPF")
+    precio   = _gv(row,"precio_compra","Precio_Compra")
+    imptos   = _gv(row,"impuestos_compra","Impuestos_Compra")
+    gastos_c = _gv(row,"gastos_compra","Gastos_Compra")
+    catastral= _gv(row,"valor_catastral","Valor_Catastral")
+    pct_c    = _gv(row,"pct_construccion","Pct_Construccion",d=0.75)
+    base_amort = max(precio+imptos+gastos_c, catastral)
+    amort    = base_amort * pct_c * 0.03 * factor
+    reparaciones = 0.0
+    if not df_mov.empty:
+        ca = "apartamento" if "apartamento" in df_mov.columns else "Apartamento"
+        ct = "tipo" if "tipo" in df_mov.columns else "Tipo"
+        cc = "categoria" if "categoria" in df_mov.columns else "Categoría"
+        ci = "importe" if "importe" in df_mov.columns else "Importe"
+        mask = ((df_mov.get(ca,pd.Series())==nombre) &
+                (df_mov.get(ct,pd.Series())=="Gasto") &
+                (df_mov.get(cc,pd.Series()).isin(["Mantenimiento","Reparación"])))
+        reparaciones = float(df_mov[mask][ci].sum()) * factor if mask.any() else 0
+    total_gastos = intereses+reparaciones+ibi+com_seg+suministros+gastos_jur+amort
+    rend_neto    = ingresos - total_gastos
+    tipo  = str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento","")).lower()
+    fecha = str(row.get("fecha_inicio_contrato") or row.get("Fecha_Inicio_Contrato","") or "")
+    es_larga = "larga" in tipo or "habitual" in tipo or tipo == ""
+    red_pct = 0
+    if es_larga:
+        try:
+            anyo = int(fecha[:4]) if fecha and len(fecha)>=4 else 0
+            red_pct = 60 if 0<anyo<=2023 else 50
+        except: red_pct = 50
+    reduccion = rend_neto * red_pct/100 if rend_neto > 0 else 0
     rend_final = rend_neto - reduccion
-
     return {
-        "ingresos": round(ingresos, 2),
-        "intereses": round(intereses, 2),
-        "reparaciones": round(reparaciones, 2),
-        "ibi": round(ibi, 2),
-        "comunidad_seguros": round(comunidad_seguros, 2),
-        "suministros": round(suministros, 2),
-        "gastos_juridicos": round(gastos_juridicos, 2),
-        "amortizacion": round(amortizacion, 2),
-        "total_gastos": round(total_gastos, 2),
-        "rend_neto": round(rend_neto, 2),
-        "reduccion": round(reduccion, 2),
-        "rend_final": round(rend_final, 2),
-        "retenciones": round(retenciones, 2),
+        "ingresos": round(ingresos,2), "intereses": round(intereses,2),
+        "reparaciones": round(reparaciones,2), "ibi": round(ibi,2),
+        "comunidad_seguros": round(com_seg,2), "suministros": round(suministros,2),
+        "gastos_juridicos": round(gastos_jur,2), "amortizacion": round(amort,2),
+        "total_gastos": round(total_gastos,2), "rend_neto": round(rend_neto,2),
+        "red_pct": red_pct, "reduccion": round(reduccion,2),
+        "rend_final": round(rend_final,2), "retenciones": round(retenciones,2), "dias": dias,
     }
 
+def calcular_modelo100_global(df_inm, df_mov):
+    if df_inm.empty: return {}
+    total = {k:0 for k in ["ingresos","intereses","reparaciones","ibi","comunidad_seguros",
+             "suministros","gastos_juridicos","amortizacion","total_gastos","rend_neto",
+             "reduccion","rend_final","retenciones"]}
+    for _, row in df_inm.iterrows():
+        m = calcular_modelo100_inmueble(row, df_mov)
+        for k in total: total[k] += m.get(k,0)
+    return {k: round(v,2) for k,v in total.items()}
+
+def calcular_alertas_cliente(df_inm, df_mov):
+    alertas = []
+    if df_inm.empty: return alertas
+    for _, row in df_inm.iterrows():
+        nombre = str(row.get("nombre") or row.get("Nombre",""))
+        sem = calcular_semaforo_inmueble(row)
+        for p in sem["problemas"]:
+            alertas.append({**p, "inmueble": nombre, "categoria": "Fiscal"})
+    return alertas
+
 def construir_cartera(clientes_vinculados):
-    """Construye la lista de clientes con sus métricas fiscales."""
     cartera = []
     for acc in clientes_vinculados:
         pid = acc.get("propietario_id") or acc.get("user_id")
-        # El nombre puede venir del email partido — intentar mejorar
-        nombre_raw = acc.get("nombre") or acc.get("nombre_propietario", "")
-        email_raw  = acc.get("email", "")
-        # Si el nombre parece un email partido (sin espacio), usar email completo
+        nombre_raw = acc.get("nombre") or acc.get("nombre_propietario","")
+        email_raw  = acc.get("email","")
         if nombre_raw and " " not in nombre_raw and "@" not in nombre_raw:
-            nombre = nombre_raw  # dejar como está, es lo que hay
+            nombre = nombre_raw
         elif email_raw:
-            nombre = email_raw.split("@")[0].replace(".", " ").title()
+            nombre = email_raw.split("@")[0].replace("."," ").title()
         else:
             nombre = nombre_raw or "Propietario"
-        if not pid:
-            continue
+        if not pid: continue
         df_inm = get_inmuebles_propietario(pid)
         df_mov = get_movimientos_propietario(pid)
         alertas = calcular_alertas_cliente(df_inm, df_mov)
-        modelo = calcular_modelo100_global(df_inm, df_mov)
-
-        criticas = len([a for a in alertas if a["tipo"] == "crit"])
-        medias   = len([a for a in alertas if a["tipo"] == "warn"])
-        impacto  = sum(a.get("impacto", 0) for a in alertas)
-
-        checks = {
-            "red60":  not any(a["categoria"] == "Fiscal" and "60%" in a["titulo"] for a in alertas),
-            "gastos": not any("Gastos sin registrar" in a["titulo"] for a in alertas),
-            "irav":   not any("mercado" in a["titulo"] for a in alertas),
-        }
-
-        if criticas > 0:   estado = "critico"
-        elif medias > 0:   estado = "medio"
-        else:               estado = "ok"
-
+        modelo  = calcular_modelo100_global(df_inm, df_mov)
+        criticas = len([a for a in alertas if a["tipo"]=="crit"])
+        medias   = len([a for a in alertas if a["tipo"]=="warn"])
+        impacto  = sum(a.get("impacto",0) for a in alertas)
+        estado   = "critico" if criticas>0 else "medio" if medias>0 else "ok"
         cartera.append({
             "id": pid, "nombre": nombre,
-            "nif": acc.get("nif_propietario", ""),
-            "inmuebles": len(df_inm),
-            "criticas": criticas, "medias": medias,
+            "inmuebles": len(df_inm), "criticas": criticas, "medias": medias,
             "impacto": impacto, "estado": estado,
-            "checks": checks, "alertas": alertas,
-            "df_inm": df_inm, "df_mov": df_mov,
-            "modelo100": modelo,
-            "activity_days": 0,
+            "alertas": alertas, "df_inm": df_inm, "df_mov": df_mov, "modelo100": modelo,
         })
-
-    cartera.sort(key=lambda x: ({"critico": 0, "medio": 1, "ok": 2}[x["estado"]], -x["criticas"]))
+    cartera.sort(key=lambda x:({"critico":0,"medio":1,"ok":2}[x["estado"]],-x["criticas"]))
     return cartera
 
-# ── CSS sidebar FiscalHub ────────────────────────────────────────
+# ── Sidebar ───────────────────────────────────────────────────────
 def render_sidebar():
-    asesor = st.session_state.get("fh_asesor", {})
-    nombre = asesor.get("nombre", "Asesor")
-    despacho = asesor.get("despacho", "Despacho Fiscal")
-    iniciales = "".join(p[0].upper() for p in nombre.split()[:2])
-    dias = days_to_irpf()
-    pct = max(0, min(100, int((90 - dias) / 90 * 100)))
-    color_irpf = "#E05252" if dias < 30 else "#D4914A" if dias < 60 else "#5C9E6E"
+    asesor   = st.session_state.get("fh_asesor", {})
+    nombre   = asesor.get("nombre","Asesor")
+    despacho = asesor.get("despacho","Despacho Fiscal")
+    iniciales= "".join(p[0].upper() for p in nombre.split()[:2])
+    dias     = days_to_irpf()
+    pct      = max(0, min(100, int((90-dias)/90*100)))
+    color    = "#A32D2D" if dias<30 else "#D4914A" if dias<60 else "#2A6040"
 
     st.markdown(f"""
-    <div class="fh-brand">
+    <div class="sb-brand">
       <div style="display:flex;align-items:center;gap:10px;">
-        <div class="fh-nc">NC</div>
-        <div class="fh-wordmark">FiscalHub</div>
+        <div class="sb-nc">NC</div><div class="sb-wordmark">FiscalHub</div>
       </div>
-      <div class="fh-sub">Portal asesoría fiscal</div>
+      <div class="sb-tag">Portal asesoría fiscal</div>
     </div>
-    <div class="fh-advisor">
+    <div class="sb-advisor">
       <div style="display:flex;gap:10px;align-items:center;">
-        <div class="fh-avatar">{iniciales}</div>
+        <div class="sb-avatar">{iniciales}</div>
         <div>
-          <div style="font-size:12px;color:var(--pa-text-strong);font-weight:500;">{nombre}</div>
-          <div style="font-size:10px;color:var(--pa-text-dim);font-family:var(--pa-font-mono);">{despacho}</div>
+          <div style="font-size:12px;color:#E8EFF8;font-weight:500;">{nombre}</div>
+          <div style="font-size:10px;color:#7A9BBF;font-family:var(--fm);">{despacho}</div>
         </div>
       </div>
-    </div>
-    """, unsafe_allow_html=True)
+    </div>""", unsafe_allow_html=True)
 
-    menu_opts = {
-        "🗂 Cartera": "cartera",
-        "⚠️ Alertas": "alertas",
-        "📥 Exportar": "exportar",
-        "🔗 Vincular cliente": "vincular",
-    }
-    for label, key in menu_opts.items():
+    for label, key in [("🗂 Cartera","cartera"),("⚠️ Alertas","alertas"),
+                        ("📥 Exportar","exportar"),("🔗 Vincular","vincular")]:
         if st.sidebar.button(label, key=f"sb_{key}", use_container_width=True):
+            for k in ["fh_cliente_sel","fh_inmueble_sel"]:
+                st.session_state.pop(k, None)
             st.session_state.fh_menu = key
-            st.session_state.pop("fh_cliente_sel", None)
-            st.session_state.pop("fh_wizard_step", None)
             st.rerun()
 
     st.sidebar.markdown("---")
     st.sidebar.markdown(f"""
-    <div class="irpf-box">
-      <div class="fh-eyebrow">Cierre IRPF</div>
-      <div class="irpf-num" style="color:{color_irpf};">{dias}<span style="font-size:13px;font-weight:400;color:var(--pa-text-mute);margin-left:6px;">días</span></div>
-      <div style="font-size:11px;color:var(--pa-text-mute);margin-top:2px;">30 jun · campaña IRPF 2025</div>
-      <div class="irpf-bar"><div class="irpf-fill" style="width:{pct}%;background:{color_irpf};"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--pa-text-dim);font-family:var(--pa-font-mono);margin-top:6px;">
-        <span>hoy</span><span>30 jun</span>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    <div class="sb-irpf">
+      <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#7A9BBF;">Cierre IRPF</div>
+      <div class="sb-irpf-num" style="color:{color};">{dias}<span style="font-size:11px;font-weight:400;color:#7A9BBF;margin-left:4px;">días</span></div>
+      <div style="font-size:10px;color:#7A9BBF;margin-top:2px;">30 jun · campaña 2025</div>
+      <div class="sb-bar"><div class="sb-fill" style="width:{pct}%;background:{color};"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#5A7A9A;font-family:var(--fm);margin-top:5px;"><span>hoy</span><span>30 jun</span></div>
+    </div>""", unsafe_allow_html=True)
 
     if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
-        for k in ["fh_logged", "fh_user_id", "fh_token", "fh_asesor",
-                  "fh_menu", "fh_cliente_sel", "fh_wizard_step", "fh_cartera"]:
+        for k in ["fh_logged","fh_user_id","fh_token","fh_asesor","fh_menu",
+                  "fh_cliente_sel","fh_inmueble_sel","fh_cartera","fh_validaciones"]:
             st.session_state.pop(k, None)
         st.rerun()
 
-# ── PANTALLA: Login / Registro ───────────────────────────────────
+# ── LOGIN ─────────────────────────────────────────────────────────
 def pantalla_login():
     st.markdown(CSS, unsafe_allow_html=True)
-
-    # Centrar con columnas
-    _, col, _ = st.columns([1, 1.2, 1])
+    st.markdown("<div style='height:10vh;'></div>", unsafe_allow_html=True)
+    _, col, _ = st.columns([1, 1, 1])
     with col:
         st.markdown("""
-        <div style="text-align:center;margin-bottom:20px;padding-top:40px;">
+        <div style="text-align:center;margin-bottom:18px;">
           <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:6px;">
-            <div style="width:32px;height:32px;border:2px solid #C8A96E;border-radius:6px;
-              display:flex;align-items:center;justify-content:center;
-              font-family:'DM Serif Display',serif;font-size:14px;color:#C8A96E;">NC</div>
+            <div style="width:30px;height:30px;border:2px solid #C8A96E;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:13px;color:#C8A96E;">NC</div>
             <span style="font-family:'DM Serif Display',serif;font-size:22px;color:#1E2A3A;">FiscalHub</span>
           </div>
-          <div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#8A9BB0;">
-            Portal Asesoría Fiscal · Nolasco Capital
-          </div>
+          <div style="font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#8A9BB0;">Portal Asesoría Fiscal · Nolasco Capital</div>
         </div>
-        <div style="background:#fff;border:0.5px solid rgba(100,130,170,0.2);border-radius:12px;
-          padding:24px 24px 20px;box-shadow:0 4px 20px rgba(30,58,95,0.07);">
+        <div style="background:linear-gradient(135deg,#FFFFFF 0%,#F4F8FC 100%);border:0.5px solid rgba(74,122,181,0.2);border-radius:12px;padding:22px 22px 18px;box-shadow:0 4px 20px rgba(30,58,95,0.08);">
         """, unsafe_allow_html=True)
 
-        tab_login, tab_reg = st.tabs(["Acceder", "Registrarse"])
-
-        with tab_login:
-            email = st.text_input("Email", key="li_email", placeholder="tu@despacho.es",
-                                   label_visibility="collapsed")
-            pwd   = st.text_input("Contraseña", type="password", key="li_pwd",
-                                   placeholder="Contraseña", label_visibility="collapsed")
+        tab_li, tab_re = st.tabs(["Acceder", "Registrarse"])
+        with tab_li:
+            em = st.text_input("", key="li_em", placeholder="email@despacho.es", label_visibility="collapsed")
+            pw = st.text_input("", type="password", key="li_pw", placeholder="Contraseña", label_visibility="collapsed")
             if st.button("Entrar →", key="li_btn", use_container_width=True, type="primary"):
-                if email and pwd:
+                if em and pw:
                     with st.spinner("Verificando..."):
-                        res = login_asesor(email, pwd)
+                        res = login_asesor(em, pw)
                     if res["ok"]:
-                        st.session_state.fh_logged   = True
-                        st.session_state.fh_user_id  = res["user_id"]
-                        st.session_state.fh_token    = res["token"]
-                        st.session_state.fh_asesor   = get_asesor_info(res["user_id"])
-                        st.session_state.fh_menu     = "cartera"
+                        st.session_state.update({"fh_logged":True,"fh_user_id":res["user_id"],
+                            "fh_token":res["token"],"fh_asesor":get_asesor_info(res["user_id"]),"fh_menu":"cartera"})
                         st.rerun()
-                    else:
-                        st.error(res.get("error", "Credenciales incorrectas"))
-                else:
-                    st.warning("Introduce email y contraseña")
+                    else: st.error(res.get("error","Credenciales incorrectas"))
+                else: st.warning("Introduce email y contraseña")
 
-        with tab_reg:
-            c1, c2 = st.columns(2)
-            with c1:
-                nombre   = st.text_input("Nombre", key="rg_nombre", placeholder="Tu nombre")
-            with c2:
-                despacho = st.text_input("Despacho", key="rg_despacho", placeholder="Nombre asesoría")
-            email_r  = st.text_input("Email profesional", key="rg_email", placeholder="tu@despacho.es",
-                                      label_visibility="collapsed")
-            pwd_r    = st.text_input("Contraseña (mín. 8 caracteres)", type="password", key="rg_pwd",
-                                      placeholder="Contraseña", label_visibility="collapsed")
-            if st.button("Crear cuenta →", key="rg_btn", use_container_width=True, type="primary"):
-                if all([nombre, despacho, email_r, pwd_r]):
-                    if len(pwd_r) < 8:
-                        st.error("Mínimo 8 caracteres")
+        with tab_re:
+            c1,c2 = st.columns(2)
+            with c1: nm = st.text_input("",key="rg_nm",placeholder="Nombre completo",label_visibility="collapsed")
+            with c2: ds = st.text_input("",key="rg_ds",placeholder="Despacho",label_visibility="collapsed")
+            em_r = st.text_input("",key="rg_em",placeholder="email@despacho.es",label_visibility="collapsed")
+            pw_r = st.text_input("",type="password",key="rg_pw",placeholder="Contraseña (mín. 8 car.)",label_visibility="collapsed")
+            if st.button("Crear cuenta →",key="rg_btn",use_container_width=True,type="primary"):
+                if all([nm,ds,em_r,pw_r]):
+                    if len(pw_r)<8: st.error("Mínimo 8 caracteres")
                     else:
-                        with st.spinner("Creando cuenta..."):
-                            res = registrar_asesor(email_r, pwd_r, nombre, despacho)
-                        if res["ok"]:
-                            st.success("✅ Cuenta creada. Revisa tu email y luego accede.")
-                        else:
-                            st.error(res.get("error", "Error al registrar"))
-                else:
-                    st.warning("Completa todos los campos")
-
+                        with st.spinner("Creando..."): res = registrar_asesor(em_r,pw_r,nm,ds)
+                        if res["ok"]: st.success("✅ Cuenta creada. Revisa tu email y accede.")
+                        else: st.error(res.get("error","Error"))
+                else: st.warning("Completa todos los campos")
         st.markdown("</div>", unsafe_allow_html=True)
 
-# ── PANTALLA: Cartera ────────────────────────────────────────────
+# ── CARTERA ───────────────────────────────────────────────────────
 def pantalla_cartera():
     cartera = st.session_state.get("fh_cartera", [])
-
     if not cartera:
-        st.markdown("""
-        <div style="text-align:center;padding:60px 20px;">
-          <div style="font-size:40px;margin-bottom:16px;">🔗</div>
-          <div class="fh-page-title" style="margin-bottom:8px;">Sin clientes vinculados</div>
-          <div class="fh-sub-text">Ve a "Vincular cliente" e introduce el código que te dé el propietario desde Nolasco Capital.</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("""<div style="text-align:center;padding:60px 20px;">
+          <div style="font-size:36px;margin-bottom:14px;">🔗</div>
+          <div style="font-family:'DM Serif Display',serif;font-size:22px;color:#1E2A3A;margin-bottom:8px;">Sin clientes vinculados</div>
+          <div style="font-size:13px;color:#5A6A7E;">Ve a Vincular e introduce el código que te dé el propietario desde Nolasco Capital.</div>
+        </div>""", unsafe_allow_html=True)
         return
 
-    total_inm = sum(c["inmuebles"] for c in cartera)
-    total_crit = sum(c["criticas"] for c in cartera)
-    total_imp = sum(c["impacto"] for c in cartera)
-    n_crit = sum(1 for c in cartera if c["estado"] == "critico")
-    n_med  = sum(1 for c in cartera if c["estado"] == "medio")
-    n_ok   = sum(1 for c in cartera if c["estado"] == "ok")
+    total_inm  = sum(c["inmuebles"] for c in cartera)
+    total_crit = sum(c["criticas"]  for c in cartera)
+    total_imp  = sum(c["impacto"]   for c in cartera)
+    n_crit = sum(1 for c in cartera if c["estado"]=="critico")
+    n_med  = sum(1 for c in cartera if c["estado"]=="medio")
+    n_ok   = sum(1 for c in cartera if c["estado"]=="ok")
 
-    # Header
-    st.markdown(f"""
-    <div style="margin-bottom:18px;">
-      <div class="fh-eyebrow">Granada · Despacho fiscal</div>
-      <div class="fh-page-title">Cartera de clientes</div>
-      <div class="fh-sub-text">{len(cartera)} propietarios · {total_inm} inmuebles · campaña IRPF 2025 en curso</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div style="margin-bottom:16px;">
+      <div class="fh-ey">Granada · Despacho fiscal</div>
+      <div class="fh-title">Cartera de clientes</div>
+      <div class="fh-sub">{len(cartera)} propietarios · {total_inm} inmuebles · campaña IRPF 2025</div>
+    </div>""", unsafe_allow_html=True)
 
-    # KPIs
-    k1, k2, k3, k4 = st.columns(4)
-    with k1:
-        st.markdown(f"""<div class="fh-kpi">
-          <div class="fh-kpi-label">Clientes en cartera</div>
-          <div class="fh-kpi-value mono">{len(cartera)}</div>
-          <div class="fh-kpi-sub">{n_crit} críticos · {n_med} a revisar · {n_ok} OK</div>
-        </div>""", unsafe_allow_html=True)
-    with k2:
-        st.markdown(f"""<div class="fh-kpi">
-          <div class="fh-kpi-label">Inmuebles bajo gestión</div>
-          <div class="fh-kpi-value mono">{total_inm}</div>
-          <div class="fh-kpi-sub">Todos en larga duración</div>
-        </div>""", unsafe_allow_html=True)
-    with k3:
-        st.markdown(f"""<div class="fh-kpi">
-          <div class="fh-kpi-label">Alertas críticas abiertas</div>
-          <div class="fh-kpi-value mono crit">{total_crit}</div>
-          <div class="fh-kpi-sub">Requieren acción antes del 30 jun</div>
-        </div>""", unsafe_allow_html=True)
-    with k4:
-        st.markdown(f"""<div class="fh-kpi">
-          <div class="fh-kpi-label">Impacto fiscal a recuperar</div>
-          <div class="fh-kpi-value mono accent">{fmt_eur(total_imp)}</div>
-          <div class="fh-kpi-sub">Lucro fiscal pendiente · cartera completa</div>
-        </div>""", unsafe_allow_html=True)
+    k1,k2,k3,k4 = st.columns(4)
+    with k1: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">Clientes</div>
+      <div class="kpi-val">{len(cartera)}</div>
+      <div class="kpi-sub">{n_crit} críticos · {n_med} revisar · {n_ok} OK</div></div>""", unsafe_allow_html=True)
+    with k2: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">Inmuebles gestionados</div>
+      <div class="kpi-val">{total_inm}</div><div class="kpi-sub">Larga duración</div></div>""", unsafe_allow_html=True)
+    with k3: st.markdown(f"""<div class="kpi red"><div class="kpi-lbl">Alertas críticas</div>
+      <div class="kpi-val cr">{total_crit}</div><div class="kpi-sub">Antes del 30 jun</div></div>""", unsafe_allow_html=True)
+    with k4: st.markdown(f"""<div class="kpi gold"><div class="kpi-lbl">Impacto fiscal</div>
+      <div class="kpi-val ac">{fmt_eur(total_imp)}</div><div class="kpi-sub">Recuperable · cartera</div></div>""", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
 
-    # Filtros
-    filtro = st.radio("Filtrar:", ["Todos", "Críticos", "A revisar", "OK"],
-                      horizontal=True, key="fh_filtro", label_visibility="collapsed")
-    busqueda = st.text_input("🔍 Buscar cliente...", key="fh_busqueda",
-                              label_visibility="collapsed")
+    cf1,cf2 = st.columns([3,1])
+    with cf1: filtro = st.radio("",["Todos","Críticos","A revisar","OK"],horizontal=True,key="fh_filtro",label_visibility="collapsed")
+    with cf2: busqueda = st.text_input("",placeholder="🔍 Buscar...",key="fh_busqueda",label_visibility="collapsed")
 
-    # Tabla
-    rows_filtradas = [c for c in cartera if
-        (filtro == "Todos" or
-         (filtro == "Críticos" and c["estado"] == "critico") or
-         (filtro == "A revisar" and c["estado"] == "medio") or
-         (filtro == "OK" and c["estado"] == "ok")) and
-        (not busqueda or busqueda.lower() in c["nombre"].lower())
-    ]
+    rows = [c for c in cartera if
+            (filtro=="Todos" or (filtro=="Críticos" and c["estado"]=="critico") or
+             (filtro=="A revisar" and c["estado"]=="medio") or (filtro=="OK" and c["estado"]=="ok")) and
+            (not busqueda or busqueda.lower() in c["nombre"].lower())]
 
-    def _pill(estado):
-        if estado == "critico": return '<span class="pill-crit"><span class="dot"></span>Crítico</span>'
-        if estado == "medio":   return '<span class="pill-warn"><span class="dot"></span>Revisar</span>'
+    def _pill(e):
+        if e=="critico": return '<span class="pill-cr"><span class="dot"></span>Crítico</span>'
+        if e=="medio":   return '<span class="pill-wn"><span class="dot"></span>Revisar</span>'
         return '<span class="pill-ok"><span class="dot"></span>OK</span>'
 
-    def _chk(v):
-        if v is True:  return '<span class="chk-ok">✓</span>'
-        if v is False: return '<span class="chk-no">✗</span>'
-        return '<span class="chk-na">–</span>'
-
-    def _badge_crit(n):
-        if n == 0: return f'<span class="badge-zero">{n}</span>'
-        return f'<span class="badge-crit">{n}</span>'
-
-    def _badge_warn(n):
-        if n == 0: return f'<span class="badge-zero">{n}</span>'
-        return f'<span class="badge-warn">{n}</span>'
-
-    filas_html = ""
-    for c in rows_filtradas:
-        row_cls = "is-priority" if c["estado"] == "critico" else ("is-warn" if c["estado"] == "medio" else "")
-        imp_str = fmt_eur(c["impacto"]) if c["impacto"] else "—"
-        imp_cls = "impact-neg" if c["impacto"] > 0 else ""
-        filas_html += f"""
-        <tr class="{row_cls}" onclick="window.parent.postMessage({{type:'streamlit:setComponentValue',value:'{c["id"]}'}}, '*')">
-          <td><div class="name-cell">{c["nombre"]}</div><div class="nif-cell">{c.get("nif","")}</div></td>
+    filas = ""
+    for c in rows:
+        rc  = "pr" if c["estado"]=="critico" else ("wn" if c["estado"]=="medio" else "")
+        imp = fmt_eur(c["impacto"]) if c["impacto"] else "—"
+        bcrit = f"<span class='bc'>{c['criticas']}</span>" if c['criticas'] else "<span class='bz'>0</span>"
+        bmed  = f"<span class='bw'>{c['medias']}</span>" if c['medias'] else "<span class='bz'>0</span>"
+        filas += f"""<tr class="{rc}">
+          <td><div class="nm">{c["nombre"]}</div></td>
           <td style="text-align:right;" class="mono">{c["inmuebles"]}</td>
-          <td style="text-align:center;">{_badge_crit(c["criticas"])}</td>
-          <td style="text-align:center;">{_badge_warn(c["medias"])}</td>
-          <td style="text-align:right;" class="{imp_cls} mono">{imp_str}</td>
-          <td style="text-align:center;">{_chk(c["checks"]["red60"])}</td>
-          <td style="text-align:center;">{_chk(c["checks"]["gastos"])}</td>
-          <td style="text-align:center;">{_chk(c["checks"]["irav"])}</td>
+          <td style="text-align:center;">{bcrit}</td>
+          <td style="text-align:center;">{bmed}</td>
+          <td style="text-align:right;" class="mono">{imp}</td>
           <td>{_pill(c["estado"])}</td>
         </tr>"""
 
-    st.markdown(f"""
-    <table class="fh-table">
+    st.markdown(f"""<table class="fh-tbl">
       <thead><tr>
-        <th>Cliente</th>
-        <th style="text-align:right;">Inmuebles</th>
-        <th style="text-align:center;">⚠ Críticas</th>
-        <th style="text-align:center;">◔ Medias</th>
-        <th style="text-align:right;">Impacto IRPF</th>
-        <th style="text-align:center;" title="Reducción 60%">Red. 60%</th>
-        <th style="text-align:center;" title="Gastos deducibles">Gastos</th>
-        <th style="text-align:center;" title="IRAV">IRAV</th>
-        <th>Estado</th>
-      </tr></thead>
-      <tbody>{filas_html}</tbody>
-    </table>
-    """, unsafe_allow_html=True)
+        <th>Cliente</th><th style="text-align:right;">Inm.</th>
+        <th style="text-align:center;">⚠ Críticas</th><th style="text-align:center;">◔ Medias</th>
+        <th style="text-align:right;">Impacto IRPF</th><th>Estado</th>
+      </tr></thead><tbody>{filas}</tbody></table>""", unsafe_allow_html=True)
 
-    # Selección via botones (alternativa al onclick del HTML)
-    st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
-    st.markdown('<div class="fh-eyebrow" style="margin-bottom:8px;">Seleccionar cliente para revisión IRPF</div>',
-                unsafe_allow_html=True)
+    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="fh-ey" style="margin-bottom:6px;">Abrir cliente</div>', unsafe_allow_html=True)
+    MAX_COLS = 4
+    for i in range(0, len(rows), MAX_COLS):
+        batch = rows[i:i+MAX_COLS]
+        cols  = st.columns(MAX_COLS)
+        for j, c in enumerate(batch):
+            icon = "🔴" if c["estado"]=="critico" else "🟡" if c["estado"]=="medio" else "🟢"
+            with cols[j]:
+                if st.button(f"{icon} {c['nombre'][:22]}", key=f"sel_{c['id']}", use_container_width=True):
+                    st.session_state.fh_cliente_sel = c["id"]
+                    st.session_state.fh_menu = "cliente"
+                    st.rerun()
 
-    cols_sel = st.columns(min(len(rows_filtradas), 4))
-    for i, c in enumerate(rows_filtradas):
-        with cols_sel[i % 4]:
-            estado_icon = "🔴" if c["estado"] == "critico" else "🟡" if c["estado"] == "medio" else "🟢"
-            if st.button(f"{estado_icon} {c['nombre'].split()[0]} {c['nombre'].split()[-1]}",
-                         key=f"sel_{c['id']}", use_container_width=True):
-                st.session_state.fh_cliente_sel = c["id"]
-                st.session_state.fh_wizard_step = 1
-                st.session_state.fh_menu = "wizard"
-                st.rerun()
-
-# ── Fichas visuales de inmuebles ────────────────────────────────
-def render_fichas_inmuebles(df_inm, alertas, cliente_id):
-    """Renderiza tarjetas casita para cada inmueble del cliente."""
-    if df_inm.empty:
-        st.info("Sin inmuebles registrados para este cliente.")
-        return
-
-    col_n   = "nombre"   if "nombre"   in df_inm.columns else "Nombre"
-    col_r   = "renta"    if "renta"    in df_inm.columns else "Renta"
-    col_com = "comunidad" if "comunidad" in df_inm.columns else "Comunidad"
-    col_ibi = "ibi_anual" if "ibi_anual" in df_inm.columns else "IBI_Anual"
-    col_seg = "seguro_anual" if "seguro_anual" in df_inm.columns else "Seguro_Anual"
-    col_amort = "amortizacion_fiscal" if "amortizacion_fiscal" in df_inm.columns else "Amortizacion_Fiscal"
-    col_hip = "intereses_hipoteca" if "intereses_hipoteca" in df_inm.columns else "Intereses_Hipoteca"
-    col_tipo = "tipo_arrendamiento" if "tipo_arrendamiento" in df_inm.columns else "Tipo_Arrendamiento"
-    col_inq = "inquilino" if "inquilino" in df_inm.columns else "Inquilino"
-    col_cp  = "cp" if "cp" in df_inm.columns else "CP"
-
-    def _roof(tipo_str, nombre_str):
-        t = (str(tipo_str) + " " + str(nombre_str)).lower()
-        if any(x in t for x in ["despacho","oficina","comercial","local","salón","salon"]):
-            return "#185FA5", "Despacho"
-        if any(x in t for x in ["casa","chalet","adosado","abarqueros","villa"]):
-            return "#6B2737", "Casa"
-        if any(x in t for x in ["cochera","garaje","parking","trastero"]):
-            return "#4A5568", "Garaje"
-        return "#B8924A", "Apartamento"
-
-    cols = st.columns(min(len(df_inm), 3))
-    for i, (_, row) in enumerate(df_inm.iterrows()):
-        nombre_inm = str(row.get(col_n, ""))
-        renta      = sf(row.get(col_r, 0))
-        comunidad  = sf(row.get(col_com, 0)) * 12
-        ibi        = sf(row.get(col_ibi, 0))
-        seguro     = sf(row.get(col_seg, 0))
-        amort      = sf(row.get(col_amort, 0))
-        hipoteca   = sf(row.get(col_hip, 0))
-        tipo_arr   = str(row.get(col_tipo, "Larga Duración"))
-        inquilino  = str(row.get(col_inq, "—"))
-        cp         = str(row.get(col_cp, ""))
-
-        ingresos = renta * 12
-        gastos   = comunidad + ibi + seguro + amort + hipoteca
-        neto     = ingresos - gastos
-        rent_pct = (neto / max(ingresos, 1)) * 100
-
-        # Alertas de este inmueble
-        alertas_inm = [a for a in alertas if a.get("inmueble") == nombre_inm]
-
-        # Checks
-        chk_ibi   = ibi > 0
-        chk_com   = comunidad > 0
-        chk_seg   = seguro > 0
-        chk_amort = amort > 0
-        chk_hip   = hipoteca > 0
-
-        roof_color, roof_label = _roof(tipo_arr, nombre_inm)
-
-        def _chk_html(ok, label):
-            cls = "chk-ok-pill" if ok else "chk-no-pill"
-            icon = "✓" if ok else "✗"
-            return f'<span class="{cls}">{icon} {label}</span>'
-
-        alertas_html = ""
-        for a in alertas_inm[:3]:
-            icon = "⚠" if a["tipo"] == "crit" else "◔"
-            color = "var(--pa-critical)" if a["tipo"] == "crit" else "var(--pa-warn)"
-            alertas_html += f'<div style="display:flex;align-items:flex-start;gap:5px;padding:4px 0;border-bottom:0.5px solid var(--pa-border);font-size:11px;color:var(--pa-text-mute);"><span style="color:{color};flex-shrink:0;">{icon}</span>{a["titulo"]}</div>'
-        if not alertas_inm:
-            alertas_html = '<div style="font-size:11px;color:var(--pa-ok);padding:4px 0;">✓ Sin alertas detectadas</div>'
-
-        with cols[i % 3]:
-            st.markdown(f"""
-            <div style="background:#fff;border:0.5px solid rgba(100,130,170,0.15);border-radius:12px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 12px rgba(30,58,95,0.06);">
-              <svg viewBox="0 0 300 64" style="display:block;width:100%;margin-bottom:-1px;" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                <polygon points="150,5 297,64 3,64" fill="{roof_color}"/>
-                <text x="150" y="50" text-anchor="middle" font-family="IBM Plex Sans,sans-serif"
-                  font-size="13" font-weight="500" fill="white" opacity="0.95">{roof_label}</text>
-                <text x="150" y="24" text-anchor="middle" font-family="IBM Plex Sans,sans-serif"
-                  font-size="15" fill="white" opacity="0.6">⌂</text>
-              </svg>
-              <div style="padding:12px 14px;">
-                <div style="font-size:14px;font-weight:500;color:var(--pa-text-strong);margin-bottom:2px;">{nombre_inm}</div>
-                <div style="font-size:11px;color:var(--pa-text-mute);margin-bottom:10px;">{inquilino} · CP {cp} · {tipo_arr}</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
-                  <div style="background:#F7F9FC;border-radius:6px;padding:6px 8px;">
-                    <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--pa-text-dim);">Renta/mes</div>
-                    <div style="font-size:16px;font-weight:500;color:var(--pa-ok);font-family:monospace;">{fmt_eur(renta)}</div>
-                  </div>
-                  <div style="background:#F7F9FC;border-radius:6px;padding:6px 8px;">
-                    <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--pa-text-dim);">Gastos/año</div>
-                    <div style="font-size:16px;font-weight:500;color:var(--pa-critical);font-family:monospace;">−{fmt_eur(gastos)}</div>
-                  </div>
-                  <div style="background:#F7F9FC;border-radius:6px;padding:6px 8px;">
-                    <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--pa-text-dim);">Neto/año</div>
-                    <div style="font-size:16px;font-weight:500;color:var(--pa-text);font-family:monospace;">{fmt_eur(neto)}</div>
-                  </div>
-                  <div style="background:#F7F9FC;border-radius:6px;padding:6px 8px;">
-                    <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--pa-text-dim);">Rentabilidad</div>
-                    <div style="font-size:16px;font-weight:500;color:var(--pa-accent);font-family:monospace;">{rent_pct:.1f}%</div>
-                  </div>
-                </div>
-                <div style="height:0.5px;background:var(--pa-border);margin:8px 0;"></div>
-                <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--pa-text-dim);margin-bottom:6px;">Gastos deducibles</div>
-                <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
-                  {_chk_html(chk_ibi,"IBI")}
-                  {_chk_html(chk_com,"Comunidad")}
-                  {_chk_html(chk_seg,"Seguro")}
-                  {_chk_html(chk_amort,"Amortización")}
-                  {_chk_html(chk_hip,"Hipoteca")}
-                </div>
-                <div style="height:0.5px;background:var(--pa-border);margin:8px 0;"></div>
-                <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--pa-text-dim);margin-bottom:4px;">Alertas</div>
-                {alertas_html}
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-
-# ── PANTALLA: Wizard ─────────────────────────────────────────────
-def pantalla_wizard():
+# ── PANTALLA CLIENTE ──────────────────────────────────────────────
+def pantalla_cliente():
     cliente_id = st.session_state.get("fh_cliente_sel")
-    cartera = st.session_state.get("fh_cartera", [])
-    cliente = next((c for c in cartera if c["id"] == cliente_id), None)
-
-    if not cliente:
-        st.warning("Selecciona un cliente desde la cartera.")
-        return
-
-    step = st.session_state.get("fh_wizard_step", 1)
-    STEPS = [
-        (1, "Resumen del cliente",    "Ingresos, gastos y rentabilidad global"),
-        (2, "Gastos deducibles",      "Verificar que todos están registrados"),
-        (3, "Modelo 100",             "Casillas pre-rellenadas para la AEAT"),
-        (4, "Exportar",               "PDF y Excel listos para el cliente"),
-    ]
-
-    # Breadcrumb
-    if st.button("← Volver a cartera", key="wz_back"):
-        st.session_state.fh_menu = "cartera"
-        st.session_state.pop("fh_cliente_sel", None)
-        st.session_state.pop("fh_wizard_step", None)
-        st.rerun()
-
-    # Barra de pasos
-    steps_html = ""
-    for i, (n, nombre, desc) in enumerate(STEPS):
-        if n < step:   cls = "done"
-        elif n == step: cls = "current"
-        else:           cls = "future"
-
-        num_html = f'<div class="wz-step-num {cls}">{"✓" if n < step else n}</div>'
-        lbl_cls  = cls if cls != "future" else ""
-        label_html = f'<span class="wz-step-label {lbl_cls}">{nombre}</span>'
-
-        steps_html += f'<div style="display:flex;align-items:center;gap:8px;">{num_html}{label_html}</div>'
-        if i < len(STEPS) - 1:
-            line_cls = "done" if n < step else ""
-            steps_html += f'<div class="wz-line {line_cls}"></div>'
-
-    st.markdown(f'<div class="wz-steps">{steps_html}</div>', unsafe_allow_html=True)
+    cartera    = st.session_state.get("fh_cartera", [])
+    cliente    = next((c for c in cartera if c["id"]==cliente_id), None)
+    if not cliente: st.warning("Selecciona un cliente."); return
 
     df_inm  = cliente["df_inm"]
     df_mov  = cliente["df_mov"]
     modelo  = cliente["modelo100"]
-    alertas = cliente["alertas"]
+    nombre  = cliente["nombre"]
+    vlds    = st.session_state.get("fh_validaciones", {}).get(cliente_id, {})
 
-    # ── PASO 1: Resumen ──────────────────────────────────────────
-    if step == 1:
-        st.markdown(f"""
-        <div class="wz-card">
-          <div class="wz-body">
-            <div class="wz-title">{cliente['nombre']}</div>
-            <div class="wz-sub">{cliente['inmuebles']} inmueble{'s' if cliente['inmuebles'] != 1 else ''} en cartera · Revisión IRPF 2025</div>
-        """, unsafe_allow_html=True)
+    if st.button("← Volver a cartera", key="cli_back"):
+        st.session_state.fh_menu = "cartera"
+        st.session_state.pop("fh_cliente_sel", None)
+        st.session_state.pop("fh_inmueble_sel", None)
+        st.rerun()
 
-        c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            st.markdown(f"""<div class="wz-field">
-              <div class="wz-field-label">Ingresos íntegros</div>
-              <div class="wz-field-value mono" style="color:var(--pa-ok);">{fmt_eur(modelo.get('ingresos',0))}</div>
-            </div>""", unsafe_allow_html=True)
-        with c2:
-            st.markdown(f"""<div class="wz-field">
-              <div class="wz-field-label">Total gastos deducibles</div>
-              <div class="wz-field-value mono" style="color:var(--pa-critical);">−{fmt_eur(modelo.get('total_gastos',0))}</div>
-            </div>""", unsafe_allow_html=True)
-        with c3:
-            st.markdown(f"""<div class="wz-field">
-              <div class="wz-field-label">Rendimiento neto</div>
-              <div class="wz-field-value mono">{fmt_eur(modelo.get('rend_neto',0))}</div>
-            </div>""", unsafe_allow_html=True)
-        with c4:
-            st.markdown(f"""<div class="wz-field">
-              <div class="wz-field-label">Base imponible estimada</div>
-              <div class="wz-field-value mono" style="color:var(--pa-accent);">{fmt_eur(modelo.get('rend_final',0))}</div>
-            </div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div style="margin-bottom:14px;">
+      <div class="fh-ey">Revisión IRPF 2025</div>
+      <div class="fh-title">{nombre}</div>
+      <div class="fh-sub">{cliente["inmuebles"]} inmuebles · Campaña IRPF 2025</div>
+    </div>""", unsafe_allow_html=True)
 
-        if alertas:
-            n_crit = len([a for a in alertas if a["tipo"] == "crit"])
-            msg = f"Este cliente tiene {len(alertas)} alerta{'s' if len(alertas)>1 else ''}" + \
-                  (f", de las cuales {n_crit} son críticas" if n_crit else "") + \
-                  ". Revísalas en los siguientes pasos."
-            tipo_callout = "crit" if n_crit else "warn"
-            st.markdown(f'<div class="wz-callout {tipo_callout}">{msg}</div>', unsafe_allow_html=True)
+    k1,k2,k3,k4 = st.columns(4)
+    with k1: st.markdown(f"""<div class="kpi grn"><div class="kpi-lbl">0102 Ingresos</div>
+      <div class="kpi-val ok">{fmt_eur(modelo.get("ingresos",0))}</div></div>""", unsafe_allow_html=True)
+    with k2: st.markdown(f"""<div class="kpi red"><div class="kpi-lbl">Gastos deducibles</div>
+      <div class="kpi-val cr">−{fmt_eur(modelo.get("total_gastos",0))}</div></div>""", unsafe_allow_html=True)
+    with k3: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">0149 Rend. neto</div>
+      <div class="kpi-val">{fmt_eur(modelo.get("rend_neto",0))}</div></div>""", unsafe_allow_html=True)
+    with k4: st.markdown(f"""<div class="kpi gold"><div class="kpi-lbl">0156 Base imp. est.</div>
+      <div class="kpi-val ac">{fmt_eur(modelo.get("rend_final",0))}</div>
+      <div class="kpi-sub">⚠️ Orientativa</div></div>""", unsafe_allow_html=True)
+
+    st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+
+    # Verificar si todos validados
+    col_n = "nombre" if "nombre" in df_inm.columns else "Nombre"
+    nombres_inm = [str(r.get(col_n,"")) for _,r in df_inm.iterrows()] if not df_inm.empty else []
+    todos_ok = all(
+        vlds.get(nm,{}).get("estado") in ("ok","vl") or
+        calcular_semaforo_inmueble(df_inm[df_inm[col_n]==nm].iloc[0])["estado"] == "ok"
+        for nm in nombres_inm
+    ) if nombres_inm else False
+
+    if todos_ok:
+        st.markdown("""<div class="callout ok" style="margin-bottom:8px;">
+          <strong>✅ Todos los inmuebles revisados</strong> — listo para el resumen global y exportar.
+        </div>""", unsafe_allow_html=True)
+        if st.button("📊 Resumen global → Exportar", type="primary", key="cli_global"):
+            st.session_state.fh_menu = "resumen_global"
+            st.rerun()
+
+    st.markdown('<div class="fh-section">Inmuebles</div>', unsafe_allow_html=True)
+    if df_inm.empty:
+        st.info("Sin inmuebles registrados para este cliente."); return
+
+    for _, row in df_inm.iterrows():
+        nombre_inm = str(row.get(col_n,""))
+        sem        = calcular_semaforo_inmueble(row)
+        vld        = vlds.get(nombre_inm,{})
+        vld_estado = vld.get("estado","")
+        vld_manual = vld.get("manual", False)
+
+        if vld_estado in ("ok","vl"):
+            rail_cls  = "vl" if vld_manual else "ok"
+            pill_html = '<span class="pill-vl"><span class="dot"></span>Validado</span>' if vld_manual else \
+                        '<span class="pill-ok"><span class="dot"></span>Correcto</span>'
         else:
-            st.markdown('<div class="wz-callout ok">✓ Sin alertas fiscales detectadas para este cliente.</div>',
-                        unsafe_allow_html=True)
-
-        # Fichas de inmuebles
-        if not df_inm.empty:
-            st.markdown('<div class="fh-section-title" style="margin-top:20px;">Inmuebles</div>',
-                        unsafe_allow_html=True)
-            render_fichas_inmuebles(df_inm, alertas, cliente_id)
-
-        st.markdown("</div>", unsafe_allow_html=True)  # wz-body
-
-        # Footer wizard
-        st.markdown('<div class="wz-foot">', unsafe_allow_html=True)
-        col_l, col_r = st.columns([1, 1])
-        with col_r:
-            if st.button("Siguiente → Gastos deducibles", key="wz1_next",
-                         use_container_width=True, type="primary"):
-                st.session_state.fh_wizard_step = 2
-                st.rerun()
-        st.markdown("</div></div>", unsafe_allow_html=True)
-
-    # ── PASO 2: Gastos deducibles ────────────────────────────────
-    elif step == 2:
-        col_nombre = "nombre" if "nombre" in df_inm.columns else "Nombre"
-
-        gastos_check = []
-        for _, row in df_inm.iterrows():
-            nombre_inm = row.get(col_nombre, "—")
-            gastos_check.extend([
-                {"cas": "0106", "label": "IBI y tributos",
-                 "hint": f"{nombre_inm}",
-                 "amount": sf(row.get("ibi_anual") or row.get("IBI_Anual", 0)),
-                 "on": sf(row.get("ibi_anual") or row.get("IBI_Anual", 0)) > 0},
-                {"cas": "0107", "label": "Comunidad de propietarios",
-                 "hint": f"{nombre_inm}",
-                 "amount": sf(row.get("comunidad") or row.get("Comunidad", 0)) * 12,
-                 "on": sf(row.get("comunidad") or row.get("Comunidad", 0)) > 0},
-                {"cas": "0111", "label": "Seguro de hogar",
-                 "hint": f"{nombre_inm}",
-                 "amount": sf(row.get("seguro_anual") or row.get("Seguro_Anual", 0)),
-                 "on": sf(row.get("seguro_anual") or row.get("Seguro_Anual", 0)) > 0},
-                {"cas": "0109", "label": "Amortización del inmueble (3%)",
-                 "hint": f"3% s/ valor construcción · {nombre_inm}",
-                 "amount": sf(row.get("amortizacion_fiscal") or row.get("Amortizacion_Fiscal", 0)),
-                 "on": sf(row.get("amortizacion_fiscal") or row.get("Amortizacion_Fiscal", 0)) > 0},
-                {"cas": "0105", "label": "Intereses hipoteca",
-                 "hint": f"{nombre_inm}",
-                 "amount": sf(row.get("intereses_hipoteca") or row.get("Intereses_Hipoteca", 0)),
-                 "on": sf(row.get("intereses_hipoteca") or row.get("Intereses_Hipoteca", 0)) > 0},
-            ])
-
-        chk_html = ""
-        for g in gastos_check:
-            if g["on"] is True:
-                box = '<div class="chk-box-on">✓</div>'
-                amt_cls = ""
-            elif g["on"] is False:
-                box = '<div class="chk-box-off">✗</div>'
-                amt_cls = "missing"
+            rail_cls  = sem["estado"]
+            n_cr = len([p for p in sem["problemas"] if p["tipo"]=="crit"])
+            n_wn = len([p for p in sem["problemas"] if p["tipo"]=="warn"])
+            if sem["estado"]=="cr":
+                pill_html = f'<span class="pill-cr"><span class="dot"></span>{n_cr} crítico{"s" if n_cr>1 else ""}</span>'
+            elif sem["estado"]=="wn":
+                pill_html = f'<span class="pill-wn"><span class="dot"></span>{n_wn} aviso{"s" if n_wn>1 else ""}</span>'
             else:
-                box = '<div class="chk-box-na">–</div>'
-                amt_cls = ""
+                pill_html = '<span class="pill-ok"><span class="dot"></span>Correcto</span>'
 
-            amt_str = fmt_eur(g["amount"]) if g["amount"] else "Pendiente"
-            chk_html += f"""
-            <div class="chk-item">
-              {box}
-              <div class="chk-cas">{g["cas"]}</div>
-              <div class="chk-lbl">{g["label"]}<div class="chk-hint">{g["hint"]}</div></div>
-              <div class="chk-amount {amt_cls}">{amt_str}</div>
-            </div>"""
+        renta    = _gv(row,"renta","Renta")
+        ibi      = _gv(row,"ibi_anual","IBI_Anual")
+        amort    = _gv(row,"amortizacion_fiscal","Amortizacion_Fiscal")
+        seguro   = _gv(row,"seguro_anual","Seguro_Anual")
+        comunidad= _gv(row,"comunidad","Comunidad")*12
+        gastos   = ibi+amort+seguro+comunidad
+        neto     = renta*12 - gastos
 
-        faltan = sum(1 for g in gastos_check if g["on"] is False)
-
-        st.markdown(f"""
-        <div class="wz-card">
-          <div class="wz-body">
-            <div class="wz-title">Gastos deducibles</div>
-            <div class="wz-sub">Verifica que todos los gastos están registrados. Los marcados en rojo están pendientes.</div>
-        """, unsafe_allow_html=True)
-
-        if faltan:
-            st.markdown(f"""<div class="wz-callout crit">
-              <strong>⚠️ {faltan} gasto{'s' if faltan > 1 else ''} sin registrar</strong><br>
-              Solicita los justificantes al propietario y añádelos desde Nolasco Capital.
-            </div>""", unsafe_allow_html=True)
+        if sem["problemas"] and vld_estado not in ("ok","vl"):
+            p0 = sem["problemas"][0]["titulo"]
+            mas = f' <span style="color:var(--txd);">+{len(sem["problemas"])-1} más</span>' if len(sem["problemas"])>1 else ""
+            alertas_txt = f'<div class="inm-alerts">⚠ {p0}{mas}</div>'
+        elif vld_manual:
+            alertas_txt = '<div class="inm-alerts" style="color:var(--acc);">✓ Validado manualmente</div>'
         else:
-            st.markdown('<div class="wz-callout ok"><strong>✓ Todos los gastos registrados</strong></div>',
-                        unsafe_allow_html=True)
+            alertas_txt = '<div class="inm-alerts" style="color:var(--ok);">✓ Sin problemas detectados</div>'
+
+        tipo_arr  = str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento",""))
+        inquilino = str(row.get("inquilino") or row.get("Inquilino","—"))
 
         st.markdown(f"""
-        <div class="fh-panel" style="margin-top:20px;">
-          <div class="fh-panel-head">
-            <span class="fh-panel-title">Checklist gastos deducibles</span>
-            <span style="font-size:11px;color:var(--pa-text-mute);">{len(gastos_check) - faltan} de {len(gastos_check)} completados</span>
+        <div class="inm-row">
+          <div class="inm-rail {rail_cls}"></div>
+          <div class="inm-body">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div class="inm-name">{nombre_inm}</div>
+                <div class="inm-meta">{inquilino[:25]} · {tipo_arr}</div>
+                {alertas_txt}
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;flex-shrink:0;">
+                <div class="inm-metrics">
+                  <div style="text-align:center;">
+                    <div class="inm-metric-lbl">Renta/mes</div>
+                    <div class="inm-metric-val" style="color:var(--ok);">{fmt_eur(renta)}</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div class="inm-metric-lbl">Gastos/año</div>
+                    <div class="inm-metric-val" style="color:var(--cr);">−{fmt_eur(gastos)}</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div class="inm-metric-lbl">Neto/año</div>
+                    <div class="inm-metric-val">{fmt_eur(neto)}</div>
+                  </div>
+                </div>
+                {pill_html}
+              </div>
+            </div>
           </div>
-          <div class="chk-list">{chk_html}</div>
+        </div>""", unsafe_allow_html=True)
+
+        bc1,bc2,bc3 = st.columns([2,1,1])
+        with bc1:
+            if st.button(f"🔍 Revisar — {nombre_inm[:22]}",
+                         key=f"rev_{cliente_id[:8]}_{nombre_inm[:8]}", use_container_width=True):
+                st.session_state.fh_inmueble_sel = nombre_inm
+                st.session_state.fh_menu = "ficha"
+                st.rerun()
+        with bc2:
+            if vld_estado not in ("ok","vl") and sem["estado"] != "ok":
+                if st.button("✅ Forzar validación",
+                             key=f"vld_{cliente_id[:8]}_{nombre_inm[:8]}", use_container_width=True):
+                    if "fh_validaciones" not in st.session_state: st.session_state.fh_validaciones = {}
+                    if cliente_id not in st.session_state.fh_validaciones: st.session_state.fh_validaciones[cliente_id] = {}
+                    st.session_state.fh_validaciones[cliente_id][nombre_inm] = {
+                        "estado":"vl","manual":True,"fecha":date.today().strftime("%d/%m/%Y")}
+                    st.rerun()
+        with bc3:
+            if vld_manual:
+                if st.button("↩ Desvalidar",
+                             key=f"dvl_{cliente_id[:8]}_{nombre_inm[:8]}", use_container_width=True):
+                    st.session_state.fh_validaciones[cliente_id].pop(nombre_inm, None)
+                    st.rerun()
+
+# ── FICHA INMUEBLE ────────────────────────────────────────────────
+def pantalla_ficha_inmueble():
+    cliente_id  = st.session_state.get("fh_cliente_sel")
+    nombre_inm  = st.session_state.get("fh_inmueble_sel","")
+    cartera     = st.session_state.get("fh_cartera", [])
+    cliente     = next((c for c in cartera if c["id"]==cliente_id), None)
+    if not cliente or not nombre_inm: st.warning("Selecciona un inmueble."); return
+
+    df_inm = cliente["df_inm"]
+    df_mov = cliente["df_mov"]
+    col_n  = "nombre" if "nombre" in df_inm.columns else "Nombre"
+    rows   = df_inm[df_inm[col_n]==nombre_inm]
+    if rows.empty: st.warning(f"No se encontró: {nombre_inm}"); return
+    row = rows.iloc[0]
+
+    sem    = calcular_semaforo_inmueble(row)
+    modelo = calcular_modelo100_inmueble(row, df_mov)
+    vlds   = st.session_state.get("fh_validaciones",{}).get(cliente_id,{})
+
+    c_back, c_vld = st.columns([3,1])
+    with c_back:
+        if st.button("← Volver al cliente", key="fic_back"):
+            st.session_state.fh_menu = "cliente"
+            st.session_state.pop("fh_inmueble_sel", None)
+            st.session_state.pop("fh_pdf_export", None)
+            st.rerun()
+    with c_vld:
+        if vlds.get(nombre_inm,{}).get("estado") != "vl" and sem["estado"] in ("cr","wn"):
+            if st.button("✅ Validar manualmente", key="fic_vld", use_container_width=True):
+                if "fh_validaciones" not in st.session_state: st.session_state.fh_validaciones = {}
+                if cliente_id not in st.session_state.fh_validaciones: st.session_state.fh_validaciones[cliente_id] = {}
+                st.session_state.fh_validaciones[cliente_id][nombre_inm] = {
+                    "estado":"vl","manual":True,"fecha":date.today().strftime("%d/%m/%Y")}
+                st.rerun()
+
+    ROOF = {"Casa":("#6B2737","#8B3547"),"Despacho":("#185FA5","#1A6FBF"),
+            "Garaje":("#4A5568","#5A6580"),"Apartamento":("#B8924A","#CFA55A")}
+    def _rtype(tipo,nombre):
+        t=(str(tipo)+" "+str(nombre)).lower()
+        if any(x in t for x in ["despacho","oficina","salon"]): return "Despacho"
+        if any(x in t for x in ["casa","chalet","abarqueros"]): return "Casa"
+        if any(x in t for x in ["cochera","garaje"]): return "Garaje"
+        return "Apartamento"
+    rt   = _rtype(row.get("tipo_arrendamiento",""),nombre_inm)
+    c1,c2= ROOF[rt]
+    sem_color = {"cr":"var(--cr)","wn":"var(--wn)","ok":"var(--ok)"}[sem["estado"]]
+    sem_label = {"cr":"🔴 Requiere acción","wn":"🟡 Revisar","ok":"🟢 Correcto"}[sem["estado"]]
+
+    st.markdown(f"""
+    <div style="background:linear-gradient(135deg,#FFFFFF 0%,#F4F8FC 100%);border:0.5px solid rgba(74,122,181,0.2);border-radius:14px;overflow:hidden;margin-bottom:14px;box-shadow:0 2px 16px rgba(30,58,95,0.08);">
+      <svg viewBox="0 0 600 52" style="display:block;width:100%;margin-bottom:-1px;" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="rh" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="{c1}"/><stop offset="100%" stop-color="{c2}"/>
+        </linearGradient></defs>
+        <rect width="600" height="52" fill="url(#rh)"/>
+        <text x="300" y="32" text-anchor="middle" font-family="DM Serif Display,serif" font-size="17" fill="white" opacity="0.95">{nombre_inm}</text>
+        <text x="300" y="47" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="10" fill="white" opacity="0.6">{rt} · {row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento","Larga Duración")}</text>
+      </svg>
+      <div style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <span style="font-size:13px;font-weight:500;color:#1E2A3A;">{row.get("inquilino") or row.get("Inquilino","Sin inquilino")}</span>
+          <span style="font-size:11px;color:#8A9BB0;margin-left:10px;">CP {row.get("cp") or row.get("CP","—")}</span>
         </div>
-        </div>""", unsafe_allow_html=True)  # wz-body
+        <span style="font-size:12px;font-weight:500;color:{sem_color};">{sem_label}</span>
+      </div>
+    </div>""", unsafe_allow_html=True)
 
-        st.markdown('<div class="wz-foot">', unsafe_allow_html=True)
-        c_l, c_r = st.columns(2)
-        with c_l:
-            if st.button("← Resumen cliente", key="wz2_prev", use_container_width=True):
-                st.session_state.fh_wizard_step = 1
-                st.rerun()
-        with c_r:
-            if st.button("Siguiente → Modelo 100", key="wz2_next",
-                         use_container_width=True, type="primary"):
-                st.session_state.fh_wizard_step = 3
-                st.rerun()
-        st.markdown("</div></div>", unsafe_allow_html=True)
+    if sem["problemas"]:
+        for p in sem["problemas"]:
+            cls = "cr" if p["tipo"]=="crit" else "wn"
+            st.markdown(f"""<div class="callout {cls}" style="margin-bottom:6px;">
+              <strong>{"🔴" if p["tipo"]=="crit" else "🟡"} {p["titulo"]}</strong><br>
+              <span style="font-size:12px;">{p["desc"]}</span><br>
+              <span style="font-size:11px;opacity:0.8;">→ {p["accion"]}</span>
+            </div>""", unsafe_allow_html=True)
 
-    # ── PASO 3: Modelo 100 ───────────────────────────────────────
-    elif step == 3:
+    left, right = st.columns([1, 1])
+    with left:
+        renta     = _gv(row,"renta","Renta")
+        ibi       = _gv(row,"ibi_anual","IBI_Anual")
+        amort     = _gv(row,"amortizacion_fiscal","Amortizacion_Fiscal")
+        seguro    = _gv(row,"seguro_anual","Seguro_Anual")
+        comunidad = _gv(row,"comunidad","Comunidad")*12
+        hipoteca  = _gv(row,"intereses_hipoteca","Intereses_Hipoteca")
+        gastos_jur= _gv(row,"gastos_juridicos","Gastos_Juridicos")
+        suministros=_gv(row,"servicios_suministros","Servicios_Suministros")
+        gastos_items = [
+            ("0102","Ingresos íntegros",  renta*12,    True,  "Renta anual"),
+            ("0105","Intereses hipoteca", hipoteca,    hipoteca>0,   "Préstamo vinculado"),
+            ("0106","IBI y tributos",      ibi,         ibi>0,        "Recibo IBI 2024"),
+            ("0107","Comunidad propiet.", comunidad,   comunidad>0,  "Cuota anual"),
+            ("0109","Amortización 3%",    amort,       amort>0,      "3% s/ valor construcción"),
+            ("0110","Seguro hogar+vida",  seguro,      seguro>0,     "Póliza hogar/vida"),
+            ("0111","Suministros",        suministros, suministros>0,"Servicios incluidos"),
+            ("0112","Gastos jurídicos",   gastos_jur,  gastos_jur>0, "Honorarios, gestión"),
+        ]
+        chk_html = ""
+        for cas, label, amt, on, hint in gastos_items:
+            box = '<div class="chk-on">✓</div>' if on else '<div class="chk-off">✗</div>'
+            amt_str = fmt_eur(amt) if amt else "Pendiente"
+            amc = "" if on else "miss"
+            chk_html += f"""<div class="chk-item">
+              {box}<div class="chk-cas">{cas}</div>
+              <div class="chk-lbl">{label}<div class="chk-hint">{hint}</div></div>
+              <div class="chk-amt {amc}">{amt_str}</div>
+            </div>"""
+        faltan = sum(1 for _,_,a,on,_ in gastos_items[1:] if not on)
+        st.markdown(f"""<div class="panel">
+          <div class="panel-head"><span class="panel-title">Gastos deducibles</span>
+            <span style="font-size:11px;color:var(--txm);">{len(gastos_items)-faltan-1}/{len(gastos_items)-1} registrados</span>
+          </div>{chk_html}</div>""", unsafe_allow_html=True)
+
+    with right:
         m = modelo
         casillas = [
-            ("0102", "Rendimiento íntegro del capital inmobiliario", "Suma rentas declaradas",
-             m.get("ingresos", 0), False, False),
-            ("0104", "Gastos de reparación y conservación", "Del diario contable",
-             -m.get("reparaciones", 0), False, False),
-            ("0105", "Intereses de capitales ajenos", "Hipotecas vinculadas",
-             -m.get("intereses", 0), False, False),
-            ("0106", "Tributos y recargos no estatales (IBI)", "IBI anual",
-             -m.get("ibi", 0), False, False),
-            ("0107", "Servicios y suministros (comunidad + seguros)", "Comunidad + seguros + ascensor",
-             -m.get("comunidad_seguros", 0), False, False),
-            ("0109", "Amortización del inmueble", "3% s/ valor construcción",
-             -m.get("amortizacion", 0), False, False),
-            ("0111", "Otros gastos deducibles", "Jurídicos, agencia",
-             -m.get("gastos_juridicos", 0), False, False),
-            ("0146", "RENDIMIENTO NETO", "Suma casillas anteriores",
-             m.get("rend_neto", 0), True, False),
-            ("0150", "Reducción rendimiento neto (orientativa)",
-             "⚠️ VALIDAR — 60% ant. 26/05/2023 · 50% posterior",
-             -m.get("reduccion", 0), False, False),
-            ("0156", "RENDIMIENTO NETO REDUCIDO A INTEGRAR", "Base imponible estimada",
-             m.get("rend_final", 0), False, True),
-            ("0153", "Retenciones practicadas", "",
-             -m.get("retenciones", 0), False, False),
+            ("0102","Rendimiento íntegro","Ingresos anuales",m["ingresos"],False,False),
+            ("0105","Intereses hipoteca","Préstamo vinculado",-m["intereses"],False,False),
+            ("0106","IBI y tributos","Recibo IBI",-m["ibi"],False,False),
+            ("0107","Comunidad + Seguros","Cuota + pólizas",-m["comunidad_seguros"],False,False),
+            ("0104","Reparaciones","Del diario contable",-m["reparaciones"],False,False),
+            ("0109","Amortización 3%","MAX(compra,catastral)×%c×3%",-m["amortizacion"],False,False),
+            ("0111","Otros deducibles","Jurídicos, suministros",-(m["gastos_juridicos"]+m["suministros"]),False,False),
+            ("0149","RENDIMIENTO NETO","",m["rend_neto"],True,False),
+            (f"0150",f"Reducción {m['red_pct']}% (orient.)","⚠️ Validar",-m["reduccion"],False,False),
+            ("0156","BASE IMPONIBLE EST.","Orientativa",m["rend_final"],False,True),
+            ("0153","Retenciones pract.","",  -m["retenciones"],False,False),
         ]
-
-        filas_m100 = ""
+        filas_m = ""
         for cas, label, sub, val, is_sum, is_final in casillas:
             tr_cls = "final" if is_final else ("sum" if is_sum else "")
-            val_color = ""
-            if is_final: val_color = "color:var(--pa-accent);"
-            elif is_sum: val_color = "color:var(--pa-text-strong);"
-            elif val < 0: val_color = "color:var(--pa-critical);"
-            elif val > 0: val_color = "color:var(--pa-ok);"
-
+            vc = ""
+            if is_final: vc = "style='color:var(--acc2);'"
+            elif is_sum: vc = "style='color:var(--tx2);'"
+            elif val < 0: vc = "style='color:var(--cr);'"
+            elif val > 0: vc = "style='color:var(--ok);'"
             sub_html = f'<div class="l-sub">{sub}</div>' if sub else ""
-            filas_m100 += f"""<tr class="{tr_cls}">
+            filas_m += f"""<tr class="{tr_cls}">
               <td><span class="cas">{cas}</span></td>
               <td>{label}{sub_html}</td>
-              <td class="r" style="{val_color}">{fmt_eur(val)}</td>
+              <td class="r" {vc}>{fmt_eur(val)}</td>
             </tr>"""
+        st.markdown(f"""<table class="m100">
+          <thead><tr><th style="width:55px;">Casilla</th><th>Descripción</th><th class="r">Importe</th></tr></thead>
+          <tbody>{filas_m}</tbody></table>""", unsafe_allow_html=True)
 
-        st.markdown(f"""
-        <div class="wz-card">
-          <div class="wz-body">
-            <div class="wz-title">Modelo 100 · Pre-relleno automático</div>
-            <div class="wz-sub">Casillas calculadas desde Nolasco Capital. Validar reducción con criterio profesional antes de presentar.</div>
-        """, unsafe_allow_html=True)
+    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+    e1,e2,_ = st.columns([1,1,2])
+    with e1:
+        gen_pdf = st.button("📄 Generar PDF", key="fic_pdf", use_container_width=True, type="primary")
+        if gen_pdf or "fh_pdf_export" in st.session_state:
+            if gen_pdf:
+                try:
+                    import reportlab
+                    from fiscal_export import generar_pdf_global
+                    fila = _build_fila_export(row, df_mov, modelo)
+                    pdf  = generar_pdf_global([fila], _build_totales_export([fila]),
+                        nombre_propietario=cliente["nombre"],
+                        nombre_asesoria=st.session_state.get("fh_asesor",{}).get("despacho",""),
+                        año_fiscal=2025)
+                    st.session_state["fh_pdf_export"] = pdf.getvalue() if pdf else _pdf_simple(nombre_inm, cliente["nombre"], modelo)
+                except:
+                    st.session_state["fh_pdf_export"] = _pdf_simple(nombre_inm, cliente["nombre"], modelo)
+            if "fh_pdf_export" in st.session_state:
+                st.download_button("⬇️ Descargar PDF", data=st.session_state["fh_pdf_export"],
+                    file_name=f"IRPF_{nombre_inm[:20].replace(' ','_')}_2025.pdf",
+                    mime="application/pdf", use_container_width=True, key="fic_pdf_dl")
+    with e2:
+        if st.button("✅ Marcar revisado", key="fic_ok", use_container_width=True):
+            if "fh_validaciones" not in st.session_state: st.session_state.fh_validaciones = {}
+            if cliente_id not in st.session_state.fh_validaciones: st.session_state.fh_validaciones[cliente_id] = {}
+            st.session_state.fh_validaciones[cliente_id][nombre_inm] = {
+                "estado":"ok","manual":False,"fecha":date.today().strftime("%d/%m/%Y")}
+            st.session_state.fh_menu = "cliente"
+            st.session_state.pop("fh_inmueble_sel", None)
+            st.session_state.pop("fh_pdf_export", None)
+            st.rerun()
 
-        st.markdown(f"""
-        <div class="wz-callout warn" style="margin-bottom:20px;">
-          <strong>⚠️ Reducción (casilla 0150)</strong><br>
-          Orientativa. Contratos anteriores al 26/05/2023 → 60%. Posteriores → 50% general.
-          Verificar si aplica 70% (zona tensionada + joven) o 90% (rebaja &gt;5% sobre contrato anterior).
-        </div>
-        <table class="m100-table">
-          <thead><tr>
-            <th style="width:60px;">Casilla</th>
-            <th>Descripción</th>
-            <th class="r">Importe</th>
-          </tr></thead>
-          <tbody>{filas_m100}</tbody>
-        </table>
+def _pdf_simple(nombre_inm, nombre_cliente, modelo):
+    from reportlab.pdfgen import canvas as rlc
+    from reportlab.lib.pagesizes import A4
+    buf = io.BytesIO()
+    c = rlc.Canvas(buf, pagesize=A4); w,h = A4
+    c.setFont("Helvetica-Bold",14); c.drawString(50,h-60,f"FiscalHub — IRPF 2025 · {nombre_cliente}")
+    c.setFont("Helvetica-Bold",12); c.drawString(50,h-90,f"Inmueble: {nombre_inm}")
+    c.setFont("Helvetica",11); y = h-130
+    for lbl,val in [("0102 Ingresos:",fmt_eur(modelo.get("ingresos",0))),
+                    ("0149 Rend. neto:",fmt_eur(modelo.get("rend_neto",0))),
+                    (f"0150 Reducción {modelo.get('red_pct',50)}%:",fmt_eur(-modelo.get("reduccion",0))),
+                    ("0156 Base imp. est.:",fmt_eur(modelo.get("rend_final",0))),
+                    ("0153 Retenciones:",fmt_eur(-modelo.get("retenciones",0)))]:
+        c.drawString(50,y,f"{lbl}  {val}"); y-=22
+    c.setFont("Helvetica-Oblique",9)
+    c.drawString(50,50,"Documento informativo — validar con asesor fiscal")
+    c.save(); buf.seek(0)
+    return buf.getvalue()
+
+def _build_fila_export(row, df_mov, modelo):
+    return {
+        "inmueble": str(row.get("nombre") or row.get("Nombre","")),
+        "ref_catastral": str(row.get("ref_catastral") or "N/A"),
+        "tipo": str(row.get("tipo_arrendamiento") or "Larga Duración"),
+        "inquilino": str(row.get("inquilino") or ""),
+        "nif_inquilino": str(row.get("nif_inquilino") or ""),
+        "dias": modelo.get("dias",365),
+        "ingresos": modelo["ingresos"],"intereses": modelo["intereses"],
+        "reparaciones": modelo["reparaciones"],"ibi": modelo["ibi"],
+        "comunidad_seguros": modelo["comunidad_seguros"],"suministros": modelo["suministros"],
+        "gastos_juridicos": modelo["gastos_juridicos"],"amortizacion": modelo["amortizacion"],
+        "amort_detalle":"","total_gastos": modelo["total_gastos"],
+        "rend_neto": modelo["rend_neto"],"reduccion_pct": modelo["red_pct"],
+        "reduccion_imp": modelo["reduccion"],"rend_final": modelo["rend_final"],
+        "retenciones": modelo["retenciones"],"nota_reduccion":"Orientativa","ahorro_potencial":0,
+    }
+
+def _build_totales_export(filas):
+    keys=["ingresos","intereses","reparaciones","ibi","comunidad_seguros","suministros",
+          "gastos_juridicos","amortizacion","total_gastos","rend_neto","reduccion_imp","rend_final","retenciones"]
+    t={k:sum(f.get(k,0) for f in filas) for k in keys}
+    t.update({"n_inmuebles":len(filas),"año_fiscal":2025})
+    return t
+
+# ── RESUMEN GLOBAL ────────────────────────────────────────────────
+def pantalla_resumen_global():
+    cliente_id = st.session_state.get("fh_cliente_sel")
+    cartera    = st.session_state.get("fh_cartera", [])
+    cliente    = next((c for c in cartera if c["id"]==cliente_id), None)
+    if not cliente: st.warning("Selecciona un cliente."); return
+
+    df_inm = cliente["df_inm"]; df_mov = cliente["df_mov"]; nombre = cliente["nombre"]
+    vlds   = st.session_state.get("fh_validaciones",{}).get(cliente_id,{})
+    modelo = calcular_modelo100_global(df_inm, df_mov)
+    col_n  = "nombre" if "nombre" in df_inm.columns else "Nombre"
+    nombres= [str(r.get(col_n,"")) for _,r in df_inm.iterrows()] if not df_inm.empty else []
+    n_manual = sum(1 for nm in nombres if vlds.get(nm,{}).get("manual",False))
+
+    if st.button("← Volver al cliente", key="gl_back"):
+        st.session_state.fh_menu = "cliente"; st.rerun()
+
+    st.markdown(f"""<div style="margin-bottom:14px;">
+      <div class="fh-ey">Resumen global IRPF 2025</div>
+      <div class="fh-title">{nombre}</div>
+      <div class="fh-sub">{len(nombres)} inmuebles · Modelo 100 consolidado</div>
+    </div>""", unsafe_allow_html=True)
+
+    if n_manual > 0:
+        st.markdown(f"""<div class="callout wn">
+          <strong>⚠️ {n_manual} inmueble{"s" if n_manual>1 else ""} con validación manual</strong> —
+          Verificar antes de presentar a la AEAT.
         </div>""", unsafe_allow_html=True)
 
-        st.markdown('<div class="wz-foot">', unsafe_allow_html=True)
-        c_l, c_r = st.columns(2)
-        with c_l:
-            if st.button("← Gastos deducibles", key="wz3_prev", use_container_width=True):
-                st.session_state.fh_wizard_step = 2
-                st.rerun()
-        with c_r:
-            if st.button("Siguiente → Exportar", key="wz3_next",
-                         use_container_width=True, type="primary"):
-                st.session_state.fh_wizard_step = 4
-                st.rerun()
-        st.markdown("</div></div>", unsafe_allow_html=True)
+    k1,k2,k3,k4 = st.columns(4)
+    with k1: st.markdown(f"""<div class="kpi grn"><div class="kpi-lbl">0102 Ingresos</div>
+      <div class="kpi-val ok">{fmt_eur(modelo.get("ingresos",0))}</div>
+      <div class="kpi-sub">{len(nombres)} inmuebles</div></div>""", unsafe_allow_html=True)
+    with k2: st.markdown(f"""<div class="kpi red"><div class="kpi-lbl">Gastos deducibles</div>
+      <div class="kpi-val cr">−{fmt_eur(modelo.get("total_gastos",0))}</div></div>""", unsafe_allow_html=True)
+    with k3: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">0149 Rend. neto</div>
+      <div class="kpi-val">{fmt_eur(modelo.get("rend_neto",0))}</div></div>""", unsafe_allow_html=True)
+    with k4: st.markdown(f"""<div class="kpi gold"><div class="kpi-lbl">0156 Base imp. est.</div>
+      <div class="kpi-val ac">{fmt_eur(modelo.get("rend_final",0))}</div>
+      <div class="kpi-sub">⚠️ Orientativa</div></div>""", unsafe_allow_html=True)
 
-    # ── PASO 4: Exportar ─────────────────────────────────────────
-    elif step == 4:
-        m = cliente["modelo100"]
-        asesor = st.session_state.get("fh_asesor", {})
-        nombre_asesor = asesor.get("despacho", asesor.get("nombre", ""))
+    st.markdown('<div class="fh-section">Desglose por inmueble</div>', unsafe_allow_html=True)
+    if not df_inm.empty:
+        cards_html = '<div class="global-grid">'
+        for _,row in df_inm.iterrows():
+            nm     = str(row.get(col_n,""))
+            m      = calcular_modelo100_inmueble(row, df_mov)
+            manual = vlds.get(nm,{}).get("manual",False)
+            tipo   = str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento","Larga Duración"))
+            inq    = str(row.get("inquilino") or row.get("Inquilino","—"))
+            roof_cls  = "manual" if manual else ""
+            badge_html = f'<span class="global-card-badge manual">✎ Manual</span>' if manual else \
+                         f'<span class="global-card-badge">✓ Automático</span>'
+            cards_html += f"""
+            <div class="global-card">
+              <div class="global-card-roof {roof_cls}"></div>
+              <div class="global-card-body">
+                <div class="global-card-name">{nm}</div>
+                <div class="global-card-meta">{inq[:20]} · {tipo}</div>
+                <div class="global-card-metrics">
+                  <div class="global-metric">
+                    <div class="global-metric-lbl">0102 Ingresos</div>
+                    <div class="global-metric-val ok">{fmt_eur(m["ingresos"])}</div>
+                  </div>
+                  <div class="global-metric">
+                    <div class="global-metric-lbl">Gastos totales</div>
+                    <div class="global-metric-val cr">−{fmt_eur(m["total_gastos"])}</div>
+                  </div>
+                  <div class="global-metric">
+                    <div class="global-metric-lbl">0149 Rend. neto</div>
+                    <div class="global-metric-val tx">{fmt_eur(m["rend_neto"])}</div>
+                  </div>
+                  <div class="global-metric">
+                    <div class="global-metric-lbl">Reducción {m["red_pct"]}%</div>
+                    <div class="global-metric-val tx">−{fmt_eur(m["reduccion"])}</div>
+                  </div>
+                </div>
+                <div class="global-card-footer">
+                  <div>
+                    <div class="global-card-base-lbl">0156 Base imp. estimada</div>
+                    <div class="global-card-base-val">{fmt_eur(m["rend_final"])}</div>
+                  </div>
+                  {badge_html}
+                </div>
+              </div>
+            </div>"""
+        cards_html += '</div>'
+        st.markdown(cards_html, unsafe_allow_html=True)
 
-        st.markdown(f"""
-        <div class="wz-card">
-          <div class="wz-body">
-            <div class="wz-title">Exportar documentos</div>
-            <div class="wz-sub">Resumen fiscal de {cliente['nombre']} · IRPF 2025</div>
-        """, unsafe_allow_html=True)
+    st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
+    asesor = st.session_state.get("fh_asesor",{})
+    nombre_asesor = asesor.get("despacho", asesor.get("nombre",""))
+    e1,e2 = st.columns(2)
+    with e1:
+        if st.button("📄 Exportar PDF completo", type="primary", use_container_width=True, key="gl_pdf"):
+            try:
+                import reportlab; from fiscal_export import generar_pdf_global
+                filas = [_build_fila_export(row,df_mov,calcular_modelo100_inmueble(row,df_mov)) for _,row in df_inm.iterrows()]
+                totales = _build_totales_export(filas)
+                pdf = generar_pdf_global(filas,totales,nombre_propietario=nombre,nombre_asesoria=nombre_asesor,año_fiscal=2025)
+                st.session_state["fh_gl_pdf"] = pdf.getvalue() if pdf else _pdf_simple(f"Global ({len(nombres)} inm.)",nombre,modelo)
+            except: st.session_state["fh_gl_pdf"] = _pdf_simple(f"Global ({len(nombres)} inm.)",nombre,modelo)
+        if "fh_gl_pdf" in st.session_state:
+            st.download_button("⬇️ Descargar PDF",data=st.session_state["fh_gl_pdf"],
+                file_name=f"IRPF_{nombre.replace(' ','_')}_2025_global.pdf",
+                mime="application/pdf",use_container_width=True,key="gl_pdf_dl")
+    with e2:
+        if st.button("📊 Exportar Excel", use_container_width=True, key="gl_xlsx"):
+            try:
+                from fiscal_export import generar_excel_asesor
+                filas = [_build_fila_export(row,df_mov,calcular_modelo100_inmueble(row,df_mov)) for _,row in df_inm.iterrows()]
+                xlsx = generar_excel_asesor(_build_totales_export(filas),_build_totales_export(filas),
+                    nombre_propietario=nombre,nombre_asesoria=nombre_asesor,año_fiscal=2025)
+                if xlsx: st.session_state["fh_gl_xlsx"] = xlsx.getvalue()
+            except Exception as e: st.error(f"Error Excel: {e}")
+        if "fh_gl_xlsx" in st.session_state:
+            st.download_button("⬇️ Descargar Excel",data=st.session_state["fh_gl_xlsx"],
+                file_name=f"IRPF_{nombre.replace(' ','_')}_2025.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,key="gl_xlsx_dl")
 
-        # Resumen cifras finales
-        c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            st.markdown(f"""<div class="wz-field">
-              <div class="wz-field-label">Ingresos íntegros (0102)</div>
-              <div class="wz-field-value mono" style="color:var(--pa-ok);">{fmt_eur(m.get('ingresos',0))}</div>
-            </div>""", unsafe_allow_html=True)
-        with c2:
-            st.markdown(f"""<div class="wz-field">
-              <div class="wz-field-label">Total gastos (0107)</div>
-              <div class="wz-field-value mono" style="color:var(--pa-critical);">−{fmt_eur(m.get('total_gastos',0))}</div>
-            </div>""", unsafe_allow_html=True)
-        with c3:
-            st.markdown(f"""<div class="wz-field">
-              <div class="wz-field-label">Rend. neto (0149)</div>
-              <div class="wz-field-value mono">{fmt_eur(m.get('rend_neto',0))}</div>
-            </div>""", unsafe_allow_html=True)
-        with c4:
-            st.markdown(f"""<div class="wz-field">
-              <div class="wz-field-label">Base imponible est. (0156)</div>
-              <div class="wz-field-value mono" style="color:var(--pa-accent);">{fmt_eur(m.get('rend_final',0))}</div>
-            </div>""", unsafe_allow_html=True)
-
-        st.markdown("""<div class="wz-callout warn" style="margin-top:16px;margin-bottom:20px;">
-          <strong>⚠️ Reducción orientativa</strong> — Validar porcentaje exacto antes de presentar a la AEAT.
-        </div>""", unsafe_allow_html=True)
-        st.markdown("</div></div>", unsafe_allow_html=True)
-
-        # ── Botones de export ────────────────────────────────────
-        def _construir_filas_export(df_inm):
-            filas = []
-            for _, row in df_inm.iterrows():
-                col_n = "nombre" if "nombre" in df_inm.columns else "Nombre"
-                filas.append({
-                    "inmueble":          str(row.get(col_n, "")),
-                    "ref_catastral":     str(row.get("ref_catastral") or row.get("Ref_Catastral","N/A")),
-                    "tipo":              str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento","Larga Duración")),
-                    "inquilino":         str(row.get("inquilino") or row.get("Inquilino","")),
-                    "nif_inquilino":     str(row.get("nif_inquilino") or row.get("NIF_Inquilino","")),
-                    "dias":              int(sf(row.get("dias_arrendados_anio") or row.get("Dias_Arrendados_Anio", 365) or 365)),
-                    "ingresos":          sf(row.get("renta") or row.get("Renta", 0)) * 12,
-                    "intereses":         sf(row.get("intereses_hipoteca") or row.get("Intereses_Hipoteca", 0)),
-                    "reparaciones":      0.0,
-                    "ibi":               sf(row.get("ibi_anual") or row.get("IBI_Anual", 0)),
-                    "comunidad_seguros": sf(row.get("comunidad") or row.get("Comunidad", 0)) * 12,
-                    "suministros":       0.0,
-                    "gastos_juridicos":  sf(row.get("gastos_juridicos") or row.get("Gastos_Juridicos", 0)),
-                    "amortizacion":      sf(row.get("amortizacion_fiscal") or row.get("Amortizacion_Fiscal", 0)),
-                    "amort_detalle":     "",
-                    "total_gastos":      0.0,
-                    "rend_neto":         0.0,
-                    "reduccion_pct":     60,
-                    "reduccion_imp":     0.0,
-                    "rend_final":        0.0,
-                    "retenciones":       sf(row.get("retenciones_irpf") or row.get("Retenciones_IRPF", 0)),
-                    "nota_reduccion":    "Validar con asesor",
-                    "ahorro_potencial":  0.0,
-                })
-            return filas
-
-        def _construir_totales_export(m):
-            return {
-                "n_inmuebles":       len(df_inm),
-                "año_fiscal":        2025,
-                "ingresos":          m.get("ingresos", 0),
-                "intereses":         m.get("intereses", 0),
-                "reparaciones":      m.get("reparaciones", 0),
-                "ibi":               m.get("ibi", 0),
-                "comunidad_seguros": m.get("comunidad_seguros", 0),
-                "suministros":       m.get("suministros", 0),
-                "gastos_juridicos":  m.get("gastos_juridicos", 0),
-                "amortizacion":      m.get("amortizacion", 0),
-                "total_gastos":      m.get("total_gastos", 0),
-                "rend_neto":         m.get("rend_neto", 0),
-                "reduccion_imp":     m.get("reduccion", 0),
-                "rend_final":        m.get("rend_final", 0),
-                "retenciones":       m.get("retenciones", 0),
-            }
-
-        col1, col2 = st.columns(2)
-        with col1:
-            gen_pdf = st.button("📄 Generar PDF", use_container_width=True,
-                                type="primary", key="wz4_pdf")
-            if gen_pdf or "fh_pdf_export" in st.session_state:
-                if gen_pdf:
-                    try:
-                        from fiscal_export import generar_pdf_global
-                        filas = _construir_filas_export(df_inm)
-                        totales = _construir_totales_export(m)
-                        pdf = generar_pdf_global(filas, totales,
-                                                 nombre_propietario=cliente["nombre"],
-                                                 nombre_asesoria=nombre_asesor,
-                                                 año_fiscal=2025)
-                        if pdf:
-                            st.session_state["fh_pdf_export"] = pdf.getvalue()
-                            st.session_state["fh_pdf_nombre"] = \
-                                f"ModeloIRPF_{cliente['nombre'].replace(' ','_')}_2025.pdf"
-                            st.success("✓ PDF generado")
-                        else:
-                            st.error("El PDF no se generó — verifica fiscal_export.py")
-                    except Exception as e:
-                        st.error(f"Error PDF: {e}")
-
-                if "fh_pdf_export" in st.session_state:
-                    st.download_button(
-                        "⬇️ Descargar PDF",
-                        data=st.session_state["fh_pdf_export"],
-                        file_name=st.session_state.get("fh_pdf_nombre", "IRPF_2025.pdf"),
-                        mime="application/pdf",
-                        use_container_width=True,
-                        key="wz4_pdf_dl"
-                    )
-
-        with col2:
-            gen_xlsx = st.button("📊 Generar Excel", use_container_width=True,
-                                 key="wz4_xlsx")
-            if gen_xlsx or "fh_xlsx_export" in st.session_state:
-                if gen_xlsx:
-                    try:
-                        from fiscal_export import generar_excel_asesor
-                        filas = _construir_filas_export(df_inm)
-                        totales = _construir_totales_export(m)
-                        xlsx = generar_excel_asesor(filas, totales,
-                                                    nombre_propietario=cliente["nombre"],
-                                                    nombre_asesoria=nombre_asesor,
-                                                    año_fiscal=2025)
-                        if xlsx:
-                            st.session_state["fh_xlsx_export"] = xlsx.getvalue()
-                            st.session_state["fh_xlsx_nombre"] = \
-                                f"IRPF_{cliente['nombre'].replace(' ','_')}_2025.xlsx"
-                            st.success("✓ Excel generado")
-                        else:
-                            st.error("El Excel no se generó")
-                    except Exception as e:
-                        st.error(f"Error Excel: {e}")
-
-                if "fh_xlsx_export" in st.session_state:
-                    st.download_button(
-                        "⬇️ Descargar Excel",
-                        data=st.session_state["fh_xlsx_export"],
-                        file_name=st.session_state.get("fh_xlsx_nombre", "IRPF_2025.xlsx"),
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True,
-                        key="wz4_xlsx_dl"
-                    )
-
-        c1, c2 = st.columns(2)
-        st.markdown('<div class="wz-foot">', unsafe_allow_html=True)
-        c_l, c_r = st.columns(2)
-        with c_l:
-            if st.button("← Modelo 100", key="wz4_prev", use_container_width=True):
-                st.session_state.fh_wizard_step = 3
-                st.rerun()
-        with c_r:
-            if st.button("✓ Marcar como revisado", key="wz4_done",
-                         use_container_width=True, type="primary"):
-                st.session_state.fh_menu = "cartera"
-                st.session_state.pop("fh_cliente_sel", None)
-                st.session_state.pop("fh_wizard_step", None)
-                st.session_state.pop("fh_pdf_export", None)
-                st.session_state.pop("fh_xlsx_export", None)
-                st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-
-# ── PANTALLA: Alertas ────────────────────────────────────────────
+# ── ALERTAS ───────────────────────────────────────────────────────
 def pantalla_alertas():
     cartera = st.session_state.get("fh_cartera", [])
     todas = []
     for c in cartera:
-        for a in c.get("alertas", []):
+        for a in c.get("alertas",[]):
             todas.append({**a, "cliente_nombre": c["nombre"], "cliente_id": c["id"]})
+    todas.sort(key=lambda x:(0 if x["tipo"]=="crit" else 1))
+    n_cr = len([a for a in todas if a["tipo"]=="crit"])
+    n_wn = len([a for a in todas if a["tipo"]=="warn"])
 
-    todas.sort(key=lambda x: (0 if x["tipo"] == "crit" else 1))
-    n_crit = len([a for a in todas if a["tipo"] == "crit"])
-    n_warn = len([a for a in todas if a["tipo"] == "warn"])
-
-    st.markdown(f"""
-    <div style="margin-bottom:18px;">
-      <div class="fh-eyebrow">Cartera completa · ordenadas por urgencia</div>
-      <div class="fh-page-title">Alertas fiscales</div>
-      <div class="fh-sub-text">{len(todas)} alertas activas · {n_crit} críticas · {n_warn} a revisar</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    k1, k2, k3 = st.columns(3)
-    with k1:
-        st.markdown(f"""<div class="fh-kpi">
-          <div class="fh-kpi-label">Críticas abiertas</div>
-          <div class="fh-kpi-value mono crit">{n_crit}</div>
-          <div class="fh-kpi-sub">Acción inmediata antes del 30 jun</div>
-        </div>""", unsafe_allow_html=True)
-    with k2:
-        st.markdown(f"""<div class="fh-kpi">
-          <div class="fh-kpi-label">A revisar</div>
-          <div class="fh-kpi-value mono" style="color:var(--pa-warn);">{n_warn}</div>
-          <div class="fh-kpi-sub">Esta semana</div>
-        </div>""", unsafe_allow_html=True)
-    with k3:
-        impacto_total = sum(a.get("impacto", 0) for a in todas if a.get("impacto", 0) > 0)
-        st.markdown(f"""<div class="fh-kpi">
-          <div class="fh-kpi-label">Impacto fiscal recuperable</div>
-          <div class="fh-kpi-value mono accent">{fmt_eur(impacto_total)}</div>
-          <div class="fh-kpi-sub">Suma de impactos cuantificables</div>
-        </div>""", unsafe_allow_html=True)
-
-    st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
-
-    if not todas:
-        st.success("✅ Sin alertas activas en la cartera.")
-        return
-
-    alertas_html = '<div class="fh-panel">'
-    for a in todas:
-        rail_cls = "fh-alert-rail-crit" if a["tipo"] == "crit" else "fh-alert-rail-warn"
-        tipo_label = "Crítica" if a["tipo"] == "crit" else "Revisar"
-        imp = fmt_eur(a["impacto"]) if a.get("impacto", 0) > 0 else "—"
-        alertas_html += f"""
-        <div class="fh-alert">
-          <div class="{rail_cls}"></div>
-          <div class="fh-alert-client">
-            <div class="fh-alert-name">{a["cliente_nombre"].split()[0]} {a["cliente_nombre"].split()[-1]}</div>
-            <div class="fh-alert-prop">{a["inmueble"]}</div>
-          </div>
-          <div class="fh-alert-main">
-            <div class="fh-alert-type">{tipo_label} · {a["categoria"]}</div>
-            <div class="fh-alert-title">{a["titulo"]}</div>
-          </div>
-          <div class="fh-alert-action">
-            <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--pa-text-dim);">Acción</div>
-            <div style="margin-top:3px;font-size:12px;">{a["accion"]}</div>
-            <div style="margin-top:3px;font-size:11px;color:var(--pa-accent);font-family:var(--pa-font-mono);">{imp}</div>
-          </div>
-          <div class="fh-alert-cta"></div>
-        </div>"""
-    alertas_html += "</div>"
-    st.markdown(alertas_html, unsafe_allow_html=True)
-
-# ── PANTALLA: Exportar ───────────────────────────────────────────
-def pantalla_exportar():
-    cartera = st.session_state.get("fh_cartera", [])
-
-    st.markdown("""
-    <div style="margin-bottom:18px;">
-      <div class="fh-eyebrow">Generación de entregables</div>
-      <div class="fh-page-title">Exportar</div>
-      <div class="fh-sub-text">PDFs Modelo 100 y resúmenes Excel para presentar al cliente o a la AEAT.</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("""<div class="fh-panel">
-          <div class="fh-panel-head"><span class="fh-panel-title">Exportar por cliente</span></div>
-          <div class="fh-panel-body">""", unsafe_allow_html=True)
-
-        if cartera:
-            cliente_names = [c["nombre"] for c in cartera]
-            sel = st.selectbox("Selecciona cliente:", cliente_names, key="exp_sel")
-            cliente_sel = next((c for c in cartera if c["nombre"] == sel), None)
-            if cliente_sel and st.button("📄 Generar PDF + Excel", use_container_width=True, type="primary"):
-                st.info(f"Generando documentos para {sel}... Usa el wizard del cliente para exportar.")
-        else:
-            st.info("Sin clientes vinculados.")
-        st.markdown("</div></div>", unsafe_allow_html=True)
-
-    with c2:
-        st.markdown("""<div class="fh-panel">
-          <div class="fh-panel-head"><span class="fh-panel-title">Historial de exportaciones</span></div>
-          <div class="fh-panel-body">""", unsafe_allow_html=True)
-        st.markdown('<div style="color:var(--pa-text-mute);font-size:12px;">Sin exportaciones registradas.</div>',
-                    unsafe_allow_html=True)
-        st.markdown("</div></div>", unsafe_allow_html=True)
-
-# ── PANTALLA: Vincular ───────────────────────────────────────────
-def pantalla_vincular():
-    st.markdown("""
-    <div style="margin-bottom:18px;">
-      <div class="fh-eyebrow">Conectar con Nolasco Capital</div>
-      <div class="fh-page-title">Vincular cliente</div>
-      <div class="fh-sub-text">Introduce el código de 6 dígitos que el propietario genera desde Nolasco Capital → Privacidad → Compartir con Asesor.</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""<div class="wz-callout info" style="max-width:600px;margin-bottom:24px;">
-      <strong>¿Cómo funciona?</strong><br>
-      El propietario entra en Nolasco Capital → pestaña Privacidad → "Compartir con Asesor" → genera un código de 6 caracteres.
-      Ese código te lo manda a ti. Introdúcelo aquí y sus datos aparecerán en tu cartera automáticamente.
+    st.markdown(f"""<div style="margin-bottom:16px;">
+      <div class="fh-ey">Cartera completa · por urgencia</div>
+      <div class="fh-title">Alertas fiscales</div>
+      <div class="fh-sub">{len(todas)} alertas · {n_cr} críticas · {n_wn} a revisar</div>
     </div>""", unsafe_allow_html=True)
 
-    codigo = st.text_input("Código del propietario:", max_chars=10,
-                            placeholder="Ej: AQ-2847", key="vincular_codigo")
-    if st.button("🔗 Vincular propietario", use_container_width=True,
-                 type="primary", key="vincular_btn"):
+    k1,k2,k3 = st.columns(3)
+    with k1: st.markdown(f"""<div class="kpi red"><div class="kpi-lbl">Críticas</div>
+      <div class="kpi-val cr">{n_cr}</div><div class="kpi-sub">Antes del 30 jun</div></div>""", unsafe_allow_html=True)
+    with k2: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">A revisar</div>
+      <div class="kpi-val" style="color:var(--wn);">{n_wn}</div></div>""", unsafe_allow_html=True)
+    with k3:
+        imp = sum(a.get("impacto",0) for a in todas if a.get("impacto",0)>0)
+        st.markdown(f"""<div class="kpi gold"><div class="kpi-lbl">Impacto</div>
+          <div class="kpi-val ac">{fmt_eur(imp)}</div></div>""", unsafe_allow_html=True)
+
+    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+    if not todas: st.success("✅ Sin alertas activas."); return
+
+    # Separar críticas y medias
+    criticas = [a for a in todas if a["tipo"] == "crit"]
+    medias   = [a for a in todas if a["tipo"] == "warn"]
+
+    def _render_cards(lista):
+        cards_html = '<div class="alert-grid">'
+        for a in lista:
+            tc   = "cr" if a["tipo"]=="crit" else "wn"
+            tipo_label = "⚠️ Crítica" if a["tipo"]=="crit" else "◔ Revisar"
+            imp  = fmt_eur(a["impacto"]) if a.get("impacto",0)>0 else ""
+            nm   = a["cliente_nombre"]
+            inm  = a.get("inmueble","")[:35]
+            titulo = a["titulo"]
+            desc   = a.get("desc","")[:100]
+            accion = a.get("accion","")[:60]
+            cards_html += f"""
+            <div class="alert-card">
+              <div class="alert-card-top {tc}"></div>
+              <div class="alert-card-body">
+                <div class="alert-card-header">
+                  <span class="alert-card-tipo {tc}">{tipo_label}</span>
+                  {f'<span class="alert-card-imp">{imp}</span>' if imp else ''}
+                </div>
+                <div class="alert-card-client">{nm}</div>
+                <div class="alert-card-inm">📍 {inm}</div>
+                <div class="alert-card-title">{titulo}</div>
+                <div class="alert-card-desc">{desc}</div>
+                <div class="alert-card-action">→ {accion}</div>
+              </div>
+            </div>"""
+        cards_html += '</div>'
+        return cards_html
+
+    if criticas:
+        st.markdown('<div class="fh-section">🔴 Críticas — acción urgente</div>', unsafe_allow_html=True)
+        st.markdown(_render_cards(criticas), unsafe_allow_html=True)
+
+    if medias:
+        st.markdown('<div class="fh-section" style="margin-top:20px;">🟡 A revisar esta semana</div>', unsafe_allow_html=True)
+        st.markdown(_render_cards(medias), unsafe_allow_html=True)
+
+# ── EXPORTAR ──────────────────────────────────────────────────────
+def pantalla_exportar():
+    cartera = st.session_state.get("fh_cartera",[])
+    st.markdown("""<div style="margin-bottom:16px;">
+      <div class="fh-ey">Generación de entregables</div>
+      <div class="fh-title">Exportar</div>
+      <div class="fh-sub">Selecciona un cliente para generar sus documentos IRPF.</div>
+    </div>""", unsafe_allow_html=True)
+    if cartera:
+        sel = st.selectbox("Cliente:", [c["nombre"] for c in cartera], key="exp_sel")
+        c_sel = next((c for c in cartera if c["nombre"]==sel), None)
+        if c_sel and st.button("🔍 Ir a revisión", type="primary", use_container_width=True, key="exp_go"):
+            st.session_state.fh_cliente_sel = c_sel["id"]
+            st.session_state.fh_menu = "cliente"; st.rerun()
+    else: st.info("Sin clientes vinculados.")
+
+# ── VINCULAR ──────────────────────────────────────────────────────
+def pantalla_vincular():
+    st.markdown("""<div style="margin-bottom:16px;">
+      <div class="fh-ey">Conectar con Nolasco Capital</div>
+      <div class="fh-title">Vincular cliente</div>
+      <div class="fh-sub">Introduce el código de 6 dígitos del propietario.</div>
+    </div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="callout inf" style="max-width:560px;margin-bottom:20px;">
+      <strong>¿Cómo funciona?</strong> El propietario entra en Nolasco Capital →
+      Privacidad → "Compartir con Asesor" → genera un código. Te lo envía y lo introduces aquí.
+    </div>""", unsafe_allow_html=True)
+    codigo = st.text_input("Código:", max_chars=10, placeholder="Ej: 628410", key="vincular_codigo")
+    if st.button("🔗 Vincular", use_container_width=True, type="primary", key="vincular_btn"):
         if codigo.strip():
-            with st.spinner("Verificando código..."):
-                res = vincular_propietario(
-                    st.session_state.fh_user_id,
-                    codigo.strip().upper()
-                )
+            with st.spinner("Verificando..."):
+                res = vincular_propietario(st.session_state.fh_user_id, codigo.strip().upper())
             if res["ok"]:
-                st.success(f"✅ Vinculado correctamente. {res.get('nombre', 'El propietario')} aparecerá en tu cartera.")
-                # Recargar cartera
+                st.success(f"✅ Vinculado — {res.get('nombre','Propietario')} en tu cartera.")
                 vinculos = get_clientes_vinculados(st.session_state.fh_user_id)
                 st.session_state.fh_cartera = construir_cartera(vinculos)
                 st.rerun()
-            else:
-                st.error(f"❌ {res.get('error', 'Código no válido')}")
-        else:
-            st.warning("Introduce un código")
+            else: st.error(f"❌ {res.get('error','Código no válido')}")
+        else: st.warning("Introduce un código")
 
-# ── APP PRINCIPAL ────────────────────────────────────────────────
+# ── MAIN ──────────────────────────────────────────────────────────
 def main():
     st.markdown(CSS, unsafe_allow_html=True)
+    if "fh_logged" not in st.session_state: st.session_state.fh_logged = False
+    if "fh_menu"   not in st.session_state: st.session_state.fh_menu   = "cartera"
 
-    # Estado inicial
-    if "fh_logged" not in st.session_state:
-        st.session_state.fh_logged = False
-    if "fh_menu" not in st.session_state:
-        st.session_state.fh_menu = "cartera"
-
-    # Login
     if not st.session_state.fh_logged:
-        pantalla_login()
-        return
+        pantalla_login(); return
 
-    # Cargar cartera si no está en sesión
     if "fh_cartera" not in st.session_state:
         with st.spinner("Cargando cartera..."):
             vinculos = get_clientes_vinculados(st.session_state.fh_user_id)
             st.session_state.fh_cartera = construir_cartera(vinculos)
 
-    # Sidebar
     with st.sidebar:
         render_sidebar()
 
-    # Contenido principal
-    menu = st.session_state.get("fh_menu", "cartera")
-
+    menu = st.session_state.get("fh_menu","cartera")
     st.markdown('<div class="fh-page">', unsafe_allow_html=True)
-
-    if menu == "cartera":
-        pantalla_cartera()
-    elif menu == "wizard":
-        pantalla_wizard()
-    elif menu == "alertas":
-        pantalla_alertas()
-    elif menu == "exportar":
-        pantalla_exportar()
-    elif menu == "vincular":
-        pantalla_vincular()
-
+    if   menu == "cartera":        pantalla_cartera()
+    elif menu == "cliente":        pantalla_cliente()
+    elif menu == "ficha":          pantalla_ficha_inmueble()
+    elif menu == "resumen_global": pantalla_resumen_global()
+    elif menu == "alertas":        pantalla_alertas()
+    elif menu == "exportar":       pantalla_exportar()
+    elif menu == "vincular":       pantalla_vincular()
     st.markdown("</div>", unsafe_allow_html=True)
-
 
 if __name__ == "__main__":
     main()
