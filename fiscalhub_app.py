@@ -9,6 +9,7 @@ import requests
 import pandas as pd
 from datetime import datetime, date
 import io
+from nolasco_styles import inject_global_css
 
 st.set_page_config(
     page_title="FiscalHub · Nolasco Capital",
@@ -29,201 +30,9 @@ def _hd():
     return {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}",
             "Content-Type": "application/json"}
 
-# ── CSS ──────────────────────────────────────────────────────────
-CSS = """
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-:root{
-  /* Tokens ficahub — coherente con nolasco_styles.py APP="ficahub" */
-  --bg:#F8F7FF;--bg2:#F0EFF9;--sf:#FFFFFF;--sf2:#F5F4FE;--sf3:#EEEDFE;
-  --bd:rgba(83,74,183,0.08);--bd2:rgba(83,74,183,0.15);
-  --acc:#534AB7;--acc2:#3f36a0;--acc-f:rgba(83,74,183,0.10);
-  --acc-light:#EEEDFE;--acc-pastel:#D8D5F8;
-  --tx:#1e293b;--tx2:#0f172a;--txm:#64748B;--txd:#94A3B8;
-  --cr:#DC2626;--cr-b:rgba(220,38,38,0.08);
-  --wn:#D97706;--wn-b:rgba(217,119,6,0.08);
-  --ok:#059669;--ok-b:rgba(5,150,105,0.08);
-  --sb:#1e293b;--sb2:#0f172a;--sbt:#F1F5F9;--sbm:#94A3B8;--sb-acc:#bc84ee;
-  --fu:'DM Sans',system-ui,sans-serif;--fd:'Playfair Display',Georgia,serif;
-}
-*{font-family:var(--fu) !important;}
-.stApp{background:var(--bg) !important;color:var(--tx) !important;}
-section[data-testid="stSidebar"]{background:linear-gradient(180deg,var(--sb) 0%,var(--sb2) 100%) !important;border-right:1px solid rgba(255,255,255,0.06) !important;}
-section[data-testid="stSidebar"] *{color:var(--sbt) !important;}
-.block-container{padding:0 !important;max-width:100% !important;}
-div[data-testid="stVerticalBlock"]{gap:0 !important;}
-.stButton>button{background:var(--sf) !important;border:1px solid var(--bd2) !important;color:var(--acc) !important;font-size:12px !important;border-radius:8px !important;padding:7px 14px !important;font-weight:500 !important;transition:all .2s !important;}
-.stButton>button:hover{background:var(--acc-light) !important;border-color:var(--acc) !important;}
-.stButton>button[kind="primary"]{background:var(--acc) !important;color:white !important;border-color:transparent !important;}
-.stButton>button[kind="primary"]:hover{background:var(--acc2) !important;}
-.stTextInput>div>div>input{background:var(--sf) !important;border:1px solid var(--bd2) !important;color:var(--tx) !important;border-radius:8px !important;font-size:13px !important;padding:8px 12px !important;}
-.stTextInput>div>div>input::placeholder{color:var(--txd) !important;}
-.stTextInput>div>div>input:focus{border-color:var(--acc) !important;box-shadow:0 0 0 3px var(--acc-f) !important;}
-label{color:var(--txm) !important;font-size:12px !important;}
-hr{border-color:var(--bd) !important;}
-h1,h2,h3{font-family:var(--fd) !important;color:var(--tx2) !important;}
-p,li{color:var(--tx) !important;}
-.stTabs [data-baseweb="tab-list"]{background:transparent !important;border-bottom:1px solid var(--bd2) !important;gap:0 !important;}
-.stTabs [data-baseweb="tab"]{background:transparent !important;color:var(--txm) !important;border-bottom:2px solid transparent !important;font-size:12px !important;padding:10px 18px !important;font-weight:500 !important;}
-.stTabs [aria-selected="true"]{color:var(--acc) !important;border-bottom-color:var(--acc) !important;}
-.stRadio>div{flex-direction:row !important;gap:8px !important;}
-.stRadio label{color:var(--txm) !important;font-size:12px !important;}
-.stSelectbox>div>div{background:var(--sf) !important;border:1px solid var(--bd2) !important;border-radius:8px !important;}
-
-/* Sidebar */
-.sb-brand{padding:16px 14px 12px;border-bottom:1px solid rgba(255,255,255,0.08);}
-.sb-nc{width:28px;height:28px;border:1.5px solid var(--sb-acc);color:var(--sb-acc);display:inline-flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:12px;border-radius:4px;font-weight:700;}
-.sb-wordmark{font-family:var(--fd);font-size:18px;color:#F1F5F9;font-weight:700;}
-.sb-tag{font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--sbm);margin-top:5px;padding-left:38px;}
-.sb-advisor{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.08);}
-.sb-avatar{width:32px;height:32px;border-radius:50%;background:rgba(188,132,238,0.18);border:1.5px solid rgba(188,132,238,0.35);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--sb-acc);}
-.sb-irpf{margin:8px 10px 12px;padding:12px;background:rgba(188,132,238,0.08);border:1px solid rgba(188,132,238,0.2);border-radius:8px;}
-.sb-irpf-num{font-family:var(--fd);font-size:24px;font-weight:700;line-height:1.1;}
-.sb-bar{height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:8px;}
-.sb-fill{height:100%;border-radius:2px;}
-
-/* Página */
-.fh-page{padding:24px 28px 60px;}
-.fh-ey{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--txd);margin-bottom:4px;font-weight:600;}
-.fh-title{font-family:var(--fd);font-size:28px;color:var(--tx2);margin-bottom:4px;line-height:1.1;font-weight:700;}
-.fh-sub{font-size:13px;color:var(--txm);margin-bottom:0;}
-.fh-section{font-family:var(--fd);font-size:17px;color:var(--tx2);border-left:3px solid var(--acc);padding-left:12px;margin:24px 0 16px;line-height:1.1;font-weight:600;}
-
-/* KPIs — estilo Nolasco Capital */
-.kpi{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:18px 20px;border-top:3px solid var(--acc);box-shadow:0 2px 8px rgba(0,0,0,0.04);}
-.kpi.red{border-top-color:var(--cr);}
-.kpi.gold{border-top-color:var(--wn);}
-.kpi.grn{border-top-color:var(--ok);}
-.kpi-lbl{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--txd);margin-bottom:8px;font-weight:600;}
-.kpi-val{font-family:var(--fd);font-size:28px;font-weight:700;color:var(--tx2);line-height:1.1;}
-.kpi-val.cr{color:var(--cr);}
-.kpi-val.ac{color:var(--acc);}
-.kpi-val.ok{color:var(--ok);}
-.kpi-sub{font-size:11px;color:var(--txm);margin-top:6px;}
-
-/* Tabla */
-.fh-tbl{width:100%;background:var(--sf);border:1px solid var(--bd);border-radius:12px;border-collapse:separate;border-spacing:0;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
-.fh-tbl thead th{background:var(--acc-light);text-align:left;font-size:9px;letter-spacing:0.10em;text-transform:uppercase;color:var(--acc);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--bd2);}
-.fh-tbl thead th:first-child{border-radius:12px 0 0 0;}
-.fh-tbl thead th:last-child{border-radius:0 12px 0 0;}
-.fh-tbl tbody td{padding:11px 14px;border-bottom:1px solid var(--bd);color:var(--tx);vertical-align:middle;}
-.fh-tbl tbody tr:last-child td{border-bottom:0;}
-.fh-tbl tbody tr:hover td{background:var(--acc-light);}
-.fh-tbl tr.pr td{box-shadow:inset 3px 0 0 var(--cr);}
-.fh-tbl tr.wn td{box-shadow:inset 3px 0 0 var(--wn);}
-.nm{font-weight:600;color:var(--tx2);}
-.mono{font-family:monospace;}
-
-/* Pills */
-.pill-cr{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 10px;border-radius:6px;background:var(--cr-b);color:var(--cr);}
-.pill-wn{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 10px;border-radius:6px;background:var(--wn-b);color:var(--wn);}
-.pill-ok{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 10px;border-radius:6px;background:var(--ok-b);color:var(--ok);}
-.pill-vl{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 10px;border-radius:6px;background:var(--acc-light);color:var(--acc);}
-.dot{width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block;}
-.bc{display:inline-block;min-width:20px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;text-align:center;background:var(--cr-b);color:var(--cr);}
-.bw{display:inline-block;min-width:20px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;text-align:center;background:var(--wn-b);color:var(--wn);}
-.bz{display:inline-block;min-width:20px;padding:1px 6px;border-radius:5px;font-size:10px;color:var(--txd);text-align:center;}
-.ck-ok{color:var(--ok);font-size:12px;font-weight:500;}
-.ck-no{color:var(--cr);font-size:12px;font-weight:500;}
-
-/* Callout */
-.callout{padding:12px 14px;border-radius:8px;border-left:3px solid;margin:10px 0;font-size:13px;}
-.callout.cr{background:var(--cr-b);border-color:var(--cr);}
-.callout.wn{background:var(--wn-b);border-color:var(--wn);}
-.callout.ok{background:var(--ok-b);border-color:var(--ok);}
-.callout.inf{background:var(--acc-light);border-color:var(--acc);}
-
-/* Panel */
-.panel{background:var(--sf);border:1px solid var(--bd);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
-.panel-head{padding:10px 14px;border-bottom:1px solid var(--bd);background:var(--acc-light);border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;}
-.panel-title{font-size:11px;letter-spacing:0.10em;text-transform:uppercase;color:var(--acc);font-weight:600;}
-
-/* Checks */
-.chk-item{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--bd);font-size:12px;}
-.chk-item:last-child{border-bottom:0;}
-.chk-item:nth-child(even){background:var(--sf2);}
-.chk-on{width:14px;height:14px;background:var(--ok);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;flex-shrink:0;}
-.chk-off{width:14px;height:14px;border:1px solid var(--cr);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;color:var(--cr);font-size:10px;flex-shrink:0;}
-.chk-lbl{flex:1;}
-.chk-hint{font-size:10px;color:var(--txd);}
-.chk-cas{font-size:10px;color:var(--txd);min-width:40px;}
-.chk-amt{font-size:12px;color:var(--tx2);min-width:90px;text-align:right;}
-.chk-amt.miss{color:var(--cr);}
-
-/* Modelo 100 */
-.m100{width:100%;background:var(--sf);border:1px solid var(--bd);border-radius:12px;border-collapse:separate;border-spacing:0;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
-.m100 thead th{background:var(--acc-light);font-size:9px;letter-spacing:0.10em;text-transform:uppercase;color:var(--acc);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--bd2);}
-.m100 thead th:first-child{border-radius:12px 0 0 0;}
-.m100 thead th:last-child{border-radius:0 12px 0 0;text-align:right;}
-.m100 tbody td{padding:9px 12px;border-bottom:1px solid var(--bd);color:var(--tx);}
-.m100 tbody td.r{text-align:right;}
-.m100 tbody tr:nth-child(even) td{background:var(--sf2);}
-.m100 tbody tr.sum td{background:var(--acc-light);font-weight:600;border-top:1px solid var(--bd2);}
-.m100 tbody tr.final td{background:var(--acc-pastel);font-weight:600;color:var(--acc2);}
-.cas{color:var(--acc);font-size:10px;}
-.l-sub{font-size:10px;color:var(--txd);margin-top:1px;}
-
-/* Filas de inmuebles */
-.ok-pill{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;background:var(--ok-b);color:var(--ok);}
-.no-pill{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;background:var(--cr-b);color:var(--cr);}
-.inm-row{display:flex;align-items:center;background:var(--sf);border:1px solid var(--bd);border-radius:12px;margin-bottom:8px;overflow:hidden;transition:box-shadow .15s;}
-.inm-row:hover{box-shadow:0 4px 16px rgba(83,74,183,0.1);}
-.inm-rail{width:4px;align-self:stretch;flex-shrink:0;}
-.inm-rail.cr{background:var(--cr);}
-.inm-rail.wn{background:var(--wn);}
-.inm-rail.ok{background:var(--ok);}
-.inm-rail.vl{background:var(--acc);}
-.inm-body{flex:1;padding:10px 14px;}
-.inm-name{font-size:13px;font-weight:600;color:var(--tx2);}
-.inm-meta{font-size:10px;color:var(--txd);margin-top:1px;}
-.inm-alerts{font-size:11px;color:var(--txm);margin-top:3px;}
-.inm-metrics{display:flex;gap:16px;}
-.inm-metric-lbl{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);}
-.inm-metric-val{font-size:13px;font-weight:600;color:var(--tx2);}
-
-/* ── Cards Alertas ── */
-.alert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:4px;}
-.alert-card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:box-shadow .15s,transform .15s;}
-.alert-card:hover{box-shadow:0 6px 20px rgba(83,74,183,0.1);transform:translateY(-2px);}
-.alert-card-top{height:4px;width:100%;}
-.alert-card-top.cr{background:var(--cr);}
-.alert-card-top.wn{background:var(--wn);}
-.alert-card-body{padding:14px 16px 16px;}
-.alert-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.alert-card-tipo{font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:2px 7px;border-radius:6px;}
-.alert-card-tipo.cr{background:var(--cr-b);color:var(--cr);}
-.alert-card-tipo.wn{background:var(--wn-b);color:var(--wn);}
-.alert-card-imp{font-size:11px;font-weight:600;color:var(--acc);}
-.alert-card-client{font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:1px;}
-.alert-card-inm{font-size:10px;color:var(--txd);margin-bottom:10px;}
-.alert-card-title{font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px;line-height:1.3;}
-.alert-card-desc{font-size:11px;color:var(--txm);line-height:1.4;margin-bottom:10px;}
-.alert-card-action{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--acc);font-weight:500;padding-top:8px;border-top:1px solid var(--bd);}
-
-/* ── Cards Resumen Global ── */
-.global-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:4px;}
-.global-card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:box-shadow .15s;}
-.global-card:hover{box-shadow:0 6px 20px rgba(83,74,183,0.10);}
-.global-card-roof{height:5px;background:var(--acc);}
-.global-card-roof.manual{background:var(--wn);}
-.global-card-body{padding:14px 16px;}
-.global-card-name{font-size:14px;font-weight:600;color:var(--tx2);margin-bottom:2px;}
-.global-card-meta{font-size:10px;color:var(--txd);margin-bottom:14px;}
-.global-card-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.global-metric{background:var(--sf2);border-radius:8px;padding:8px 10px;}
-.global-metric-lbl{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin-bottom:3px;}
-.global-metric-val{font-size:15px;font-weight:600;}
-.global-metric-val.ok{color:var(--ok);}
-.global-metric-val.cr{color:var(--cr);}
-.global-metric-val.ac{color:var(--acc);}
-.global-metric-val.tx{color:var(--tx2);}
-.global-card-footer{padding-top:10px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;}
-.global-card-base-lbl{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);}
-.global-card-base-val{font-size:16px;font-weight:700;color:var(--acc);}
-.global-card-badge{font-size:9px;padding:3px 8px;border-radius:6px;background:var(--acc-light);color:var(--acc);font-weight:600;}
-.global-card-badge.manual{background:var(--wn-b);color:var(--wn);}
-</style>
-"""
+# ── INYECTAR ESTILO GLOBAL ──────────────────────────────────────
+# El CSS completo se gestiona desde nolasco_styles.py (único fuente de verdad)
+# Esto se llama UNA VEZ al inicio de la app
 
 # ── Helpers ──────────────────────────────────────────────────────
 def sf(v, d=0):
@@ -526,8 +335,8 @@ def render_sidebar():
 
 # ── LOGIN ─────────────────────────────────────────────────────────
 def pantalla_login():
-    st.markdown(CSS, unsafe_allow_html=True)
-    st.markdown("<div style='height:10vh;'></div>", unsafe_allow_html=True)
+    inject_global_css("ficahub")
+    st.markdown("<div style='height:12vh;'></div>", unsafe_allow_html=True)
     _, col, _ = st.columns([1, 1, 1])
     with col:
         st.markdown("""
@@ -1269,7 +1078,7 @@ def pantalla_vincular():
 
 # ── MAIN ──────────────────────────────────────────────────────────
 def main():
-    st.markdown(CSS, unsafe_allow_html=True)
+    inject_global_css("ficahub")
     if "fh_logged" not in st.session_state: st.session_state.fh_logged = False
     if "fh_menu"   not in st.session_state: st.session_state.fh_menu   = "cartera"
 
