@@ -501,7 +501,7 @@ def render_sidebar():
 # ── LOGIN ─────────────────────────────────────────────────────────
 def pantalla_login():
     inject_global_css("ficahub")
-    st.markdown(FISCALHUB_CSS, unsafe_allow_html=True)
+    
     st.markdown("<div style='height:12vh;'></div>", unsafe_allow_html=True)
     _, col, _ = st.columns([1, 1, 1])
     with col:
@@ -567,15 +567,15 @@ def pantalla_cartera():
 
     st.markdown(f"""<div style="margin-bottom:20px;">
       <div class="fh-ey">Granada · Despacho fiscal</div>
-      <div class="fh-title">Cartera de clientes</div>
+      <div class="nc-title">Cartera de clientes</div>
       <div class="fh-sub">{len(cartera)} propietarios · {total_inm} inmuebles · campaña IRPF 2025</div>
     </div>""", unsafe_allow_html=True)
 
     k1,k2,k3,k4 = st.columns(4)
-    with k1: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">Clientes</div>
+    with k1: st.markdown(f"""<div class="nc-card"><div class="kpi-lbl">Clientes</div>
       <div class="kpi-val ac">{len(cartera)}</div>
       <div class="kpi-sub">{n_crit} críticos · {n_med} revisar · {n_ok} OK</div></div>""", unsafe_allow_html=True)
-    with k2: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">Inmuebles gestionados</div>
+    with k2: st.markdown(f"""<div class="nc-card"><div class="kpi-lbl">Inmuebles gestionados</div>
       <div class="kpi-val ac">{total_inm}</div><div class="kpi-sub">Activos patrimoniales</div></div>""", unsafe_allow_html=True)
     with k3: st.markdown(f"""<div class="kpi red"><div class="kpi-lbl">Alertas críticas</div>
       <div class="kpi-val cr">{total_crit}</div><div class="kpi-sub">Antes del 30 jun</div></div>""", unsafe_allow_html=True)
@@ -594,9 +594,9 @@ def pantalla_cartera():
             (not busqueda or busqueda.lower() in c["nombre"].lower())]
 
     def _pill(e):
-        if e=="critico": return '<span class="pill-cr"><span class="dot"></span>Crítico</span>'
-        if e=="medio":   return '<span class="pill-wn"><span class="dot"></span>Revisar</span>'
-        return '<span class="pill-ok"><span class="dot"></span>OK</span>'
+        if e=="critico": return '<span class="nc-pill-neg"><span class="dot"></span>Crítico</span>'
+        if e=="medio":   return '<span class="nc-pill-warn"><span class="dot"></span>Revisar</span>'
+        return '<span class="nc-pill-pos"><span class="dot"></span>OK</span>'
 
     filas = ""
     for c in rows:
@@ -613,7 +613,7 @@ def pantalla_cartera():
           <td>{_pill(c["estado"])}</td>
         </tr>"""
 
-    st.markdown(f"""<table class="fh-tbl">
+    st.markdown(f"""<table class="nc-table">
       <thead><tr>
         <th>Cliente</th><th style="text-align:right;">Inm.</th>
         <th style="text-align:center;">⚠ Críticas</th><th style="text-align:center;">◔ Medias</th>
@@ -655,7 +655,7 @@ def pantalla_cliente():
 
     st.markdown(f"""<div style="margin-bottom:14px;">
       <div class="fh-ey">Revisión IRPF 2025</div>
-      <div class="fh-title">{nombre}</div>
+      <div class="nc-title">{nombre}</div>
       <div class="fh-sub">{cliente["inmuebles"]} inmuebles · Campaña IRPF 2025</div>
     </div>""", unsafe_allow_html=True)
 
@@ -664,7 +664,7 @@ def pantalla_cliente():
       <div class="kpi-val ok">{fmt_eur(modelo.get("ingresos",0))}</div></div>""", unsafe_allow_html=True)
     with k2: st.markdown(f"""<div class="kpi red"><div class="kpi-lbl">Gastos deducibles</div>
       <div class="kpi-val cr">−{fmt_eur(modelo.get("total_gastos",0))}</div></div>""", unsafe_allow_html=True)
-    with k3: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">0149 Rend. neto</div>
+    with k3: st.markdown(f"""<div class="nc-card"><div class="kpi-lbl">0149 Rend. neto</div>
       <div class="kpi-val ac">{fmt_eur(modelo.get("rend_neto",0))}</div></div>""", unsafe_allow_html=True)
     with k4: st.markdown(f"""<div class="kpi gold"><div class="kpi-lbl">0156 Base imp. est.</div>
       <div class="kpi-val" style="color:var(--wn);">{fmt_eur(modelo.get("rend_final",0))}</div>
@@ -703,17 +703,17 @@ def pantalla_cliente():
         if vld_estado in ("ok","vl"):
             rail_cls  = "vl" if vld_manual else "ok"
             pill_html = '<span class="pill-vl"><span class="dot"></span>Validado</span>' if vld_manual else \
-                        '<span class="pill-ok"><span class="dot"></span>Correcto</span>'
+                        '<span class="nc-pill-pos"><span class="dot"></span>Correcto</span>'
         else:
             rail_cls  = sem["estado"]
             n_cr = len([p for p in sem["problemas"] if p["tipo"]=="crit"])
             n_wn = len([p for p in sem["problemas"] if p["tipo"]=="warn"])
             if sem["estado"]=="cr":
-                pill_html = f'<span class="pill-cr"><span class="dot"></span>{n_cr} crítico{"s" if n_cr>1 else ""}</span>'
+                pill_html = f'<span class="nc-pill-neg"><span class="dot"></span>{n_cr} crítico{"s" if n_cr>1 else ""}</span>'
             elif sem["estado"]=="wn":
-                pill_html = f'<span class="pill-wn"><span class="dot"></span>{n_wn} aviso{"s" if n_wn>1 else ""}</span>'
+                pill_html = f'<span class="nc-pill-warn"><span class="dot"></span>{n_wn} aviso{"s" if n_wn>1 else ""}</span>'
             else:
-                pill_html = '<span class="pill-ok"><span class="dot"></span>Correcto</span>'
+                pill_html = '<span class="nc-pill-pos"><span class="dot"></span>Correcto</span>'
 
         renta    = _gv(row,"renta","Renta")
         ibi      = _gv(row,"ibi_anual","IBI_Anual")
@@ -1029,7 +1029,7 @@ def pantalla_resumen_global():
 
     st.markdown(f"""<div style="margin-bottom:14px;">
       <div class="fh-ey">Resumen global IRPF 2025</div>
-      <div class="fh-title">{nombre}</div>
+      <div class="nc-title">{nombre}</div>
       <div class="fh-sub">{len(nombres)} inmuebles · Modelo 100 consolidado</div>
     </div>""", unsafe_allow_html=True)
 
@@ -1045,7 +1045,7 @@ def pantalla_resumen_global():
       <div class="kpi-sub">{len(nombres)} inmuebles</div></div>""", unsafe_allow_html=True)
     with k2: st.markdown(f"""<div class="kpi red"><div class="kpi-lbl">Gastos deducibles</div>
       <div class="kpi-val cr">−{fmt_eur(modelo.get("total_gastos",0))}</div></div>""", unsafe_allow_html=True)
-    with k3: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">0149 Rend. neto</div>
+    with k3: st.markdown(f"""<div class="nc-card"><div class="kpi-lbl">0149 Rend. neto</div>
       <div class="kpi-val">{fmt_eur(modelo.get("rend_neto",0))}</div></div>""", unsafe_allow_html=True)
     with k4: st.markdown(f"""<div class="kpi gold"><div class="kpi-lbl">0156 Base imp. est.</div>
       <div class="kpi-val ac">{fmt_eur(modelo.get("rend_final",0))}</div>
@@ -1144,14 +1144,14 @@ def pantalla_alertas():
 
     st.markdown(f"""<div style="margin-bottom:16px;">
       <div class="fh-ey">Cartera completa · por urgencia</div>
-      <div class="fh-title">Alertas fiscales</div>
+      <div class="nc-title">Alertas fiscales</div>
       <div class="fh-sub">{len(todas)} alertas · {n_cr} críticas · {n_wn} a revisar</div>
     </div>""", unsafe_allow_html=True)
 
     k1,k2,k3 = st.columns(3)
     with k1: st.markdown(f"""<div class="kpi red"><div class="kpi-lbl">Críticas</div>
       <div class="kpi-val cr">{n_cr}</div><div class="kpi-sub">Antes del 30 jun</div></div>""", unsafe_allow_html=True)
-    with k2: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">A revisar</div>
+    with k2: st.markdown(f"""<div class="nc-card"><div class="kpi-lbl">A revisar</div>
       <div class="kpi-val" style="color:var(--wn);">{n_wn}</div></div>""", unsafe_allow_html=True)
     with k3:
         imp = sum(a.get("impacto",0) for a in todas if a.get("impacto",0)>0)
@@ -1178,7 +1178,7 @@ def pantalla_alertas():
             desc       = _e(a.get("desc", "")[:100])
             accion     = _e(a.get("accion", "")[:60])
             cards_html += (
-                '<div class="alert-card">'
+                '<div class="nc-alert-card">'
                   '<div class="alert-card-top ' + tc + '"></div>'
                   '<div class="alert-card-body">'
                     '<div class="alert-card-header">'
@@ -1209,7 +1209,7 @@ def pantalla_exportar():
     cartera = st.session_state.get("fh_cartera",[])
     st.markdown("""<div style="margin-bottom:16px;">
       <div class="fh-ey">Generación de entregables</div>
-      <div class="fh-title">Exportar</div>
+      <div class="nc-title">Exportar</div>
       <div class="fh-sub">Selecciona un cliente para generar sus documentos IRPF.</div>
     </div>""", unsafe_allow_html=True)
     if cartera:
@@ -1224,7 +1224,7 @@ def pantalla_exportar():
 def pantalla_vincular():
     st.markdown("""<div style="margin-bottom:16px;">
       <div class="fh-ey">Conectar con Nolasco Capital</div>
-      <div class="fh-title">Vincular cliente</div>
+      <div class="nc-title">Vincular cliente</div>
       <div class="fh-sub">Introduce el código de 6 dígitos del propietario.</div>
     </div>""", unsafe_allow_html=True)
     st.markdown("""<div class="callout inf" style="max-width:560px;margin-bottom:20px;">
@@ -1247,7 +1247,7 @@ def pantalla_vincular():
 # ── MAIN ──────────────────────────────────────────────────────────
 def main():
     inject_global_css("ficahub")
-    st.markdown(FISCALHUB_CSS, unsafe_allow_html=True)
+    
     if "fh_logged" not in st.session_state: st.session_state.fh_logged = False
     if "fh_menu"   not in st.session_state: st.session_state.fh_menu   = "cartera"
 
