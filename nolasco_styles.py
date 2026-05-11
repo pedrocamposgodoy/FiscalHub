@@ -166,12 +166,31 @@ def inject_global_css(app: str):
     .stApp {{
         background-color: {t['body_bg']} !important;
         font-family: {t['font_body']};
+        color: {t['text_primary']} !important;
+    }}
+
+    /* Garantizar visibilidad de texto en todo el body */
+    .stApp * {{
+        color: {t['text_primary']} !important;
+    }}
+
+    .stApp p, .stApp span, .stApp div, .stApp label {{
+        color: {t['text_primary']} !important;
     }}
 
     /* ── SIDEBAR ── */
     [data-testid="stSidebar"] {{
         background-color: {t['sidebar_bg']} !important;
         border-right: 0.5px solid {'rgba(255,255,255,0.08)' if is_dark else 'rgba(0,0,0,0.06)'};
+    }}
+
+    /* Texto del sidebar: blanco si es dark, gris si es light */
+    [data-testid="stSidebar"] {{
+        color: {'#8899AA' if is_dark else '#64748B'} !important;
+    }}
+
+    [data-testid="stSidebar"] * {{
+        color: {'#8899AA' if is_dark else '#64748B'} !important;
     }}
 
     /* Texto del sidebar sin !important global para no romper nav */
@@ -184,7 +203,6 @@ def inject_global_css(app: str):
     /* Botones sidebar: transparentes con texto legible */
     [data-testid="stSidebar"] .stButton > button {{
         background: transparent !important;
-        color: {'#8899AA' if is_dark else '#4B5563'} !important;
         border: none !important;
         border-radius: 8px !important;
         font-size: 13px !important;
@@ -196,10 +214,26 @@ def inject_global_css(app: str):
         box-shadow: none !important;
     }}
 
+    /* Texto del botón sidebar - CRÍTICO para ficahub */
+    [data-testid="stSidebar"] .stButton > button {{
+        color: {'#FFFFFF' if is_dark else '#64748B'} !important;
+    }}
+
+    [data-testid="stSidebar"] .stButton > button span {{
+        color: {'#FFFFFF' if is_dark else '#64748B'} !important;
+    }}
+
+    [data-testid="stSidebar"] .stButton > button p {{
+        color: {'#FFFFFF' if is_dark else '#64748B'} !important;
+    }}
+
     [data-testid="stSidebar"] .stButton > button:hover {{
-        background: {'rgba(255,255,255,0.06)' if is_dark else 'rgba(24,95,165,0.06)'} !important;
-        color: {'#ffffff' if is_dark else '#185FA5'} !important;
-        opacity: 1 !important;
+        background: {'rgba(255,255,255,0.06)' if is_dark else 'rgba(83,74,183,0.08)'} !important;
+        color: {'#ffffff' if is_dark else '#534AB7'} !important;
+    }}
+
+    [data-testid="stSidebar"] .stButton > button:hover span {{
+        color: {'#ffffff' if is_dark else '#534AB7'} !important;
     }}
 
     [data-testid="stSidebar"] .stRadio label {{
@@ -212,10 +246,12 @@ def inject_global_css(app: str):
         transition: background 0.15s;
         font-size: 13px;
         font-family: {t['font_body']};
+        color: {'#8899AA' if is_dark else '#64748B'} !important;
     }}
 
     [data-testid="stSidebar"] .stRadio label:hover {{
-        background: {'rgba(255,255,255,0.06)' if is_dark else 'rgba(0,0,0,0.04)'};
+        background: {'rgba(255,255,255,0.06)' if is_dark else 'rgba(83,74,183,0.08)'};
+        color: {'#ffffff' if is_dark else '#534AB7'} !important;
     }}
 
     /* ── CARDS ── */
