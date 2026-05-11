@@ -9,7 +9,12 @@ import requests
 import pandas as pd
 from datetime import datetime, date
 import io
+import html as _html
 from nolasco_styles import inject_global_css
+
+def _e(s):
+    """Escapar caracteres HTML especiales en datos de usuario."""
+    return _html.escape(str(s)) if s else ""
 
 st.set_page_config(
     page_title="FiscalHub · Nolasco Capital",
@@ -1163,29 +1168,31 @@ def pantalla_alertas():
     def _render_cards(lista):
         cards_html = '<div class="alert-grid">'
         for a in lista:
-            tc   = "cr" if a["tipo"]=="crit" else "wn"
-            tipo_label = "⚠️ Crítica" if a["tipo"]=="crit" else "◔ Revisar"
-            imp  = fmt_eur(a["impacto"]) if a.get("impacto",0)>0 else ""
-            nm   = a["cliente_nombre"]
-            inm  = a.get("inmueble","")[:35]
-            titulo = a["titulo"]
-            desc   = a.get("desc","")[:100]
-            accion = a.get("accion","")[:60]
-            cards_html += f"""
-            <div class="alert-card">
-              <div class="alert-card-top {tc}"></div>
-              <div class="alert-card-body">
-                <div class="alert-card-header">
-                  <span class="alert-card-tipo {tc}">{tipo_label}</span>
-                  {f'<span class="alert-card-imp">{imp}</span>' if imp else ''}
-                </div>
-                <div class="alert-card-client">{nm}</div>
-                <div class="alert-card-inm">📍 {inm}</div>
-                <div class="alert-card-title">{titulo}</div>
-                <div class="alert-card-desc">{desc}</div>
-                <div class="alert-card-action">→ {accion}</div>
-              </div>
-            </div>"""
+            tc         = "cr" if a["tipo"] == "crit" else "wn"
+            tipo_label = "⚠️ Crítica" if a["tipo"] == "crit" else "◔ Revisar"
+            imp_val    = a.get("impacto", 0)
+            imp_html   = '<span class="alert-card-imp">' + _e(fmt_eur(imp_val)) + '</span>' if imp_val and imp_val > 0 else ''
+            nm         = _e(a.get("cliente_nombre", ""))
+            inm        = _e(a.get("inmueble", "")[:35])
+            titulo     = _e(a.get("titulo", ""))
+            desc       = _e(a.get("desc", "")[:100])
+            accion     = _e(a.get("accion", "")[:60])
+            cards_html += (
+                '<div class="alert-card">'
+                  '<div class="alert-card-top ' + tc + '"></div>'
+                  '<div class="alert-card-body">'
+                    '<div class="alert-card-header">'
+                      '<span class="alert-card-tipo ' + tc + '">' + tipo_label + '</span>'
+                      + imp_html +
+                    '</div>'
+                    '<div class="alert-card-client">' + nm + '</div>'
+                    '<div class="alert-card-inm">📍 ' + inm + '</div>'
+                    '<div class="alert-card-title">' + titulo + '</div>'
+                    '<div class="alert-card-desc">' + desc + '</div>'
+                    '<div class="alert-card-action">→ ' + accion + '</div>'
+                  '</div>'
+                '</div>'
+            )
         cards_html += '</div>'
         return cards_html
 
