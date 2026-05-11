@@ -472,6 +472,21 @@ def inject_global_css(app: str):
     .nc-bocadillo-label {{ font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:{t['bocadillo_header']};margin-bottom:8px; }}
     .nc-bocadillo-text  {{ font-size:13px;color:{t['text_primary']};line-height:1.65; }}
     .nc-bocadillo-response {{ background:{t['bocadillo_response']};border-radius:12px;padding:12px 14px;font-size:12px;color:{t['text_primary']};line-height:1.6;margin-top:12px;border-left:3px solid {t['accent']}; }}
+  /* --- FORZAR COLORES EN FISCAL HUB --- */
+    .stApp, .main, .fh-page {{
+        background-color: var(--body-bg) !important;
+    }}
+    [data-testid="stSidebar"] > div:first-child {{
+        background-color: var(--sidebar-bg) !important;
+    }}
+    .fh-card, .fh-tbl {{
+        background-color: var(--card-bg) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }}
+     
     </style>
     """
 
