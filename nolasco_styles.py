@@ -31,12 +31,12 @@ APP_TOKENS = {
 
     # ── NOLASCO CAPITAL — sidebar blanco, acento azul
     "capital": {
-        "sidebar_bg":        "#FFFFFF",
+        "sidebar_bg":        "#E2E8F0",
         "sidebar_border":    _BD,
         "sidebar_txt":       _TXM,
         "sidebar_txt_hover": "#185FA5",
         "sidebar_bg_hover":  "#EAF1FB",
-        "body_bg":           "#F8FAFC",
+        "body_bg":           "#F1F5F9",
         "card_bg":           "#FFFFFF",
         "card_border":       _BD,
         "accent":            "#185FA5",
