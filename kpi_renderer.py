@@ -117,6 +117,7 @@ def render_kpi_grid(kpis_data: list):
         color    = kpi.get("color", GREY)
         subtitle = kpi.get("subtitle","")
 
+        border_color = kpi.get("border_color", color)  # color del cliente si se pasa
         sub = (
             f'<p style="font-size:13px;color:#94A3B8;margin:4px 0 0;' +
             f'font-family:{_FONT};font-weight:500;">{subtitle}</p>'
@@ -128,7 +129,7 @@ def render_kpi_grid(kpis_data: list):
             f'border-radius:12px;' +
             f'padding:22px 20px 18px;' +
             f'border:{_BORDER};' +
-            f'border-top:5px solid {color};' +
+            f'border-top:5px solid {border_color};' +
             f'box-shadow:{_SHADOW};' +
             f'box-sizing:border-box;">' +
             f'<p style="font-family:{_FONT};font-size:13px;font-weight:800;' +
