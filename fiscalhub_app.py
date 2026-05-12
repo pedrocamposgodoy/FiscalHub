@@ -412,27 +412,28 @@ def pantalla_cartera():
       <div class="nc-page-sub">{len(cartera)} propietarios · {total_inm} inmuebles · campaña IRPF 2025</div>
     </div>""", unsafe_allow_html=True)
 
+    def _kpi(col, label, value, subtitle, color, nav=None, key_sfx=""):
+        col.markdown(f"""<div class="nc-card" style="border-top-color:{color}">
+          <div class="nc-label">{label}</div>
+          <div class="nc-number" style="color:{color}">{value}</div>
+          <div class="nc-subtitle">{subtitle}</div>
+        </div>""", unsafe_allow_html=True)
+        if nav:
+            if col.button("↗ Ver alertas", key=f"knav_{key_sfx}",
+                          use_container_width=True):
+                st.session_state.fh_menu = nav
+                st.rerun()
+
     k1,k2,k3,k4 = st.columns(4)
-    with k1: st.markdown(f"""<div class="nc-card" style="border-top-color:#534AB7">
-      <div class="nc-label">Clientes</div>
-      <div class="nc-number" style="color:#534AB7">{len(cartera)}</div>
-      <div class="nc-subtitle">{n_crit} críticos · {n_med} revisar · {n_ok} OK</div>
-      </div>""", unsafe_allow_html=True)
-    with k2: st.markdown(f"""<div class="nc-card" style="border-top-color:#534AB7">
-      <div class="nc-label">Inmuebles gestionados</div>
-      <div class="nc-number" style="color:#534AB7">{total_inm}</div>
-      <div class="nc-subtitle">Activos patrimoniales</div>
-      </div>""", unsafe_allow_html=True)
-    with k3: st.markdown(f"""<div class="nc-card" style="border-top-color:#DC2626">
-      <div class="nc-label">Alertas críticas</div>
-      <div class="nc-number" style="color:#DC2626">{total_crit}</div>
-      <div class="nc-subtitle">Antes del 30 jun</div>
-      </div>""", unsafe_allow_html=True)
-    with k4: st.markdown(f"""<div class="nc-card" style="border-top-color:#D97706">
-      <div class="nc-label">Impacto fiscal</div>
-      <div class="nc-number" style="color:#D97706">{fmt_eur(total_imp)}</div>
-      <div class="nc-subtitle">Recuperable · cartera</div>
-      </div>""", unsafe_allow_html=True)
+    _kpi(k1, "👥 Clientes", len(cartera),
+         f"{n_crit} críticos · {n_med} revisar · {n_ok} OK", "#534AB7")
+    _kpi(k2, "🏠 Inmuebles", total_inm,
+         "Activos patrimoniales", "#534AB7")
+    _kpi(k3, "🚨 Alertas críticas", total_crit,
+         "Antes del 30 jun", "#DC2626", nav="alertas", key_sfx="alrt")
+    _kpi(k4, "💶 Impacto fiscal", fmt_eur(total_imp),
+         "Recuperable · cartera", "#D97706")
+
 
     st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
 
@@ -445,46 +446,61 @@ def pantalla_cartera():
              (filtro=="A revisar" and c["estado"]=="medio") or (filtro=="OK" and c["estado"]=="ok")) and
             (not busqueda or busqueda.lower() in c["nombre"].lower())]
 
-    def _pill(e):
-        if e=="critico": return '<span class="nc-pill-neg"><span class="dot"></span>Crítico</span>'
-        if e=="medio":   return '<span class="nc-pill-warn"><span class="dot"></span>Revisar</span>'
-        return '<span class="nc-pill-pos"><span class="dot"></span>OK</span>'
+    # Pool de iconos determinista por índice
+    _ICONS = ["🏠","🏢","🏗","🏦","🏛","🏪","🏬","🏨","🏩","🏫",
+              "🏭","🏯","🏰","🗼","🗽","⛪","🕌","🕍","🛖","🏡"]
+    _ELBL  = {"critico":"⚠ Crítico","medio":"◔ Revisar","ok":"✓ OK"}
+    _ECOL  = {"critico":"#DC2626","medio":"#D97706","ok":"#059669"}
+    _EBG   = {"critico":"rgba(220,38,38,0.08)","medio":"rgba(217,119,6,0.08)","ok":"rgba(5,150,105,0.08)"}
 
-    filas = ""
-    for c in rows:
-        rc  = "row-neg" if c["estado"]=="critico" else ("wn" if c["estado"]=="medio" else "")
-        imp = fmt_eur(c["impacto"]) if c["impacto"] else "—"
-        bcrit = f"<span class='bc'>{c['criticas']}</span>" if c['criticas'] else "<span class='bz'>0</span>"
-        bmed  = f"<span class='bw'>{c['medias']}</span>" if c['medias'] else "<span class='bz'>0</span>"
-        filas += f"""<tr class="{rc}">
-          <td><div class="nm">{c["nombre"]}</div></td>
-          <td style="text-align:right;" class="mono">{c["inmuebles"]}</td>
-          <td style="text-align:center;">{bcrit}</td>
-          <td style="text-align:center;">{bmed}</td>
-          <td style="text-align:right;" class="mono">{imp}</td>
-          <td>{_pill(c["estado"])}</td>
-        </tr>"""
+    for idx, c in enumerate(rows):
+        icon   = _ICONS[idx % len(_ICONS)]
+        estado = c["estado"]
+        color  = _ECOL[estado]
+        imp_v  = fmt_eur(abs(c["impacto"])) if c["impacto"] else "—"
+        imp_cls= "neg" if c["impacto"] < 0 else ("pos" if c["impacto"] > 0 else "acc")
+        c_cls  = "neg" if c["criticas"] > 0 else "acc"
+        m_cls  = "warn" if c["medias"] > 0 else "acc"
 
-    st.markdown(f"""<table class="nc-table">
-      <thead><tr>
-        <th>Cliente</th><th style="text-align:right;">Inm.</th>
-        <th style="text-align:center;">⚠ Críticas</th><th style="text-align:center;">◔ Medias</th>
-        <th style="text-align:right;">Impacto IRPF</th><th>Estado</th>
-      </tr></thead><tbody>{filas}</tbody></table>""", unsafe_allow_html=True)
+        st.markdown(
+            f'''<div class="nc-cli-card {estado}">
+  <div class="nc-cli-header">
+    <div class="nc-cli-icon {estado}">{icon}</div>
+    <div style="flex:1;min-width:0;">
+      <div class="nc-cli-name">{c["nombre"]}</div>
+      <div class="nc-cli-sub">{c["inmuebles"]} inmuebles · campaña 2025</div>
+    </div>
+    <span style="background:{_EBG[estado]};color:{color};font-size:10px;font-weight:700;
+                 padding:3px 10px;border-radius:6px;white-space:nowrap;">{_ELBL[estado]}</span>
+  </div>
+  <div class="nc-cli-metrics">
+    <div class="nc-cli-metric">
+      <div class="nc-cli-metric-lbl">🏠 Inmuebles</div>
+      <div class="nc-cli-metric-val acc">{c["inmuebles"]}</div>
+    </div>
+    <div class="nc-cli-metric">
+      <div class="nc-cli-metric-lbl">🚨 Críticas</div>
+      <div class="nc-cli-metric-val {c_cls}">{c["criticas"]}</div>
+    </div>
+    <div class="nc-cli-metric">
+      <div class="nc-cli-metric-lbl">⚡ Revisar</div>
+      <div class="nc-cli-metric-val {m_cls}">{c["medias"]}</div>
+    </div>
+  </div>
+  <div class="nc-cli-footer">
+    <span>💶 Impacto fiscal: {imp_v}</span>
+    <span>Ver detalle →</span>
+  </div>
+</div>''', unsafe_allow_html=True)
 
-    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
-    st.markdown('<div class="nc-page-label" style="margin-bottom:6px;">Abrir cliente</div>', unsafe_allow_html=True)
-    MAX_COLS = 4
-    for i in range(0, len(rows), MAX_COLS):
-        batch = rows[i:i+MAX_COLS]
-        cols  = st.columns(MAX_COLS)
-        for j, c in enumerate(batch):
-            icon = "🔴" if c["estado"]=="critico" else "🟡" if c["estado"]=="medio" else "🟢"
-            with cols[j]:
-                if st.button(f"{icon} {c['nombre'][:22]}", key=f"sel_{c['id']}", use_container_width=True):
-                    st.session_state.fh_cliente_sel = c["id"]
-                    st.session_state.fh_menu = "cliente"
-                    st.rerun()
+        if st.button(f"📂 Abrir — {c['nombre'][:24]}", key=f"sel_{c['id']}",
+                     use_container_width=True):
+            st.session_state.fh_cliente_sel = c["id"]
+            st.session_state.fh_menu = "cliente"
+            st.rerun()
+
+        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+
 
 # ── PANTALLA CLIENTE ──────────────────────────────────────────────
 def pantalla_cliente():
@@ -513,22 +529,26 @@ def pantalla_cliente():
 
     k1,k2,k3,k4 = st.columns(4)
     with k1: st.markdown(f"""<div class="nc-card" style="border-top-color:#059669">
-      <div class="nc-label">0102 Ingresos</div>
+      <div class="nc-label">📥 0102 Ingresos</div>
       <div class="nc-number" style="color:#059669">{fmt_eur(modelo.get("ingresos",0))}</div>
+      <div class="nc-subtitle">Rendimiento íntegro</div>
       </div>""", unsafe_allow_html=True)
     with k2: st.markdown(f"""<div class="nc-card" style="border-top-color:#DC2626">
-      <div class="nc-label">Gastos deducibles</div>
+      <div class="nc-label">📤 Gastos deducibles</div>
       <div class="nc-number" style="color:#DC2626">−{fmt_eur(modelo.get("total_gastos",0))}</div>
+      <div class="nc-subtitle">Total deducible</div>
       </div>""", unsafe_allow_html=True)
     with k3: st.markdown(f"""<div class="nc-card" style="border-top-color:#534AB7">
-      <div class="nc-label">0149 Rend. neto</div>
+      <div class="nc-label">⚖️ 0149 Rend. neto</div>
       <div class="nc-number" style="color:#534AB7">{fmt_eur(modelo.get("rend_neto",0))}</div>
+      <div class="nc-subtitle">Antes de reducción</div>
       </div>""", unsafe_allow_html=True)
     with k4: st.markdown(f"""<div class="nc-card" style="border-top-color:#D97706">
-      <div class="nc-label">0156 Base imp. est.</div>
+      <div class="nc-label">🧾 0156 Base imp. est.</div>
       <div class="nc-number" style="color:#D97706">{fmt_eur(modelo.get("rend_final",0))}</div>
       <div class="nc-subtitle">⚠️ Orientativa</div>
       </div>""", unsafe_allow_html=True)
+
 
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
