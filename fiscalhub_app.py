@@ -301,17 +301,16 @@ def render_sidebar():
     st.markdown(f"""
     <div class="sb-brand">
       <div style="display:flex;align-items:center;gap:10px;">
-        <div class="sb-nc">NC</div><div class="sb-wordmark">FiscalHub</div>
+        <div class="sb-logo">NC</div>
+        <div class="sb-wordmark">FiscalHub</div>
       </div>
       <div class="sb-tag">Portal asesoría fiscal</div>
     </div>
     <div class="sb-advisor">
-      <div style="display:flex;gap:10px;align-items:center;">
-        <div class="sb-avatar">{iniciales}</div>
-        <div>
-          <div style="font-size:12px;color:#F1F5F9;font-weight:500;">{nombre}</div>
-          <div style="font-size:10px;color:#94A3B8;">{despacho}</div>
-        </div>
+      <div class="sb-avatar">{iniciales}</div>
+      <div>
+        <div class="sb-advisor-name">{nombre}</div>
+        <div class="sb-advisor-desc">{despacho}</div>
       </div>
     </div>""", unsafe_allow_html=True)
 
@@ -326,11 +325,13 @@ def render_sidebar():
     st.sidebar.markdown("---")
     st.sidebar.markdown(f"""
     <div class="sb-irpf">
-      <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#94A3B8;font-weight:600;">Cierre IRPF</div>
-      <div class="sb-irpf-num" style="color:{color};">{dias}<span style="font-size:11px;font-weight:400;color:#94A3B8;margin-left:4px;">días</span></div>
-      <div style="font-size:10px;color:#94A3B8;margin-top:2px;">30 jun · campaña 2025</div>
+      <div class="sb-irpf-label">Cierre IRPF 2025</div>
+      <div class="sb-irpf-num" style="color:{color};">{dias}
+        <span style="font-size:14px;font-weight:600;margin-left:4px;opacity:0.7;">días</span>
+      </div>
+      <div class="sb-irpf-sub">30 jun · campaña 2025</div>
       <div class="sb-bar"><div class="sb-fill" style="width:{pct}%;background:{color};"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748B;margin-top:5px;"><span>hoy</span><span>30 jun</span></div>
+      <div class="sb-bar-labels"><span>hoy</span><span>30 jun</span></div>
     </div>""", unsafe_allow_html=True)
 
     if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
@@ -412,15 +413,26 @@ def pantalla_cartera():
     </div>""", unsafe_allow_html=True)
 
     k1,k2,k3,k4 = st.columns(4)
-    with k1: st.markdown(f"""<div class="nc-card"><div class="nc-label">Clientes</div>
+    with k1: st.markdown(f"""<div class="nc-card" style="border-top-color:#534AB7">
+      <div class="nc-label">Clientes</div>
       <div class="nc-number" style="color:#534AB7">{len(cartera)}</div>
-      <div class="nc-subtitle">{n_crit} críticos · {n_med} revisar · {n_ok} OK</div></div>""", unsafe_allow_html=True)
-    with k2: st.markdown(f"""<div class="nc-card"><div class="nc-label">Inmuebles gestionados</div>
-      <div class="nc-number" style="color:#534AB7">{total_inm}</div><div class="nc-subtitle">Activos patrimoniales</div></div>""", unsafe_allow_html=True)
-    with k3: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #DC2626"><div class="nc-label">Alertas críticas</div>
-      <div class="nc-number" style="color:#DC2626">{total_crit}</div><div class="nc-subtitle">Antes del 30 jun</div></div>""", unsafe_allow_html=True)
-    with k4: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #D97706"><div class="nc-label">Impacto fiscal</div>
-      <div class="nc-number" style="color:var(--wn);">{fmt_eur(total_imp)}</div><div class="nc-subtitle">Recuperable · cartera</div></div>""", unsafe_allow_html=True)
+      <div class="nc-subtitle">{n_crit} críticos · {n_med} revisar · {n_ok} OK</div>
+      </div>""", unsafe_allow_html=True)
+    with k2: st.markdown(f"""<div class="nc-card" style="border-top-color:#534AB7">
+      <div class="nc-label">Inmuebles gestionados</div>
+      <div class="nc-number" style="color:#534AB7">{total_inm}</div>
+      <div class="nc-subtitle">Activos patrimoniales</div>
+      </div>""", unsafe_allow_html=True)
+    with k3: st.markdown(f"""<div class="nc-card" style="border-top-color:#DC2626">
+      <div class="nc-label">Alertas críticas</div>
+      <div class="nc-number" style="color:#DC2626">{total_crit}</div>
+      <div class="nc-subtitle">Antes del 30 jun</div>
+      </div>""", unsafe_allow_html=True)
+    with k4: st.markdown(f"""<div class="nc-card" style="border-top-color:#D97706">
+      <div class="nc-label">Impacto fiscal</div>
+      <div class="nc-number" style="color:#D97706">{fmt_eur(total_imp)}</div>
+      <div class="nc-subtitle">Recuperable · cartera</div>
+      </div>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
 
@@ -500,15 +512,23 @@ def pantalla_cliente():
     </div>""", unsafe_allow_html=True)
 
     k1,k2,k3,k4 = st.columns(4)
-    with k1: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #059669"><div class="nc-label">0102 Ingresos</div>
-      <div class="nc-number" style="color:#059669">{fmt_eur(modelo.get("ingresos",0))}</div></div>""", unsafe_allow_html=True)
-    with k2: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #DC2626"><div class="nc-label">Gastos deducibles</div>
-      <div class="nc-number" style="color:#DC2626">−{fmt_eur(modelo.get("total_gastos",0))}</div></div>""", unsafe_allow_html=True)
-    with k3: st.markdown(f"""<div class="nc-card"><div class="nc-label">0149 Rend. neto</div>
-      <div class="nc-number" style="color:#534AB7">{fmt_eur(modelo.get("rend_neto",0))}</div></div>""", unsafe_allow_html=True)
-    with k4: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #D97706"><div class="nc-label">0156 Base imp. est.</div>
-      <div class="nc-number" style="color:var(--wn);">{fmt_eur(modelo.get("rend_final",0))}</div>
-      <div class="nc-subtitle">⚠️ Orientativa</div></div>""", unsafe_allow_html=True)
+    with k1: st.markdown(f"""<div class="nc-card" style="border-top-color:#059669">
+      <div class="nc-label">0102 Ingresos</div>
+      <div class="nc-number" style="color:#059669">{fmt_eur(modelo.get("ingresos",0))}</div>
+      </div>""", unsafe_allow_html=True)
+    with k2: st.markdown(f"""<div class="nc-card" style="border-top-color:#DC2626">
+      <div class="nc-label">Gastos deducibles</div>
+      <div class="nc-number" style="color:#DC2626">−{fmt_eur(modelo.get("total_gastos",0))}</div>
+      </div>""", unsafe_allow_html=True)
+    with k3: st.markdown(f"""<div class="nc-card" style="border-top-color:#534AB7">
+      <div class="nc-label">0149 Rend. neto</div>
+      <div class="nc-number" style="color:#534AB7">{fmt_eur(modelo.get("rend_neto",0))}</div>
+      </div>""", unsafe_allow_html=True)
+    with k4: st.markdown(f"""<div class="nc-card" style="border-top-color:#D97706">
+      <div class="nc-label">0156 Base imp. est.</div>
+      <div class="nc-number" style="color:#D97706">{fmt_eur(modelo.get("rend_final",0))}</div>
+      <div class="nc-subtitle">⚠️ Orientativa</div>
+      </div>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
@@ -575,8 +595,9 @@ def pantalla_cliente():
         tipo_arr  = str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento",""))
         inquilino = str(row.get("inquilino") or row.get("Inquilino","—"))
 
+        warn_cls = " warn-row" if (sem["estado"] in ("cr","wn","critico","advertencia") and vld_estado not in ("ok","vl")) else ""
         st.markdown(f"""
-        <div class="nc-inm-row">
+        <div class="nc-inm-row{warn_cls}">
           <div class="nc-inm-rail {rail_cls}"></div>
           <div class="nc-inm-body">
             <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -1084,6 +1105,121 @@ def pantalla_vincular():
             else: st.error(f"❌ {res.get('error','Código no válido')}")
         else: st.warning("Introduce un código")
 
+
+# ── MOCK DATA — activar con ?demo=1 en la URL ─────────────────────
+def _mock_cartera():
+    """Cartera de demostración con 6 clientes ficticios + los reales."""
+    import pandas as pd
+    from datetime import date, timedelta
+
+    def _inm(nombre, inquilino, tipo, renta, ibi, amort, seguro, comunidad,
+             hipoteca=0, tiene_alerta=False, alerta_tipo="crit", alerta_txt=""):
+        return {
+            "nombre": nombre, "inquilino": inquilino,
+            "tipo_arrendamiento": tipo, "renta": renta,
+            "ibi_anual": ibi, "amortizacion_fiscal": amort,
+            "seguro_anual": seguro, "comunidad": comunidad,
+            "intereses_hipoteca": hipoteca,
+            "tiene_alerta": tiene_alerta,
+            "alerta_tipo": alerta_tipo, "alerta_txt": alerta_txt,
+            "fecha_vencimiento_contrato": str(date.today() + timedelta(days=30)) if tiene_alerta else "",
+            "precio_compra": 180000, "valor_catastral": 95000,
+            "porcentaje_construccion": 0.7,
+        }
+
+    clientes_mock = [
+        {
+            "id": "mock-001", "nombre": "García Martínez, Ana",
+            "estado": "critico", "criticas": 3, "medias": 1,
+            "inmuebles": 3, "impacto": -2400,
+            "alertas": [
+                {"tipo":"crit","titulo":"Amortización a 0 — revisar","desc":"Catastral: 95.000 € · Precio compra: 180.000 €","accion":"Calcular 3% s/ MAX(precio compra, catastral) × % construcción","inmueble":"Calle Mayor 12","cliente_nombre":"García Martínez, Ana"},
+                {"tipo":"crit","titulo":"Contrato próximo a vencer","desc":"Vence en 28 días sin renovar","accion":"Notificar al inquilino y preparar nuevo contrato","inmueble":"Av. Constitución 4","cliente_nombre":"García Martínez, Ana"},
+                {"tipo":"crit","titulo":"ROE negativo","desc":"La hipoteca consume el 110% de los ingresos netos","accion":"Revisar si refinanciar o vender el activo","inmueble":"Plaza Nueva 8","cliente_nombre":"García Martínez, Ana"},
+                {"tipo":"warn","titulo":"Rentabilidad por debajo de mercado","desc":"Rendimiento actual 3.2% vs 6.8% de media en CP 18001","accion":"Evaluar subida de renta en próxima renovación","inmueble":"Calle Mayor 12","cliente_nombre":"García Martínez, Ana"},
+            ],
+            "modelo100": {"ingresos":28800,"total_gastos":22400,"rend_neto":6400,"reduccion":3200,"rend_final":3200,"retenciones":5472,"intereses":4200,"reparaciones":800,"ibi":1240,"comunidad_seguros":3600,"suministros":0,"gastos_juridicos":0,"amortizacion":12560,"red_pct":50},
+            "df_inm": pd.DataFrame([
+                _inm("Calle Mayor 12","Luisa Fernández","Larga Duración",900,620,3800,380,1200,1800,True,"crit","Amortización a 0"),
+                _inm("Av. Constitución 4","Roberto Sanz","Larga Duración",750,480,2900,290,900,0,True,"crit","Contrato vence 28 días"),
+                _inm("Plaza Nueva 8","Carmen López","Larga Duración",550,390,2100,210,720,1600,True,"crit","ROE negativo"),
+            ]),
+            "df_mov": pd.DataFrame(),
+        },
+        {
+            "id": "mock-002", "nombre": "López Ruiz, Carlos",
+            "estado": "critico", "criticas": 2, "medias": 2,
+            "inmuebles": 4, "impacto": -1800,
+            "alertas": [
+                {"tipo":"crit","titulo":"Amortización a 0 — revisar","desc":"Catastral: 112.000 € · Precio compra: 210.000 €","accion":"Calcular 3% s/ MAX","inmueble":"Gran Vía 33","cliente_nombre":"López Ruiz, Carlos"},
+                {"tipo":"crit","titulo":"Gastos sin justificar","desc":"3 recibos de reparaciones sin factura adjunta","accion":"Solicitar facturas al propietario antes del 30/06","inmueble":"Recogidas 18","cliente_nombre":"López Ruiz, Carlos"},
+                {"tipo":"warn","titulo":"IBI pendiente de actualizar","desc":"El IBI declarado no coincide con el recibo 2024","accion":"Verificar con el Ayuntamiento","inmueble":"Gran Vía 33","cliente_nombre":"López Ruiz, Carlos"},
+                {"tipo":"warn","titulo":"Seguro infradeducido","desc":"Seguro hogar+vida deducible al 100% — solo se declaró el 50%","accion":"Corregir casilla 0110","inmueble":"Recogidas 18","cliente_nombre":"López Ruiz, Carlos"},
+            ],
+            "modelo100": {"ingresos":42000,"total_gastos":31200,"rend_neto":10800,"reduccion":5400,"rend_final":5400,"retenciones":7980,"intereses":6800,"reparaciones":1200,"ibi":1820,"comunidad_seguros":4800,"suministros":0,"gastos_juridicos":0,"amortizacion":16580,"red_pct":50},
+            "df_inm": pd.DataFrame([
+                _inm("Gran Vía 33","Marcos Vega","Larga Duración",1200,820,5200,480,1560,2400,True,"crit","Amortización a 0"),
+                _inm("Recogidas 18","Sofía Moreno","Larga Duración",950,640,3900,360,1200,0,True,"crit","Gastos sin justificar"),
+                _inm("Camino Ronda 5","Pedro Jiménez","Temporada",700,420,2800,260,840,0,False),
+                _inm("Arabial 22","Nuria Castro","Larga Duración",650,380,2400,220,720,0,False),
+            ]),
+            "df_mov": pd.DataFrame(),
+        },
+        {
+            "id": "mock-003", "nombre": "Martínez Peña, Isabel",
+            "estado": "medio", "criticas": 0, "medias": 2,
+            "inmuebles": 2, "impacto": 0,
+            "alertas": [
+                {"tipo":"warn","titulo":"Contrato vence en 45 días","desc":"Arrendamiento de larga duración próximo a expirar","accion":"Iniciar proceso de renovación o búsqueda de nuevo inquilino","inmueble":"Paseo Colón 7","cliente_nombre":"Martínez Peña, Isabel"},
+                {"tipo":"warn","titulo":"Rentabilidad por debajo de mercado","desc":"Renta 4.1% vs 6.5% de media en CP 18002","accion":"Evaluar incremento según IRAV 2026 (2.47%)","inmueble":"San Juan de Dios 14","cliente_nombre":"Martínez Peña, Isabel"},
+            ],
+            "modelo100": {"ingresos":19200,"total_gastos":12800,"rend_neto":6400,"reduccion":3200,"rend_final":3200,"retenciones":3648,"intereses":2400,"reparaciones":400,"ibi":980,"comunidad_seguros":2400,"suministros":0,"gastos_juridicos":0,"amortizacion":6620,"red_pct":50},
+            "df_inm": pd.DataFrame([
+                _inm("Paseo Colón 7","Alberto García","Larga Duración",900,680,3200,300,960,0,True,"warn","Contrato vence 45 días"),
+                _inm("San Juan de Dios 14","Elena Ruiz","Larga Duración",700,520,2400,240,720,0,True,"warn","Rentabilidad baja"),
+            ]),
+            "df_mov": pd.DataFrame(),
+        },
+        {
+            "id": "mock-004", "nombre": "Sánchez Torres, Miguel",
+            "estado": "ok", "criticas": 0, "medias": 0,
+            "inmuebles": 2, "impacto": 0,
+            "alertas": [],
+            "modelo100": {"ingresos":22800,"total_gastos":14600,"rend_neto":8200,"reduccion":4100,"rend_final":4100,"retenciones":4332,"intereses":0,"reparaciones":600,"ibi":1100,"comunidad_seguros":3200,"suministros":0,"gastos_juridicos":0,"amortizacion":9700,"red_pct":50},
+            "df_inm": pd.DataFrame([
+                _inm("Alhambra 3","Rosa Blanco","Larga Duración",1100,760,4200,420,1320,0,False),
+                _inm("Zaidín Norte 8","Jesús Molina","Larga Duración",800,580,3100,300,960,0,False),
+            ]),
+            "df_mov": pd.DataFrame(),
+        },
+        {
+            "id": "mock-005", "nombre": "Fernández Gómez, Laura",
+            "estado": "ok", "criticas": 0, "medias": 0,
+            "inmuebles": 1, "impacto": 0,
+            "alertas": [],
+            "modelo100": {"ingresos":9600,"total_gastos":6200,"rend_neto":3400,"reduccion":1700,"rend_final":1700,"retenciones":1824,"intereses":0,"reparaciones":200,"ibi":480,"comunidad_seguros":1200,"suministros":0,"gastos_juridicos":0,"amortizacion":4320,"red_pct":50},
+            "df_inm": pd.DataFrame([
+                _inm("Neptuno 5","Diana Prieto","Larga Duración",800,480,2400,240,720,0,False),
+            ]),
+            "df_mov": pd.DataFrame(),
+        },
+        {
+            "id": "mock-006", "nombre": "Romero Díaz, Antonio",
+            "estado": "critico", "criticas": 1, "medias": 0,
+            "inmuebles": 1, "impacto": -600,
+            "alertas": [
+                {"tipo":"crit","titulo":"Amortización a 0 — revisar","desc":"Catastral: 78.000 € · Precio compra: 145.000 €","accion":"Calcular 3% s/ MAX","inmueble":"Genil 12","cliente_nombre":"Romero Díaz, Antonio"},
+            ],
+            "modelo100": {"ingresos":9600,"total_gastos":7800,"rend_neto":1800,"reduccion":900,"rend_final":900,"retenciones":1824,"intereses":0,"reparaciones":300,"ibi":560,"comunidad_seguros":1440,"suministros":0,"gastos_juridicos":0,"amortizacion":5500,"red_pct":50},
+            "df_inm": pd.DataFrame([
+                _inm("Genil 12","Francisco Ruiz","Larga Duración",800,560,2800,280,840,0,True,"crit","Amortización a 0"),
+            ]),
+            "df_mov": pd.DataFrame(),
+        },
+    ]
+    return sorted(clientes_mock, key=lambda x:({"critico":0,"medio":1,"ok":2}[x["estado"]],-x["criticas"]))
+
+
 # ── MAIN ──────────────────────────────────────────────────────────
 def main():
     inject_global_css("ficahub")
@@ -1093,10 +1229,31 @@ def main():
     if not st.session_state.fh_logged:
         pantalla_login(); return
 
+    # Demo mode — añade ?demo=1 a la URL para ver mock data
+    demo_mode = st.query_params.get("demo", "0") == "1"
+
     if "fh_cartera" not in st.session_state:
         with st.spinner("Cargando cartera..."):
-            vinculos = get_clientes_vinculados(st.session_state.fh_user_id)
-            st.session_state.fh_cartera = construir_cartera(vinculos)
+            if demo_mode:
+                # Cargar reales + mock
+                vinculos = get_clientes_vinculados(st.session_state.fh_user_id)
+                cartera_real = construir_cartera(vinculos)
+                cartera_mock = _mock_cartera()
+                # Evitar duplicados por nombre
+                nombres_reales = {c["nombre"] for c in cartera_real}
+                extra = [c for c in cartera_mock if c["nombre"] not in nombres_reales]
+                st.session_state.fh_cartera = cartera_real + extra
+            else:
+                vinculos = get_clientes_vinculados(st.session_state.fh_user_id)
+                st.session_state.fh_cartera = construir_cartera(vinculos)
+
+    if demo_mode:
+        st.sidebar.markdown(
+            '<div style="background:#FFC107;color:#795548;font-size:10px;font-weight:700;'
+            'padding:4px 10px;border-radius:6px;margin:4px 10px;text-align:center;'
+            'letter-spacing:0.06em;">🎭 MODO DEMO</div>',
+            unsafe_allow_html=True
+        )
 
     with st.sidebar:
         render_sidebar()
