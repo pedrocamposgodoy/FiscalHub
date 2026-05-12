@@ -597,102 +597,132 @@ def pantalla_cliente():
     if df_inm.empty:
         st.info("Sin inmuebles registrados para este cliente."); return
 
-    for idx, (_, row) in enumerate(df_inm.iterrows()):
-        nombre_inm = str(row.get(col_n,""))
-        sem        = calcular_semaforo_inmueble(row)
-        vld        = vlds.get(nombre_inm,{})
-        vld_estado = vld.get("estado","")
-        vld_manual = vld.get("manual", False)
+    # Color del cliente — mismo para todos sus inmuebles
+    _cc = _color_cli(cliente_id)
 
-        if vld_estado in ("ok","vl"):
-            rail_cls  = "vl" if vld_manual else "ok"
-            pill_html = '<span class="nc-pill-acc"><span class="dot"></span>Validado</span>' if vld_manual else \
-                        '<span class="nc-pill-pos"><span class="dot"></span>Correcto</span>'
-        else:
-            rail_cls  = sem["estado"]
-            n_cr = len([p for p in sem["problemas"] if p["tipo"]=="crit"])
-            n_wn = len([p for p in sem["problemas"] if p["tipo"]=="warn"])
-            if sem["estado"]=="cr":
-                pill_html = f'<span class="nc-pill-neg"><span class="dot"></span>{n_cr} crítico{"s" if n_cr>1 else ""}</span>'
-            elif sem["estado"]=="wn":
-                pill_html = f'<span class="nc-pill-warn"><span class="dot"></span>{n_wn} aviso{"s" if n_wn>1 else ""}</span>'
+    # Grid de 4 columnas — mismo patrón que cards de cliente
+    MAX_COLS = 4
+    inm_list = list(df_inm.iterrows())
+    for fila_start in range(0, len(inm_list), MAX_COLS):
+        fila_rows = inm_list[fila_start:fila_start+MAX_COLS]
+        cols = st.columns(MAX_COLS)
+        for col_idx, (_, row) in enumerate(fila_rows):
+            idx        = fila_start + col_idx
+            nombre_inm = str(row.get(col_n,""))
+            sem        = calcular_semaforo_inmueble(row)
+            vld        = vlds.get(nombre_inm,{})
+            vld_estado = vld.get("estado","")
+            vld_manual = vld.get("manual", False)
+
+            # Métricas
+            renta     = _gv(row,"renta","Renta")
+            ibi       = _gv(row,"ibi_anual","IBI_Anual")
+            amort     = _gv(row,"amortizacion_fiscal","Amortizacion_Fiscal")
+            seguro    = _gv(row,"seguro_anual","Seguro_Anual")
+            comunidad = _gv(row,"comunidad","Comunidad")*12
+            gastos    = ibi+amort+seguro+comunidad
+            neto      = renta*12 - gastos
+            tipo_arr  = str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento","Larga Duración"))
+            inquilino = str(row.get("inquilino") or row.get("Inquilino","—"))[:28]
+
+            # Estado visual
+            if vld_estado in ("ok","vl"):
+                est_lbl = "✓ Validado" if vld_manual else "✓ Correcto"
+                est_bg  = "rgba(5,150,105,0.10)"
+                est_col = "#059669"
+            elif sem["estado"] in ("cr","critico"):
+                n_cr    = len([p for p in sem["problemas"] if p["tipo"]=="crit"])
+                est_lbl = f"⚠ {n_cr} crítico{'s' if n_cr>1 else ''}"
+                est_bg  = "rgba(220,38,38,0.10)"
+                est_col = "#DC2626"
+            elif sem["estado"] in ("wn","advertencia"):
+                n_wn    = len([p for p in sem["problemas"] if p["tipo"]=="warn"])
+                est_lbl = f"◔ {n_wn} aviso{'s' if n_wn>1 else ''}"
+                est_bg  = "rgba(217,119,6,0.10)"
+                est_col = "#D97706"
             else:
-                pill_html = '<span class="nc-pill-pos"><span class="dot"></span>Correcto</span>'
+                est_lbl = "✓ Correcto"
+                est_bg  = "rgba(5,150,105,0.10)"
+                est_col = "#059669"
 
-        renta    = _gv(row,"renta","Renta")
-        ibi      = _gv(row,"ibi_anual","IBI_Anual")
-        amort    = _gv(row,"amortizacion_fiscal","Amortizacion_Fiscal")
-        seguro   = _gv(row,"seguro_anual","Seguro_Anual")
-        comunidad= _gv(row,"comunidad","Comunidad")*12
-        gastos   = ibi+amort+seguro+comunidad
-        neto     = renta*12 - gastos
+            # Primera alerta
+            alerta_txt = ""
+            if sem["problemas"] and vld_estado not in ("ok","vl"):
+                p0 = sem["problemas"][0]["titulo"]
+                mas = f" +{len(sem['problemas'])-1} más" if len(sem["problemas"])>1 else ""
+                alerta_txt = f"⚠ {p0}{mas}"
+            elif vld_manual:
+                alerta_txt = "✓ Validado manualmente"
 
-        if sem["problemas"] and vld_estado not in ("ok","vl"):
-            p0 = sem["problemas"][0]["titulo"]
-            mas = f' <span style="color:var(--txd);">+{len(sem["problemas"])-1} más</span>' if len(sem["problemas"])>1 else ""
-            alertas_txt = f'<div class="inm-alerts">⚠ {p0}{mas}</div>'
-        elif vld_manual:
-            alertas_txt = '<div class="inm-alerts" style="color:var(--acc);">✓ Validado manualmente</div>'
-        else:
-            alertas_txt = '<div class="inm-alerts" style="color:var(--ok);">✓ Sin problemas detectados</div>'
+            neto_col = "#059669" if neto >= 0 else "#DC2626"
 
-        tipo_arr  = str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento",""))
-        inquilino = str(row.get("inquilino") or row.get("Inquilino","—"))
+            with cols[col_idx]:
+                # Header con color del cliente
+                hdr = (
+                    f'<div style="background:{_cc};border-radius:12px 12px 0 0;' +
+                    f'padding:12px 14px 10px;margin-bottom:-1px;">' +
+                    f'<div style="font-size:15px;font-weight:800;color:#FFF;' +
+                    f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+                    f'{nombre_inm}</div>' +
+                    f'<div style="font-size:11px;color:rgba(255,255,255,0.65);margin-top:2px;">' +
+                    f'{inquilino} · {tipo_arr}</div>' +
+                    f'</div>'
+                )
+                body = (
+                    f'<div style="background:#FFF;border:2px solid #E2E8F0;' +
+                    f'border-top:none;border-radius:0 0 12px 12px;' +
+                    f'padding:12px 14px 10px;">' +
+                    # alerta
+                    (f'<div style="font-size:12px;color:{est_col};font-weight:600;' +
+                     f'margin-bottom:8px;padding:4px 8px;background:{est_bg};' +
+                     f'border-radius:6px;">{alerta_txt}</div>' if alerta_txt else
+                     f'<div style="height:4px;"></div>') +
+                    # métricas
+                    f'<div style="display:flex;justify-content:space-between;margin-bottom:5px;">' +
+                    f'<span style="font-size:12px;color:#94A3B8;">📈 Renta/mes</span>' +
+                    f'<span style="font-size:13px;font-weight:800;color:#059669;">{fmt_eur(renta)}</span></div>' +
+                    f'<div style="display:flex;justify-content:space-between;margin-bottom:5px;">' +
+                    f'<span style="font-size:12px;color:#94A3B8;">📉 Gastos/año</span>' +
+                    f'<span style="font-size:13px;font-weight:800;color:#DC2626;">−{fmt_eur(gastos)}</span></div>' +
+                    f'<div style="display:flex;justify-content:space-between;margin-bottom:8px;">' +
+                    f'<span style="font-size:12px;color:#94A3B8;">⚖️ Neto/año</span>' +
+                    f'<span style="font-size:13px;font-weight:800;color:{neto_col};">{fmt_eur(neto)}</span></div>' +
+                    # badge estado
+                    f'<div style="background:{est_bg};border-radius:6px;padding:4px 10px;' +
+                    f'text-align:center;font-size:12px;font-weight:700;color:{est_col};">' +
+                    f'{est_lbl}</div></div>'
+                )
+                st.markdown(hdr + body, unsafe_allow_html=True)
 
-        warn_cls = " warn-row" if (sem["estado"] in ("cr","wn","critico","advertencia") and vld_estado not in ("ok","vl")) else ""
-        st.markdown(f"""
-        <div class="nc-inm-row{warn_cls}">
-          <div class="nc-inm-rail {rail_cls}"></div>
-          <div class="nc-inm-body">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div class="nc-inm-name">{nombre_inm}</div>
-                <div class="nc-inm-meta">{inquilino[:25]} · {tipo_arr}</div>
-                {alertas_txt}
-              </div>
-              <div style="display:flex;align-items:center;gap:16px;flex-shrink:0;">
-                <div class="inm-metrics">
-                  <div style="text-align:center;">
-                    <div class="inm-metric-lbl">Renta/mes</div>
-                    <div class="inm-metric-val" style="color:var(--ok);">{fmt_eur(renta)}</div>
-                  </div>
-                  <div style="text-align:center;">
-                    <div class="inm-metric-lbl">Gastos/año</div>
-                    <div class="inm-metric-val" style="color:var(--cr);">−{fmt_eur(gastos)}</div>
-                  </div>
-                  <div style="text-align:center;">
-                    <div class="inm-metric-lbl">Neto/año</div>
-                    <div class="inm-metric-val">{fmt_eur(neto)}</div>
-                  </div>
-                </div>
-                {pill_html}
-              </div>
-            </div>
-          </div>
-        </div>""", unsafe_allow_html=True)
-
-        bc1,bc2,bc3 = st.columns([2,1,1])
-        with bc1:
-            if st.button(f"🔍 Revisar — {nombre_inm[:22]}",
-                         key=f"rev_{cliente_id[:8]}_{idx}", use_container_width=True):
-                st.session_state.fh_inmueble_sel = nombre_inm
-                st.session_state.fh_menu = "ficha"
-                st.rerun()
-        with bc2:
-            if vld_estado not in ("ok","vl") and sem["estado"] != "ok":
-                if st.button("✅ Forzar validación",
-                             key=f"vld_{cliente_id[:8]}_{idx}", use_container_width=True):
-                    if "fh_validaciones" not in st.session_state: st.session_state.fh_validaciones = {}
-                    if cliente_id not in st.session_state.fh_validaciones: st.session_state.fh_validaciones[cliente_id] = {}
-                    st.session_state.fh_validaciones[cliente_id][nombre_inm] = {
-                        "estado":"vl","manual":True,"fecha":date.today().strftime("%d/%m/%Y")}
-                    st.rerun()
-        with bc3:
-            if vld_manual:
-                if st.button("↩ Desvalidar",
-                             key=f"dvl_{cliente_id[:8]}_{idx}", use_container_width=True):
-                    st.session_state.fh_validaciones[cliente_id].pop(nombre_inm, None)
-                    st.rerun()
+                # Botones — Revisar y Validar
+                b1, b2 = st.columns(2)
+                with b1:
+                    if st.button(f"🔍 Revisar",
+                                 key=f"rev_{cliente_id[:8]}_{idx}",
+                                 use_container_width=True):
+                        st.session_state.fh_inmueble_sel = nombre_inm
+                        st.session_state.fh_menu = "ficha"
+                        st.rerun()
+                with b2:
+                    if vld_manual:
+                        if st.button("↩ Desvalidar",
+                                     key=f"dvl_{cliente_id[:8]}_{idx}",
+                                     use_container_width=True):
+                            st.session_state.fh_validaciones[cliente_id].pop(nombre_inm, None)
+                            st.rerun()
+                    elif vld_estado not in ("ok","vl") and sem["estado"] not in ("ok",""):
+                        if st.button("✅ Validar",
+                                     key=f"vld_{cliente_id[:8]}_{idx}",
+                                     use_container_width=True):
+                            if "fh_validaciones" not in st.session_state:
+                                st.session_state.fh_validaciones = {}
+                            if cliente_id not in st.session_state.fh_validaciones:
+                                st.session_state.fh_validaciones[cliente_id] = {}
+                            st.session_state.fh_validaciones[cliente_id][nombre_inm] = {
+                                "estado":"vl","manual":True,
+                                "fecha":date.today().strftime("%d/%m/%Y")}
+                            st.rerun()
+                st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
 # ── FICHA INMUEBLE ────────────────────────────────────────────────
 def pantalla_ficha_inmueble():
