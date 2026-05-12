@@ -91,10 +91,14 @@ LABELS = {
 
 # ── API ─────────────────────────────────────────────────────────
 def _get_api_key() -> str:
+    # Primero secrets de Streamlit Cloud
     try:
-        return st.secrets.get("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_API_KEY", "")
+        key = st.secrets["ANTHROPIC_API_KEY"]
+        if key: return key
     except Exception:
-        return os.getenv("ANTHROPIC_API_KEY", "")
+        pass
+    # Fallback variable de entorno
+    return os.getenv("ANTHROPIC_API_KEY", "")
 
 
 def _llamar_claude(system: str, pregunta: str, max_tokens: int = 350) -> str:
