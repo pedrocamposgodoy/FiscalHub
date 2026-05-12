@@ -13,6 +13,23 @@ import html as _html
 from nolasco_styles import inject_global_css
 from kpi_renderer import render_kpi_row, ACCENT_F, RED, AMBER, GREEN
 
+# Paleta determinista por cliente — 8 colores profesionales
+# Siempre el mismo color para el mismo cliente_id
+_PALETA_CLI = [
+    "#1E3A5F",  # azul marino
+    "#3D2B6B",  # morado oscuro
+    "#1A4731",  # verde oscuro
+    "#7A2D1A",  # rojo ladrillo
+    "#1A3A4A",  # azul petróleo
+    "#4A3000",  # marrón dorado
+    "#2D1A4A",  # índigo oscuro
+    "#3B3B3B",  # gris antracita
+]
+
+def _color_cli(cliente_id: str) -> str:
+    """Color determinista para un cliente — siempre el mismo."""
+    return _PALETA_CLI[abs(hash(str(cliente_id))) % len(_PALETA_CLI)]
+
 def _e(s):
     """Escapar caracteres HTML especiales en datos de usuario."""
     return _html.escape(str(s)) if s else ""
@@ -438,11 +455,11 @@ def pantalla_cartera():
             (not busqueda or busqueda.lower() in c["nombre"].lower())]
 
     # Colores header por estado
-    _HDR_COL = {"critico":"#7F1D1D","medio":"#78350F","ok":"#14532D"}
-    _ECOL    = {"critico":"#DC2626","medio":"#D97706","ok":"#059669"}
-    _ELBL    = {"critico":"⚠ Crítico","medio":"◔ Revisar","ok":"✓ OK"}
-    _BADGE   = {"critico":"rgba(220,38,38,0.12)",
-                "medio":"rgba(217,119,6,0.12)","ok":"rgba(5,150,105,0.12)"}
+    # Estado semántico para badge
+    _ECOL  = {"critico":"#DC2626","medio":"#D97706","ok":"#059669"}
+    _ELBL  = {"critico":"⚠ Crítico","medio":"◔ Revisar","ok":"✓ OK"}
+    _BADGE = {"critico":"rgba(220,38,38,0.12)",
+              "medio":"rgba(217,119,6,0.12)","ok":"rgba(5,150,105,0.12)"}
 
     def _cli_icon(nombre):
         n = nombre.lower()
@@ -459,7 +476,7 @@ def pantalla_cartera():
         cols = st.columns(MAX_COLS)
         for col_idx, c in enumerate(fila_rows):
             estado   = c["estado"]
-            hdr      = _HDR_COL[estado]
+            hdr      = _color_cli(c["id"])  # color único por cliente
             txt      = _ECOL[estado]
             lbl      = _ELBL[estado]
             badge_bg = _BADGE[estado]
@@ -539,19 +556,20 @@ def pantalla_cliente():
       <div class="nc-page-sub">{cliente["inmuebles"]} inmuebles · Campaña IRPF 2025</div>
     </div>""", unsafe_allow_html=True)
 
+    _cc = _color_cli(cliente_id)  # color único del cliente
     render_kpi_row([
         {"label":"📥 0102 Ingresos",
          "value":fmt_eur(modelo.get("ingresos",0)),
-         "color":GREEN, "subtitle":"Rendimiento íntegro"},
+         "color":_cc, "subtitle":"Rendimiento íntegro"},
         {"label":"📤 Gastos deducibles",
          "value":f"−{fmt_eur(modelo.get('total_gastos',0))}",
-         "color":RED,   "subtitle":"Total deducible"},
+         "color":_cc, "subtitle":"Total deducible"},
         {"label":"⚖️ 0149 Rend. neto",
          "value":fmt_eur(modelo.get("rend_neto",0)),
-         "color":ACCENT_F, "subtitle":"Antes de reducción"},
+         "color":_cc, "subtitle":"Antes de reducción"},
         {"label":"🧾 0156 Base imp. est.",
          "value":fmt_eur(modelo.get("rend_final",0)),
-         "color":AMBER, "subtitle":"⚠️ Orientativa"},
+         "color":_cc, "subtitle":"⚠️ Orientativa"},
     ])
 
 
@@ -1054,44 +1072,73 @@ def pantalla_alertas():
     criticas = [a for a in todas if a["tipo"] == "crit"]
     medias   = [a for a in todas if a["tipo"] == "warn"]
 
-    def _render_cards(lista):
-        cards_html = '<div class="nc-alert-grid">'
-        for a in lista:
-            tc         = "cr" if a["tipo"] == "crit" else "wn"
-            tipo_label = "⚠️ Crítica" if a["tipo"] == "crit" else "◔ Revisar"
-            imp_val    = a.get("impacto", 0)
-            imp_html   = '<span class="nc-alert-imp">' + _e(fmt_eur(imp_val)) + '</span>' if imp_val and imp_val > 0 else ''
-            nm         = _e(a.get("cliente_nombre", ""))
-            inm        = _e(a.get("inmueble", "")[:35])
-            titulo     = _e(a.get("titulo", ""))
-            desc       = _e(a.get("desc", "")[:100])
-            accion     = _e(a.get("accion", "")[:60])
-            cards_html += (
-                '<div class="nc-alert-card">'
-                  '<div class="alert-card-top ' + tc + '"></div>'
-                  '<div class="nc-alert-body">'
-                    '<div class="nc-alert-header">'
-                      '<span class="alert-card-tipo ' + tc + '">' + tipo_label + '</span>'
-                      + imp_html +
-                    '</div>'
-                    '<div class="nc-alert-client">' + nm + '</div>'
-                    '<div class="nc-alert-inm">📍 ' + inm + '</div>'
-                    '<div class="nc-alert-title">' + titulo + '</div>'
-                    '<div class="nc-alert-desc">' + desc + '</div>'
-                    '<div class="nc-alert-action">→ ' + accion + '</div>'
-                  '</div>'
-                '</div>'
-            )
-        cards_html += '</div>'
-        return cards_html
+    def _render_alertas_grid(lista, seccion_key):
+        """Cards de alerta con patrón header coloreado + body + botón clicable."""
+        MAX_COLS = 4
+        for fila_start in range(0, len(lista), MAX_COLS):
+            fila_rows = lista[fila_start:fila_start+MAX_COLS]
+            cols = st.columns(MAX_COLS)
+            for col_idx, a in enumerate(fila_rows):
+                es_crit = a["tipo"] == "crit"
+                tipo_lbl = "⚠️ Crítica" if es_crit else "◔ Revisar"
+                # Color header: color del cliente (determinista)
+                cli_id  = a.get("cliente_id", a.get("cliente_nombre",""))
+                hdr_col = _color_cli(cli_id)
+                # Badge color por tipo
+                badge_bg = "rgba(220,38,38,0.12)" if es_crit else "rgba(217,119,6,0.12)"
+                badge_col= "#DC2626" if es_crit else "#D97706"
+                nm      = _e(a.get("cliente_nombre",""))
+                inm     = _e(a.get("inmueble","")[:40])
+                titulo  = _e(a.get("titulo",""))
+                desc    = _e(a.get("desc","")[:120])
+                accion  = _e(a.get("accion","")[:80])
+
+                with cols[col_idx]:
+                    html = (
+                        f'<div style="background:{hdr_col};border-radius:12px 12px 0 0;'
+                        f'padding:12px 14px 10px;margin-bottom:-1px;">'
+                        f'<div style="font-size:11px;color:rgba(255,255,255,0.65);'
+                        f'font-weight:600;letter-spacing:0.05em;margin-bottom:3px;">'
+                        f'{tipo_lbl}</div>'
+                        f'<div style="font-size:15px;font-weight:800;color:#FFF;'
+                        f'line-height:1.2;">{nm}</div>'
+                        f'<div style="font-size:11px;color:rgba(255,255,255,0.65);'
+                        f'margin-top:2px;">📍 {inm}</div>'
+                        f'</div>'
+                        f'<div style="background:#FFF;border:2px solid #E2E8F0;'
+                        f'border-top:none;border-radius:0 0 12px 12px;'
+                        f'padding:12px 14px 10px;">'
+                        f'<div style="font-size:14px;font-weight:700;color:#1e293b;'
+                        f'margin-bottom:4px;">{titulo}</div>'
+                        f'<div style="font-size:12px;color:#64748B;margin-bottom:8px;'
+                        f'line-height:1.4;">{desc}</div>'
+                        f'<div style="background:{badge_bg};border-radius:6px;'
+                        f'padding:5px 10px;font-size:11px;font-weight:700;'
+                        f'color:{badge_col};">→ {accion}</div>'
+                        f'</div>'
+                    )
+                    st.markdown(html, unsafe_allow_html=True)
+                    # Botón clicable — navega al cliente
+                    cli_obj = next((c for c in cartera
+                                    if c["nombre"]==a.get("cliente_nombre","")), None)
+                    if st.button("🔍 Ir al cliente",
+                                 key=f"alt_{seccion_key}_{fila_start}_{col_idx}",
+                                 use_container_width=True):
+                        if cli_obj:
+                            st.session_state.fh_cliente_sel = cli_obj["id"]
+                            st.session_state.fh_menu = "cliente"
+                            st.rerun()
+                    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
 
     if criticas:
-        st.markdown('<div class="nc-section">🔴 Críticas — acción urgente</div>', unsafe_allow_html=True)
-        st.markdown(_render_cards(criticas), unsafe_allow_html=True)
+        st.markdown('<div class="nc-section">🔴 Críticas — acción urgente</div>',
+                    unsafe_allow_html=True)
+        _render_alertas_grid(criticas, "cr")
 
     if medias:
-        st.markdown('<div class="nc-section" style="margin-top:20px;">🟡 A revisar esta semana</div>', unsafe_allow_html=True)
-        st.markdown(_render_cards(medias), unsafe_allow_html=True)
+        st.markdown('<div class="nc-section" style="margin-top:20px;">🟡 A revisar esta semana</div>',
+                    unsafe_allow_html=True)
+        _render_alertas_grid(medias, "wn")
 
 # ── EXPORTAR ──────────────────────────────────────────────────────
 def pantalla_exportar():
