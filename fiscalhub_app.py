@@ -918,6 +918,14 @@ def pantalla_ficha_inmueble():
 
     dec = st.session_state[dec_key]
 
+    # ── KPI IMPACTO: Antes vs. Después ───────────────────────────
+    m_sim      = _simular(row, dec)
+    base_orig  = m.get("rend_final", 0)
+    base_sim   = m_sim["rend_final"]
+    ahorro     = base_orig - base_sim
+    ahorro_pct = round(ahorro / base_orig * 100, 1) if base_orig else 0
+    col_imp    = st.columns(4)
+
     for _col, _lbl, _val2, _color2, _border2 in [
         (col_imp[0], "📊 Base original",  fmt_eur(base_orig), "#475569",              "#94A3B8"),
         (col_imp[1], "🔬 Base simulada",  fmt_eur(base_sim),  _color_cli(cliente_id), _color_cli(cliente_id)),
