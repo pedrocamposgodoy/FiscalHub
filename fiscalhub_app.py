@@ -412,27 +412,34 @@ def pantalla_cartera():
       <div class="nc-page-sub">{len(cartera)} propietarios · {total_inm} inmuebles · campaña IRPF 2025</div>
     </div>""", unsafe_allow_html=True)
 
-    def _kpi(col, label, value, subtitle, color, nav=None, key_sfx=""):
-        col.markdown(f"""<div class="nc-card" style="border-top-color:{color}">
-          <div class="nc-label">{label}</div>
-          <div class="nc-number" style="color:{color}">{value}</div>
-          <div class="nc-subtitle">{subtitle}</div>
-        </div>""", unsafe_allow_html=True)
-        if nav:
-            if col.button("↗ Ver alertas", key=f"knav_{key_sfx}",
-                          use_container_width=True):
-                st.session_state.fh_menu = nav
-                st.rerun()
+    def _kpi_btn(col, label, value, subtitle, color_cls, color_hex, key, nav=None):
+        """KPI como st.button — la card ES el botón, sin nada debajo."""
+        col.markdown(f'<div class="nc-kpi-wrap nc-kpi-{color_cls}">', unsafe_allow_html=True)
+        clicked = col.button(
+            f"{label}\n{value}\n{subtitle}",
+            key=key,
+            use_container_width=True,
+            help=f"Clic para ir a {nav}" if nav else None
+        )
+        col.markdown('</div>', unsafe_allow_html=True)
+        if clicked and nav:
+            st.session_state.fh_menu = nav
+            st.rerun()
+        return clicked
 
     k1,k2,k3,k4 = st.columns(4)
-    _kpi(k1, "👥 Clientes", len(cartera),
-         f"{n_crit} críticos · {n_med} revisar · {n_ok} OK", "#534AB7")
-    _kpi(k2, "🏠 Inmuebles", total_inm,
-         "Activos patrimoniales", "#534AB7")
-    _kpi(k3, "🚨 Alertas críticas", total_crit,
-         "Antes del 30 jun", "#DC2626", nav="alertas", key_sfx="alrt")
-    _kpi(k4, "💶 Impacto fiscal", fmt_eur(total_imp),
-         "Recuperable · cartera", "#D97706")
+    _kpi_btn(k1,"👥 Clientes", str(len(cartera)),
+             f"{n_crit} críticos · {n_med} revisar · {n_ok} OK",
+             "acc","#534AB7","kpi_cli")
+    _kpi_btn(k2,"🏠 Inmuebles", str(total_inm),
+             "Activos patrimoniales",
+             "acc","#534AB7","kpi_inm")
+    _kpi_btn(k3,"🚨 Alertas críticas", str(total_crit),
+             "Antes del 30 jun",
+             "neg","#DC2626","kpi_crit", nav="alertas")
+    _kpi_btn(k4,"💶 Impacto fiscal", fmt_eur(total_imp),
+             "Recuperable · cartera",
+             "warn","#D97706","kpi_imp")
 
 
     st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
@@ -462,6 +469,7 @@ def pantalla_cartera():
         c_cls  = "neg" if c["criticas"] > 0 else "acc"
         m_cls  = "warn" if c["medias"] > 0 else "acc"
 
+        st.markdown(f'<div class="nc-cli-wrap">', unsafe_allow_html=True)
         st.markdown(
             f'''<div class="nc-cli-card {estado}">
   <div class="nc-cli-header">
@@ -493,13 +501,14 @@ def pantalla_cartera():
   </div>
 </div>''', unsafe_allow_html=True)
 
-        if st.button(f"📂 Abrir — {c['nombre'][:24]}", key=f"sel_{c['id']}",
-                     use_container_width=True):
+        # Botón transparente superpuesto (invisible, cubre la card)
+        if st.button(" ", key=f"sel_{c['id']}", use_container_width=True,
+                     help=f"Ver detalle de {c['nombre']}"):
             st.session_state.fh_cliente_sel = c["id"]
             st.session_state.fh_menu = "cliente"
             st.rerun()
-
-        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
 
 # ── PANTALLA CLIENTE ──────────────────────────────────────────────
@@ -527,27 +536,28 @@ def pantalla_cliente():
       <div class="nc-page-sub">{cliente["inmuebles"]} inmuebles · Campaña IRPF 2025</div>
     </div>""", unsafe_allow_html=True)
 
+    def _kpi_static(col, label, value, subtitle, color_cls):
+        col.markdown(f'<div class="nc-kpi-wrap nc-kpi-{color_cls}">', unsafe_allow_html=True)
+        col.markdown(
+            f'<div class="nc-card"><div class="nc-label">{label}</div>' +
+            f'<div class="nc-number">{value}</div>' +
+            f'<div class="nc-subtitle">{subtitle}</div></div>',
+            unsafe_allow_html=True)
+        col.markdown('</div>', unsafe_allow_html=True)
+
     k1,k2,k3,k4 = st.columns(4)
-    with k1: st.markdown(f"""<div class="nc-card" style="border-top-color:#059669">
-      <div class="nc-label">📥 0102 Ingresos</div>
-      <div class="nc-number" style="color:#059669">{fmt_eur(modelo.get("ingresos",0))}</div>
-      <div class="nc-subtitle">Rendimiento íntegro</div>
-      </div>""", unsafe_allow_html=True)
-    with k2: st.markdown(f"""<div class="nc-card" style="border-top-color:#DC2626">
-      <div class="nc-label">📤 Gastos deducibles</div>
-      <div class="nc-number" style="color:#DC2626">−{fmt_eur(modelo.get("total_gastos",0))}</div>
-      <div class="nc-subtitle">Total deducible</div>
-      </div>""", unsafe_allow_html=True)
-    with k3: st.markdown(f"""<div class="nc-card" style="border-top-color:#534AB7">
-      <div class="nc-label">⚖️ 0149 Rend. neto</div>
-      <div class="nc-number" style="color:#534AB7">{fmt_eur(modelo.get("rend_neto",0))}</div>
-      <div class="nc-subtitle">Antes de reducción</div>
-      </div>""", unsafe_allow_html=True)
-    with k4: st.markdown(f"""<div class="nc-card" style="border-top-color:#D97706">
-      <div class="nc-label">🧾 0156 Base imp. est.</div>
-      <div class="nc-number" style="color:#D97706">{fmt_eur(modelo.get("rend_final",0))}</div>
-      <div class="nc-subtitle">⚠️ Orientativa</div>
-      </div>""", unsafe_allow_html=True)
+    _kpi_static(k1,"📥 0102 Ingresos",
+                fmt_eur(modelo.get("ingresos",0)),
+                "Rendimiento íntegro","pos")
+    _kpi_static(k2,"📤 Gastos deducibles",
+                f"−{fmt_eur(modelo.get('total_gastos',0))}",
+                "Total deducible","neg")
+    _kpi_static(k3,"⚖️ 0149 Rend. neto",
+                fmt_eur(modelo.get("rend_neto",0)),
+                "Antes de reducción","acc")
+    _kpi_static(k4,"🧾 0156 Base imp. est.",
+                fmt_eur(modelo.get("rend_final",0)),
+                "⚠️ Orientativa","warn")
 
 
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
@@ -921,16 +931,18 @@ def pantalla_resumen_global():
         </div>""", unsafe_allow_html=True)
 
     k1,k2,k3,k4 = st.columns(4)
-    with k1: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #059669"><div class="nc-label">0102 Ingresos</div>
-      <div class="nc-number" style="color:#059669">{fmt_eur(modelo.get("ingresos",0))}</div>
-      <div class="nc-subtitle">{len(nombres)} inmuebles</div></div>""", unsafe_allow_html=True)
-    with k2: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #DC2626"><div class="nc-label">Gastos deducibles</div>
-      <div class="nc-number" style="color:#DC2626">−{fmt_eur(modelo.get("total_gastos",0))}</div></div>""", unsafe_allow_html=True)
-    with k3: st.markdown(f"""<div class="nc-card"><div class="nc-label">0149 Rend. neto</div>
-      <div class="nc-number">{fmt_eur(modelo.get("rend_neto",0))}</div></div>""", unsafe_allow_html=True)
-    with k4: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #D97706"><div class="nc-label">0156 Base imp. est.</div>
-      <div class="nc-number" style="color:#534AB7">{fmt_eur(modelo.get("rend_final",0))}</div>
-      <div class="nc-subtitle">⚠️ Orientativa</div></div>""", unsafe_allow_html=True)
+    for _col, _lbl, _val, _sub, _cls in [
+        (k1,"📥 0102 Ingresos",    fmt_eur(modelo.get("ingresos",0)),       f"{len(nombres)} inmuebles","pos"),
+        (k2,"📤 Gastos deducibles",f"−{fmt_eur(modelo.get('total_gastos',0))}","Total deducible",          "neg"),
+        (k3,"⚖️ 0149 Rend. neto",  fmt_eur(modelo.get("rend_neto",0)),      "Antes de reducción",        "acc"),
+        (k4,"🧾 0156 Base imp.",    fmt_eur(modelo.get("rend_final",0)),     "⚠️ Orientativa",            "warn"),
+    ]:
+        _col.markdown(f'<div class="nc-kpi-wrap nc-kpi-{_cls}">', unsafe_allow_html=True)
+        _col.markdown(f"""<div class="nc-card">
+          <div class="nc-label">{_lbl}</div>
+          <div class="nc-number">{_val}</div>
+          <div class="nc-subtitle">{_sub}</div></div>""", unsafe_allow_html=True)
+        _col.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="nc-section">Desglose por inmueble</div>', unsafe_allow_html=True)
     if not df_inm.empty:
@@ -1030,10 +1042,18 @@ def pantalla_alertas():
     </div>""", unsafe_allow_html=True)
 
     k1,k2,k3 = st.columns(3)
-    with k1: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #DC2626"><div class="nc-label">Críticas</div>
-      <div class="nc-number" style="color:#DC2626">{n_cr}</div><div class="nc-subtitle">Antes del 30 jun</div></div>""", unsafe_allow_html=True)
-    with k2: st.markdown(f"""<div class="nc-card"><div class="nc-label">A revisar</div>
-      <div class="nc-number" style="color:var(--wn);">{n_wn}</div></div>""", unsafe_allow_html=True)
+    k1.markdown('<div class="nc-kpi-wrap nc-kpi-neg">', unsafe_allow_html=True)
+    k1.markdown(f"""<div class="nc-card">
+      <div class="nc-label">🚨 Críticas</div>
+      <div class="nc-number">{n_cr}</div>
+      <div class="nc-subtitle">Antes del 30 jun</div></div>""", unsafe_allow_html=True)
+    k1.markdown('</div>', unsafe_allow_html=True)
+    k2.markdown('<div class="nc-kpi-wrap nc-kpi-warn">', unsafe_allow_html=True)
+    k2.markdown(f"""<div class="nc-card">
+      <div class="nc-label">⚡ A revisar</div>
+      <div class="nc-number">{n_wn}</div>
+      <div class="nc-subtitle">Esta semana</div></div>""", unsafe_allow_html=True)
+    k2.markdown('</div>', unsafe_allow_html=True)
     with k3:
         imp = sum(a.get("impacto",0) for a in todas if a.get("impacto",0)>0)
         st.markdown(f"""<div class="nc-card" style="border-top:3px solid #D97706"><div class="nc-label">Impacto</div>
