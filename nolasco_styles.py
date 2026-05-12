@@ -154,11 +154,27 @@ def inject_global_css(app: str):
     /* RESET */
     * {{ box-sizing: border-box; }}
     #MainMenu, footer, header {{ visibility: hidden; }}
-    .block-container {{ padding-top: 2rem !important; max-width: 100% !important; }}
+    .block-container {{
+        padding-top: 2rem !important;
+        max-width: 100% !important;
+        background-color: {t['body_bg']} !important;
+    }}
 
     /* BODY */
-    .stApp {{
+    .stApp,
+    .stApp > div,
+    .stApp > div > div,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stAppViewContainer"] > div,
+    [data-testid="stMainBlockContainer"],
+    [data-testid="stMain"],
+    [data-testid="stMain"] > div,
+    section.main,
+    section.main > div {{
         background-color: {t['body_bg']} !important;
+    }}
+
+    .stApp {{
         font-family: {t['font_body']} !important;
         color: {t['text_primary']} !important;
     }}
