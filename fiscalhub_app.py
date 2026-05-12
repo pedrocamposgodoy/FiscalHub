@@ -556,20 +556,21 @@ def pantalla_cliente():
       <div class="nc-page-sub">{cliente["inmuebles"]} inmuebles · Campaña IRPF 2025</div>
     </div>""", unsafe_allow_html=True)
 
-    _cc = _color_cli(cliente_id)  # color único del cliente
+    _cc = _color_cli(cliente_id)  # color único del cliente — se usa en border-top
+    # Número semántico + border-top con color del cliente
     render_kpi_grid([
         {"label":"📥 0102 Ingresos",
          "value":fmt_eur(modelo.get("ingresos",0)),
-         "color":_cc, "subtitle":"Rendimiento íntegro"},
+         "color":GREEN,   "border_color":_cc, "subtitle":"Rendimiento íntegro"},
         {"label":"📤 Gastos deducibles",
          "value":f"−{fmt_eur(modelo.get('total_gastos',0))}",
-         "color":_cc, "subtitle":"Total deducible"},
+         "color":RED,     "border_color":_cc, "subtitle":"Total deducible"},
         {"label":"⚖️ 0149 Rend. neto",
          "value":fmt_eur(modelo.get("rend_neto",0)),
-         "color":_cc, "subtitle":"Antes de reducción"},
+         "color":ACCENT_F,"border_color":_cc, "subtitle":"Antes de reducción"},
         {"label":"🧾 0156 Base imp. est.",
          "value":fmt_eur(modelo.get("rend_final",0)),
-         "color":_cc, "subtitle":"⚠️ Orientativa"},
+         "color":AMBER,   "border_color":_cc, "subtitle":"⚠️ Orientativa"},
     ])
 
 
@@ -943,19 +944,20 @@ def pantalla_resumen_global():
           Verificar antes de presentar a la AEAT.
         </div>""", unsafe_allow_html=True)
 
-    render_kpi_row([
+    _cc_gl = _color_cli(cliente_id)
+    render_kpi_grid([
         {"label":"📥 0102 Ingresos",
          "value":fmt_eur(modelo.get("ingresos",0)),
-         "color":GREEN,    "subtitle":f"{len(nombres)} inmuebles"},
+         "color":GREEN,    "border_color":_cc_gl, "subtitle":f"{len(nombres)} inmuebles"},
         {"label":"📤 Gastos deducibles",
          "value":f"−{fmt_eur(modelo.get('total_gastos',0))}",
-         "color":RED,      "subtitle":"Total deducible"},
+         "color":RED,      "border_color":_cc_gl, "subtitle":"Total deducible"},
         {"label":"⚖️ 0149 Rend. neto",
          "value":fmt_eur(modelo.get("rend_neto",0)),
-         "color":ACCENT_F, "subtitle":"Antes de reducción"},
+         "color":ACCENT_F, "border_color":_cc_gl, "subtitle":"Antes de reducción"},
         {"label":"🧾 0156 Base imp.",
          "value":fmt_eur(modelo.get("rend_final",0)),
-         "color":AMBER,    "subtitle":"⚠️ Orientativa"},
+         "color":AMBER,    "border_color":_cc_gl, "subtitle":"⚠️ Orientativa"},
     ])
 
     st.markdown('<div class="nc-section">Desglose por inmueble</div>', unsafe_allow_html=True)
