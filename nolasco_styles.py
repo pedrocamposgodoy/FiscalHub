@@ -327,7 +327,7 @@ def inject_global_css(app: str):
     }}
 
     /* NC-KPI-BTN — KPI clicable como st.button() */
-    /* Aplicar clase nc-kpi-{color_key} al contenedor via st.markdown antes del botón */
+    /* Aplicar clase nc-kpi-{{color_key}} al contenedor via st.markdown antes del botón */
     [data-testid="stColumn"] .nc-kpi-wrap {{
         position: relative;
     }}
