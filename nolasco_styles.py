@@ -311,7 +311,7 @@ def inject_global_css(app: str):
     }}
     button[kind="primary"]:hover {{ opacity: 0.88 !important; }}
 
-    /* NC-CARDS — KPI altura fija + relieve */
+    /* NC-CARDS — KPI como div estático (para contenido puro) */
     .nc-card {{
         background: {t['card_bg']};
         border-radius: 12px;
@@ -324,13 +324,59 @@ def inject_global_css(app: str):
         flex-direction: column;
         justify-content: center;
         overflow: hidden;
-        transition: box-shadow 0.2s, transform 0.15s;
-        cursor: pointer;
     }}
-    .nc-card:hover {{
-        box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
-        transform: translateY(-2px);
+
+    /* NC-KPI-BTN — KPI clicable como st.button() */
+    /* Aplicar clase nc-kpi-{color_key} al contenedor via st.markdown antes del botón */
+    [data-testid="stColumn"] .nc-kpi-wrap {{
+        position: relative;
     }}
+    [data-testid="stColumn"] .nc-kpi-wrap .stButton > button {{
+        width: 100% !important;
+        height: 130px !important;
+        background: {t['card_bg']} !important;
+        border: 2px solid {t['card_border']} !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06) !important;
+        padding: 14px 18px !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+        flex-direction: column !important;
+        display: flex !important;
+        transition: box-shadow 0.2s, transform 0.15s !important;
+        white-space: normal !important;
+        line-height: 1.3 !important;
+        cursor: pointer !important;
+        color: {t['text_primary']} !important;
+        font-family: {t['font_body']} !important;
+    }}
+    [data-testid="stColumn"] .nc-kpi-wrap .stButton > button:hover {{
+        box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08) !important;
+        transform: translateY(-2px) !important;
+        background: {t['card_bg']} !important;
+    }}
+    /* Colores de borde superior por tipo */
+    .nc-kpi-acc .stButton > button {{ border-top: 5px solid {t['accent']} !important; }}
+    .nc-kpi-neg .stButton > button {{ border-top: 5px solid {t['negative']} !important; }}
+    .nc-kpi-warn .stButton > button {{ border-top: 5px solid {t['warning']} !important; }}
+    .nc-kpi-pos  .stButton > button {{ border-top: 5px solid {t['positive']} !important; }}
+
+    /* Colores de borde superior para nc-card dentro del wrapper */
+    .nc-kpi-acc .nc-card {{ border-top: 5px solid {t['accent']} !important; }}
+    .nc-kpi-neg .nc-card {{ border-top: 5px solid {t['negative']} !important; }}
+    .nc-kpi-warn .nc-card {{ border-top: 5px solid {t['warning']} !important; }}
+    .nc-kpi-pos  .nc-card {{ border-top: 5px solid {t['positive']} !important; }}
+
+    /* Colores del número según clase */
+    .nc-kpi-acc .nc-number {{ color: {t['accent']} !important; }}
+    .nc-kpi-neg .nc-number {{ color: {t['negative']} !important; }}
+    .nc-kpi-warn .nc-number {{ color: {t['warning']} !important; }}
+    .nc-kpi-pos  .nc-number {{ color: {t['positive']} !important; }}
+
+    /* Quitar margen entre wrapper y contenedor Streamlit */
+    .nc-kpi-wrap + div {{ margin-top: 0 !important; }}
+    .nc-kpi-wrap {{ margin-bottom: 0 !important; }}
     .nc-card-sm {{
         background: {t['card_bg']};
         border-radius: 12px;
@@ -471,6 +517,42 @@ def inject_global_css(app: str):
     .sb-bar  {{ height:4px;background:rgba(255,255,255,0.12);border-radius:2px;margin-top:10px;overflow:hidden; }}
     .sb-fill {{ height:100%;border-radius:2px; }}
     .sb-bar-labels {{ display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.4);margin-top:4px; }}
+
+    /* BOTÓN OVERLAY invisible — cubre la nc-cli-card para hacerla clicable */
+    /* El div nc-cli-wrap envuelve la card + el stButton */
+    .nc-cli-wrap {{
+        position: relative;
+        margin-bottom: 8px;
+    }}
+    /* La card HTML */
+    .nc-cli-wrap .nc-cli-card {{
+        position: relative;
+        z-index: 1;
+    }}
+    /* El botón Streamlit: transparente, 100% altura, posición absoluta sobre la card */
+    .nc-cli-wrap .stButton {{
+        position: absolute !important;
+        top: 0 !important; left: 0 !important;
+        width: 100% !important; height: 100% !important;
+        z-index: 2 !important;
+    }}
+    .nc-cli-wrap .stButton > button {{
+        width: 100% !important;
+        height: 100% !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: transparent !important;
+        font-size: 0 !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+    }}
+    .nc-cli-wrap .stButton > button:hover {{
+        background: rgba(83,74,183,0.04) !important;
+        border: none !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }}
 
     /* CARDS CLIENTE — tabla visual con icono y métricas */
     .nc-cli-grid {{
