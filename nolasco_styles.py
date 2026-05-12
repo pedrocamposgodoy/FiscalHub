@@ -195,7 +195,7 @@ def inject_global_css(app: str):
         color: {t['sidebar_txt']} !important;
     }}
 
-    /* SIDEBAR — botones */
+    /* SIDEBAR — botones (+30% tamaño) */
     [data-testid="stSidebar"] .stButton > button,
     [data-testid="stSidebar"] .stButton > button *,
     [data-testid="stSidebar"] .stButton > button span {{
@@ -203,9 +203,9 @@ def inject_global_css(app: str):
         color: {t['sidebar_txt']} !important;
         border: none !important;
         border-radius: 8px !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
-        padding: 8px 14px !important;
+        font-size: 17px !important;
+        font-weight: 600 !important;
+        padding: 11px 14px !important;
         text-align: left !important;
         width: 100% !important;
         justify-content: flex-start !important;
@@ -220,15 +220,15 @@ def inject_global_css(app: str):
         color: {t['sidebar_txt_hover']} !important;
     }}
 
-    /* SIDEBAR — radio nav */
+    /* SIDEBAR — radio nav (+30%) */
     [data-testid="stSidebar"] .stRadio label,
     [data-testid="stSidebar"] .stRadio label span,
     [data-testid="stSidebar"] .stRadio label * {{
         color: {t['sidebar_txt']} !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
+        font-size: 17px !important;
+        font-weight: 600 !important;
         border-radius: 8px !important;
-        padding: 2px 0 !important;
+        padding: 4px 0 !important;
     }}
 
     [data-testid="stSidebar"] .stRadio label:hover {{
@@ -525,12 +525,12 @@ def inject_global_css(app: str):
     /* SIDEBAR BLOCKS (avatar, IRPF counter, brand) */
     .sb-brand {{ padding:16px 14px 10px;border-bottom:1px solid {t['sidebar_border']}; }}
     .sb-logo  {{ width:30px;height:30px;border:2px solid {t['sidebar_txt_hover']};color:{t['sidebar_txt_hover']} !important;display:inline-flex;align-items:center;justify-content:center;font-family:{t['font_display']};font-size:12px;border-radius:6px;font-weight:800; }}
-    .sb-wordmark {{ font-family:{t['font_body']};font-size:18px;color:{t['sidebar_txt_hover']} !important;font-weight:800;letter-spacing:-0.01em; }}
+    .sb-wordmark {{ font-family:{t['font_body']};font-size:22px;color:{t['sidebar_txt_hover']} !important;font-weight:800;letter-spacing:-0.01em; }}
     .sb-tag {{ font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:{t['sidebar_txt']} !important;margin-top:4px;padding-left:38px; }}
     .sb-advisor {{ padding:10px 14px;border-bottom:1px solid {t['sidebar_border']};display:flex;align-items:center;gap:10px; }}
     .sb-avatar {{ width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:{t['sidebar_txt_hover']} !important;flex-shrink:0; }}
-    .sb-advisor-name {{ font-size:13px;font-weight:700;color:{t['sidebar_txt_hover']} !important;line-height:1.2; }}
-    .sb-advisor-desc {{ font-size:10px;color:{t['sidebar_txt']} !important;margin-top:1px; }}
+    .sb-advisor-name {{ font-size:17px;font-weight:700;color:{t['sidebar_txt_hover']} !important;line-height:1.2; }}
+    .sb-advisor-desc {{ font-size:13px;color:{t['sidebar_txt']} !important;margin-top:1px; }}
     /* Nav items — más grandes y compactos */
     .sb-nav-item {{ 
         display:flex;align-items:center;gap:10px;
@@ -548,9 +548,9 @@ def inject_global_css(app: str):
         border:1px solid rgba(255,255,255,0.15);
         border-radius:10px;
     }}
-    .sb-irpf-label {{ font-size:9px;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;color:rgba(255,255,255,0.55);margin-bottom:4px; }}
-    .sb-irpf-num {{ font-family:{t['font_body']};font-size:28px;font-weight:900;line-height:1;color:{t['sidebar_txt_hover']} !important; }}
-    .sb-irpf-sub {{ font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px; }}
+    .sb-irpf-label {{ font-size:12px;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;color:rgba(255,255,255,0.55);margin-bottom:4px; }}
+    .sb-irpf-num {{ font-family:{t['font_body']};font-size:36px;font-weight:900;line-height:1;color:{t['sidebar_txt_hover']} !important; }}
+    .sb-irpf-sub {{ font-size:13px;color:rgba(255,255,255,0.5);margin-top:2px; }}
     .sb-bar  {{ height:4px;background:rgba(255,255,255,0.12);border-radius:2px;margin-top:10px;overflow:hidden; }}
     .sb-fill {{ height:100%;border-radius:2px; }}
     .sb-bar-labels {{ display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.4);margin-top:4px; }}
