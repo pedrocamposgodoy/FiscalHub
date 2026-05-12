@@ -315,14 +315,15 @@ def inject_global_css(app: str):
     .nc-card {{
         background: {t['card_bg']};
         border-radius: 12px;
-        padding: 20px 22px;
+        padding: 20px 22px 20px;
         border: 1px solid {t['card_border']};
-        border-top: 3px solid {t['accent']};
+        border-top: 4px solid {t['accent']};
         box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-        min-height: 110px;
+        aspect-ratio: 1.6 / 1;
         display: flex;
         flex-direction: column;
         justify-content: center;
+        overflow: hidden;
     }}
     .nc-card-sm {{
         background: {t['card_bg']};
@@ -335,12 +336,12 @@ def inject_global_css(app: str):
     /* TIPOGRAFÍA */
     .nc-number {{
         font-family: {t['font_body']};
-        font-size: 1.9rem;
-        font-weight: 800;
+        font-size: 2.2rem;
+        font-weight: 900;
         color: {t['text_primary']};
         line-height: 1;
-        letter-spacing: -0.02em;
-        margin: 6px 0 4px;
+        letter-spacing: -0.03em;
+        margin: 8px 0 4px;
     }}
     .nc-number-lg {{
         font-family: {t['font_display']};
@@ -350,9 +351,9 @@ def inject_global_css(app: str):
         line-height: 1;
     }}
     .nc-label {{
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.10em;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
         color: {t['text_muted']};
     }}
@@ -433,16 +434,37 @@ def inject_global_css(app: str):
     .nc-page-sub    {{ font-size:13px;color:{t['text_secondary']};margin-bottom:0; }}
 
     /* SIDEBAR BLOCKS (avatar, IRPF counter, brand) */
-    .sb-brand {{ padding:16px 14px 12px;border-bottom:1px solid {t['sidebar_border']}; }}
-    .sb-logo  {{ width:28px;height:28px;border:1.5px solid {t['accent']};color:{t['accent']} !important;display:inline-flex;align-items:center;justify-content:center;font-family:{t['font_display']};font-size:12px;border-radius:4px;font-weight:700; }}
-    .sb-wordmark {{ font-family:{t['font_display']};font-size:18px;color:{t['text_primary']} !important;font-weight:700; }}
-    .sb-tag {{ font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:{t['text_muted']} !important;margin-top:4px;padding-left:38px; }}
-    .sb-advisor {{ padding:10px 14px;border-bottom:1px solid {t['sidebar_border']}; }}
-    .sb-avatar {{ width:32px;height:32px;border-radius:50%;background:{t['accent_light']};border:1.5px solid {t['accent_pastel']};display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:{t['accent']} !important; }}
-    .sb-irpf {{ margin:8px 10px 12px;padding:12px;background:{t['accent_light']};border:1px solid {t['accent_pastel']};border-radius:8px; }}
-    .sb-irpf-num {{ font-family:{t['font_display']};font-size:24px;font-weight:700;line-height:1.1; }}
-    .sb-bar  {{ height:3px;background:{t['card_border']};border-radius:2px;margin-top:8px;overflow:hidden; }}
+    .sb-brand {{ padding:16px 14px 10px;border-bottom:1px solid {t['sidebar_border']}; }}
+    .sb-logo  {{ width:30px;height:30px;border:2px solid {t['sidebar_txt_hover']};color:{t['sidebar_txt_hover']} !important;display:inline-flex;align-items:center;justify-content:center;font-family:{t['font_display']};font-size:12px;border-radius:6px;font-weight:800; }}
+    .sb-wordmark {{ font-family:{t['font_body']};font-size:18px;color:{t['sidebar_txt_hover']} !important;font-weight:800;letter-spacing:-0.01em; }}
+    .sb-tag {{ font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:{t['sidebar_txt']} !important;margin-top:4px;padding-left:38px; }}
+    .sb-advisor {{ padding:10px 14px;border-bottom:1px solid {t['sidebar_border']};display:flex;align-items:center;gap:10px; }}
+    .sb-avatar {{ width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:{t['sidebar_txt_hover']} !important;flex-shrink:0; }}
+    .sb-advisor-name {{ font-size:13px;font-weight:700;color:{t['sidebar_txt_hover']} !important;line-height:1.2; }}
+    .sb-advisor-desc {{ font-size:10px;color:{t['sidebar_txt']} !important;margin-top:1px; }}
+    /* Nav items — más grandes y compactos */
+    .sb-nav-item {{ 
+        display:flex;align-items:center;gap:10px;
+        padding:11px 14px;border-radius:8px;
+        font-size:14px;font-weight:600;
+        color:{t['sidebar_txt']} !important;
+        margin:2px 8px;cursor:pointer;
+        transition:background 0.15s,color 0.15s;
+    }}
+    .sb-nav-item:hover {{ background:{t['sidebar_bg_hover']};color:{t['sidebar_txt_hover']} !important; }}
+    /* Widget IRPF — contraste sobre fondo oscuro */
+    .sb-irpf {{ 
+        margin:8px 10px 10px;padding:14px;
+        background:rgba(255,255,255,0.10);
+        border:1px solid rgba(255,255,255,0.15);
+        border-radius:10px;
+    }}
+    .sb-irpf-label {{ font-size:9px;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;color:rgba(255,255,255,0.55);margin-bottom:4px; }}
+    .sb-irpf-num {{ font-family:{t['font_body']};font-size:28px;font-weight:900;line-height:1;color:{t['sidebar_txt_hover']} !important; }}
+    .sb-irpf-sub {{ font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px; }}
+    .sb-bar  {{ height:4px;background:rgba(255,255,255,0.12);border-radius:2px;margin-top:10px;overflow:hidden; }}
     .sb-fill {{ height:100%;border-radius:2px; }}
+    .sb-bar-labels {{ display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.4);margin-top:4px; }}
 
     /* INMUEBLE ROWS */
     .nc-inm-row {{ display:flex;align-items:center;background:{t['card_bg']};border:1px solid {t['card_border']};border-radius:12px;margin-bottom:8px;overflow:hidden;transition:box-shadow 0.15s;box-shadow:0 1px 3px rgba(0,0,0,0.04); }}
@@ -489,6 +511,24 @@ def inject_global_css(app: str):
     .nc-chk-item:last-child {{ border-bottom:none; }}
     .nc-chk-on  {{ width:14px;height:14px;background:{t['positive']};border-radius:3px;display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;flex-shrink:0; }}
     .nc-chk-off {{ width:14px;height:14px;border:1px solid {t['negative']};border-radius:3px;display:inline-flex;align-items:center;justify-content:center;color:{t['negative']};font-size:10px;flex-shrink:0; }}
+
+    /* NC-CARD-WARN — inmueble/cliente con alertas pendientes */
+    .nc-card-warn {{
+        background: #FFFBEB !important;
+        border: 1px solid #FDE68A !important;
+        border-left: 4px solid #FFC107 !important;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(255,193,7,0.15);
+    }}
+    .nc-card-warn:hover {{
+        box-shadow: 0 4px 16px rgba(255,193,7,0.25);
+        transform: translateY(-1px);
+    }}
+    /* Inmueble row con alerta — fondo amarillo */
+    .nc-inm-row.warn-row {{
+        background: #FFFBEB !important;
+        border-color: #FDE68A !important;
+    }}
 
     /* BOCADILLO IA */
     .nc-bocadillo {{ background:{t['bocadillo_bg']};border:1.5px solid {t['bocadillo_border']};border-radius:20px;padding:18px 20px;position:relative;box-shadow:{t['bocadillo_shadow']};margin-bottom:12px; }}
