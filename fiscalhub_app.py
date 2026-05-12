@@ -476,10 +476,10 @@ def pantalla_cartera():
                     f'padding:14px 16px 12px;display:flex;align-items:center;gap:10px;margin-bottom:-1px;">' +
                     f'<span style="font-size:22px;">{icon}</span>' +
                     f'<div style="flex:1;min-width:0;">' +
-                    f'<div style="font-size:14px;font-weight:800;color:#FFF;line-height:1.2;' +
+                    f'<div style="font-size:18px;font-weight:800;color:#FFF;line-height:1.2;' +
                     f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{c["nombre"]}</div>' +
                     f'<div style="font-size:10px;color:rgba(255,255,255,0.65);margin-top:2px;">' +
-                    f'{tipo} · {c["inmuebles"]} inmuebles</div></div>' +
+                    f'<span style="font-size:13px;opacity:0.75;">{tipo} · {c["inmuebles"]} inmuebles</span></div></div>' +
                     f'<span style="background:rgba(255,255,255,0.15);color:#FFF;font-size:9px;' +
                     f'font-weight:700;padding:3px 8px;border-radius:6px;">{lbl}</span></div>'
                 )
@@ -488,19 +488,19 @@ def pantalla_cartera():
                     'border-radius:0 0 12px 12px;padding:14px 16px 12px;">' +
                     '<div style="display:flex;justify-content:space-between;margin-bottom:8px;' +
                     'padding-bottom:8px;border-bottom:1px solid #F1F5F9;">' +
-                    f'<span style="font-size:11px;color:#94A3B8;font-weight:600;">Tipo</span>' +
-                    f'<span style="font-size:11px;color:#1e293b;font-weight:700;">{tipo}</span></div>' +
+                    f'<span style="font-size:14px;color:#94A3B8;font-weight:600;">Tipo</span>' +
+                    f'<span style="font-size:14px;color:#1e293b;font-weight:700;">{tipo}</span></div>' +
                     f'<div style="display:flex;justify-content:space-between;margin-bottom:5px;">' +
-                    f'<span style="font-size:11px;color:#94A3B8;">📥 0102 Ingresos</span>' +
-                    f'<span style="font-size:12px;font-weight:700;color:#059669;">{ingresos}</span></div>' +
+                    f'<span style="font-size:14px;color:#94A3B8;">📥 0102 Ingresos</span>' +
+                    f'<span style="font-size:16px;font-weight:800;color:#059669;">{ingresos}</span></div>' +
                     f'<div style="display:flex;justify-content:space-between;margin-bottom:5px;">' +
-                    f'<span style="font-size:11px;color:#94A3B8;">🚨 Alertas críticas</span>' +
-                    f'<span style="font-size:12px;font-weight:700;color:{cr_col};">{c["criticas"]}</span></div>' +
+                    f'<span style="font-size:14px;color:#94A3B8;">🚨 Alertas críticas</span>' +
+                    f'<span style="font-size:16px;font-weight:800;color:{cr_col};">{c["criticas"]}</span></div>' +
                     f'<div style="display:flex;justify-content:space-between;margin-bottom:10px;">' +
-                    f'<span style="font-size:11px;color:#94A3B8;">⚡ A revisar</span>' +
-                    f'<span style="font-size:12px;font-weight:700;color:{med_col};">{c["medias"]}</span></div>' +
+                    f'<span style="font-size:14px;color:#94A3B8;">⚡ A revisar</span>' +
+                    f'<span style="font-size:16px;font-weight:800;color:{med_col};">{c["medias"]}</span></div>' +
                     f'<div style="background:{badge_bg};border-radius:6px;padding:5px 10px;' +
-                    f'text-align:center;font-size:11px;font-weight:700;color:{txt};">' +
+                    f'text-align:center;font-size:14px;font-weight:700;color:{txt};">' +
                     f'Base imp. est.: {base_imp}</div></div>'
                 )
                 st.markdown(hdr_html + body_html, unsafe_allow_html=True)
@@ -1096,18 +1096,87 @@ def pantalla_alertas():
 # ── EXPORTAR ──────────────────────────────────────────────────────
 def pantalla_exportar():
     cartera = st.session_state.get("fh_cartera",[])
-    st.markdown("""<div style="margin-bottom:16px;">
+    st.markdown("""<div style="margin-bottom:20px;">
       <div class="nc-page-label">Generación de entregables</div>
-      <div class="nc-page-title">Exportar</div>
-      <div class="nc-page-sub">Selecciona un cliente para generar sus documentos IRPF.</div>
+      <div class="nc-page-title">Exportar documentos</div>
+      <div class="nc-page-sub">Revisa y exporta el modelo 100 de cada cliente.</div>
     </div>""", unsafe_allow_html=True)
-    if cartera:
-        sel = st.selectbox("Cliente:", [c["nombre"] for c in cartera], key="exp_sel")
-        c_sel = next((c for c in cartera if c["nombre"]==sel), None)
-        if c_sel and st.button("🔍 Ir a revisión", type="primary", use_container_width=True, key="exp_go"):
-            st.session_state.fh_cliente_sel = c_sel["id"]
-            st.session_state.fh_menu = "cliente"; st.rerun()
-    else: st.info("Sin clientes vinculados.")
+
+    if not cartera:
+        st.info("Sin clientes vinculados.")
+        return
+
+    _HDR = {"critico":"#7F1D1D","medio":"#78350F","ok":"#14532D"}
+    _COL = {"critico":"#DC2626","medio":"#D97706","ok":"#059669"}
+    _LBL = {"critico":"⚠ Crítico","medio":"◔ Revisar","ok":"✓ OK"}
+
+    MAX_COLS = 4
+    for fila_start in range(0, len(cartera), MAX_COLS):
+        fila_rows = cartera[fila_start:fila_start+MAX_COLS]
+        cols = st.columns(MAX_COLS)
+        for col_idx, c in enumerate(fila_rows):
+            estado  = c["estado"]
+            hdr     = _HDR[estado]
+            txt     = _COL[estado]
+            lbl     = _LBL[estado]
+            modelo  = c.get("modelo100",{})
+            ingresos= fmt_eur(modelo.get("ingresos",0))
+            base    = fmt_eur(modelo.get("rend_final",0))
+            gastos  = fmt_eur(modelo.get("total_gastos",0))
+            rend    = fmt_eur(modelo.get("rend_neto",0))
+            criticas= c["criticas"]
+            badge_bg= {"critico":"rgba(220,38,38,0.10)",
+                       "medio":"rgba(217,119,6,0.10)",
+                       "ok":"rgba(5,150,105,0.10)"}[estado]
+            chk = "✅" if criticas == 0 else "⚠️"
+
+            with cols[col_idx]:
+                st.markdown(
+                    f'<div style="background:{hdr};border-radius:12px 12px 0 0;' +
+                    f'padding:14px 16px 12px;display:flex;align-items:center;' +
+                    f'gap:10px;margin-bottom:-1px;">' +
+                    f'<span style="font-size:22px;">📋</span>' +
+                    f'<div style="flex:1;min-width:0;">' +
+                    f'<div style="font-size:16px;font-weight:800;color:#FFF;' +
+                    f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+                    f'{c["nombre"]}</div>' +
+                    f'<div style="font-size:12px;color:rgba(255,255,255,0.65);margin-top:2px;">' +
+                    f'{c["inmuebles"]} inmuebles · campaña 2025</div></div>' +
+                    f'<span style="background:rgba(255,255,255,0.15);color:#FFF;' +
+                    f'font-size:11px;font-weight:700;padding:3px 8px;' +
+                    f'border-radius:6px;">{lbl}</span></div>' +
+                    f'<div style="background:#FFF;border:2px solid #E2E8F0;' +
+                    f'border-top:none;border-radius:0 0 12px 12px;' +
+                    f'padding:14px 16px 12px;">' +
+                    f'<div style="display:flex;justify-content:space-between;' +
+                    f'margin-bottom:6px;">' +
+                    f'<span style="font-size:13px;color:#94A3B8;">📥 0102 Ingresos</span>' +
+                    f'<span style="font-size:14px;font-weight:800;color:#059669;">{ingresos}</span></div>' +
+                    f'<div style="display:flex;justify-content:space-between;' +
+                    f'margin-bottom:6px;">' +
+                    f'<span style="font-size:13px;color:#94A3B8;">📤 Gastos deducibles</span>' +
+                    f'<span style="font-size:14px;font-weight:800;color:#DC2626;">-{gastos}</span></div>' +
+                    f'<div style="display:flex;justify-content:space-between;' +
+                    f'margin-bottom:6px;">' +
+                    f'<span style="font-size:13px;color:#94A3B8;">⚖️ 0149 Rend. neto</span>' +
+                    f'<span style="font-size:14px;font-weight:800;color:#534AB7;">{rend}</span></div>' +
+                    f'<div style="display:flex;justify-content:space-between;' +
+                    f'margin-bottom:10px;">' +
+                    f'<span style="font-size:13px;color:#94A3B8;">{chk} Alertas</span>' +
+                    f'<span style="font-size:14px;font-weight:800;color:{txt};">{criticas}</span></div>' +
+                    f'<div style="background:{badge_bg};border-radius:6px;' +
+                    f'padding:6px 10px;text-align:center;' +
+                    f'font-size:13px;font-weight:700;color:{txt};">' +
+                    f'🧾 Base imp. est.: {base}</div></div>',
+                    unsafe_allow_html=True)
+
+                if st.button("📄 Ir a revisión completa",
+                             key=f"exp_{c['id']}_{col_idx}",
+                             use_container_width=True, type="primary"):
+                    st.session_state.fh_cliente_sel = c["id"]
+                    st.session_state.fh_menu = "cliente"
+                    st.rerun()
+                st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
 # ── VINCULAR ──────────────────────────────────────────────────────
 def pantalla_vincular():
