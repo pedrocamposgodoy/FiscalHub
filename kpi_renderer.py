@@ -36,7 +36,7 @@ def render_kpi_row(kpis_data: list):
         subtitle = kpi.get("subtitle","")
 
         sub = (
-            f'<p style="font-size:11px;color:#94A3B8;margin:4px 0 0;'
+            f'<p style="font-size:14px;color:#94A3B8;margin:4px 0 0;'
             f'font-family:{_FONT};font-weight:500;">{subtitle}</p>'
         ) if subtitle else ""
 
@@ -49,10 +49,10 @@ def render_kpi_row(kpis_data: list):
             f'border-top:5px solid {color};'
             f'box-shadow:{_SHADOW};'
             f'box-sizing:border-box;">'
-            f'<p style="font-family:{_FONT};font-size:10px;font-weight:800;'
+            f'<p style="font-family:{_FONT};font-size:13px;font-weight:800;'
             f'color:#94A3B8;margin:0 0 8px;text-transform:uppercase;'
             f'letter-spacing:0.10em;">{label}</p>'
-            f'<p style="font-family:{_FONT};font-size:2rem;font-weight:900;'
+            f'<p style="font-family:{_FONT};font-size:2.6rem;font-weight:900;'
             f'color:{color};margin:0;line-height:1;'
             f'letter-spacing:-0.02em;">{value}</p>'
             f'{sub}'
@@ -74,11 +74,11 @@ def render_kpi_large(label: str, value: str,
             f'<div style="margin-top:10px;">'
             f'<span style="background:{dbg};color:{dc};'
             f'padding:4px 10px;border-radius:6px;'
-            f'font-size:12px;font-weight:700;">{delta}</span>'
+            f'font-size:15px;font-weight:700;">{delta}</span>'
             f'</div>'
         )
     sub_html = (
-        f'<p style="font-size:12px;color:#94A3B8;margin:4px 0 0;">'
+        f'<p style="font-size:15px;color:#94A3B8;margin:4px 0 0;">'
         f'{subtitle}</p>'
     ) if subtitle else ""
 
@@ -86,10 +86,10 @@ def render_kpi_large(label: str, value: str,
         f'<div style="background:#FFFFFF;border-radius:12px;padding:24px;'
         f'border:{_BORDER};border-top:5px solid {color};'
         f'box-shadow:{_SHADOW};">'
-        f'<p style="font-family:{_FONT};font-size:10px;font-weight:800;'
+        f'<p style="font-family:{_FONT};font-size:13px;font-weight:800;'
         f'color:#94A3B8;margin:0 0 8px;text-transform:uppercase;'
         f'letter-spacing:0.10em;">{label}</p>'
-        f'<p style="font-family:{_FONT};font-size:2.4rem;font-weight:900;'
+        f'<p style="font-family:{_FONT};font-size:3.1rem;font-weight:900;'
         f'color:{color};margin:0;line-height:1;'
         f'letter-spacing:-0.02em;">{value}</p>'
         f'{sub_html}{delta_html}'
