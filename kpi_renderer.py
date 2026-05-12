@@ -36,28 +36,32 @@ def _kpi_html(label: str, value: str, color: str,
            ) if nav_label else ""
     return f"""
     <div style="
+        position:relative;
         background:#FFFFFF;
         border-radius:12px;
-        padding:18px 20px;
         border:{_BORDER};
         border-top:5px solid {color};
         box-shadow:{_SHADOW};
-        height:{_H};
-        min-height:{_H};
-        max-height:{_H};
-        display:flex;
-        flex-direction:column;
-        justify-content:center;
+        padding-top:55%;
         overflow:hidden;
         box-sizing:border-box;
     ">
-        <p style="font-family:{_FONT};font-size:10px;font-weight:800;
-                  color:#94A3B8;margin:0;text-transform:uppercase;
-                  letter-spacing:0.10em;">{label}</p>
-        <p style="font-family:{_FONT};font-size:2rem;font-weight:900;
-                  color:{color};margin:6px 0 0;line-height:1;
-                  letter-spacing:-0.02em;">{value}</p>
-        {sub}{nav}
+        <div style="
+            position:absolute;
+            top:0;left:0;right:0;bottom:0;
+            padding:16px 20px;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+        ">
+            <p style="font-family:{_FONT};font-size:10px;font-weight:800;
+                      color:#94A3B8;margin:0;text-transform:uppercase;
+                      letter-spacing:0.10em;">{label}</p>
+            <p style="font-family:{_FONT};font-size:2rem;font-weight:900;
+                      color:{color};margin:6px 0 0;line-height:1;
+                      letter-spacing:-0.02em;">{value}</p>
+            {sub}{nav}
+        </div>
     </div>"""
 
 
