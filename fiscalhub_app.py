@@ -11,6 +11,7 @@ from datetime import datetime, date
 import io
 import html as _html
 from nolasco_styles import inject_global_css
+from kpi_renderer import render_kpi_row, ACCENT_F, RED, AMBER, GREEN
 
 def _e(s):
     """Escapar caracteres HTML especiales en datos de usuario."""
@@ -412,34 +413,18 @@ def pantalla_cartera():
       <div class="nc-page-sub">{len(cartera)} propietarios · {total_inm} inmuebles · campaña IRPF 2025</div>
     </div>""", unsafe_allow_html=True)
 
-    def _kpi_btn(col, label, value, subtitle, color_cls, color_hex, key, nav=None):
-        """KPI como st.button — la card ES el botón, sin nada debajo."""
-        col.markdown(f'<div class="nc-kpi-wrap nc-kpi-{color_cls}">', unsafe_allow_html=True)
-        clicked = col.button(
-            f"{label}\n{value}\n{subtitle}",
-            key=key,
-            use_container_width=True,
-            help=f"Clic para ir a {nav}" if nav else None
-        )
-        col.markdown('</div>', unsafe_allow_html=True)
-        if clicked and nav:
-            st.session_state.fh_menu = nav
-            st.rerun()
-        return clicked
-
-    k1,k2,k3,k4 = st.columns(4)
-    _kpi_btn(k1,"👥 Clientes", str(len(cartera)),
-             f"{n_crit} críticos · {n_med} revisar · {n_ok} OK",
-             "acc","#534AB7","kpi_cli")
-    _kpi_btn(k2,"🏠 Inmuebles", str(total_inm),
-             "Activos patrimoniales",
-             "acc","#534AB7","kpi_inm")
-    _kpi_btn(k3,"🚨 Alertas críticas", str(total_crit),
-             "Antes del 30 jun",
-             "neg","#DC2626","kpi_crit", nav="alertas")
-    _kpi_btn(k4,"💶 Impacto fiscal", fmt_eur(total_imp),
-             "Recuperable · cartera",
-             "warn","#D97706","kpi_imp")
+    render_kpi_row([
+        {"label":"👥 Clientes",       "value":str(len(cartera)),
+         "color":ACCENT_F,
+         "subtitle":f"{n_crit} críticos · {n_med} revisar · {n_ok} OK"},
+        {"label":"🏠 Inmuebles",      "value":str(total_inm),
+         "color":ACCENT_F,            "subtitle":"Activos patrimoniales"},
+        {"label":"🚨 Alertas críticas","value":str(total_crit),
+         "color":RED,
+         "subtitle":"Antes del 30 jun", "nav":"alertas"},
+        {"label":"💶 Impacto fiscal", "value":fmt_eur(total_imp),
+         "color":AMBER,               "subtitle":"Recuperable · cartera"},
+    ])
 
 
     st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
@@ -536,28 +521,20 @@ def pantalla_cliente():
       <div class="nc-page-sub">{cliente["inmuebles"]} inmuebles · Campaña IRPF 2025</div>
     </div>""", unsafe_allow_html=True)
 
-    def _kpi_static(col, label, value, subtitle, color_cls):
-        col.markdown(f'<div class="nc-kpi-wrap nc-kpi-{color_cls}">', unsafe_allow_html=True)
-        col.markdown(
-            f'<div class="nc-card"><div class="nc-label">{label}</div>' +
-            f'<div class="nc-number">{value}</div>' +
-            f'<div class="nc-subtitle">{subtitle}</div></div>',
-            unsafe_allow_html=True)
-        col.markdown('</div>', unsafe_allow_html=True)
-
-    k1,k2,k3,k4 = st.columns(4)
-    _kpi_static(k1,"📥 0102 Ingresos",
-                fmt_eur(modelo.get("ingresos",0)),
-                "Rendimiento íntegro","pos")
-    _kpi_static(k2,"📤 Gastos deducibles",
-                f"−{fmt_eur(modelo.get('total_gastos',0))}",
-                "Total deducible","neg")
-    _kpi_static(k3,"⚖️ 0149 Rend. neto",
-                fmt_eur(modelo.get("rend_neto",0)),
-                "Antes de reducción","acc")
-    _kpi_static(k4,"🧾 0156 Base imp. est.",
-                fmt_eur(modelo.get("rend_final",0)),
-                "⚠️ Orientativa","warn")
+    render_kpi_row([
+        {"label":"📥 0102 Ingresos",
+         "value":fmt_eur(modelo.get("ingresos",0)),
+         "color":GREEN, "subtitle":"Rendimiento íntegro"},
+        {"label":"📤 Gastos deducibles",
+         "value":f"−{fmt_eur(modelo.get('total_gastos',0))}",
+         "color":RED,   "subtitle":"Total deducible"},
+        {"label":"⚖️ 0149 Rend. neto",
+         "value":fmt_eur(modelo.get("rend_neto",0)),
+         "color":ACCENT_F, "subtitle":"Antes de reducción"},
+        {"label":"🧾 0156 Base imp. est.",
+         "value":fmt_eur(modelo.get("rend_final",0)),
+         "color":AMBER, "subtitle":"⚠️ Orientativa"},
+    ])
 
 
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
@@ -930,19 +907,20 @@ def pantalla_resumen_global():
           Verificar antes de presentar a la AEAT.
         </div>""", unsafe_allow_html=True)
 
-    k1,k2,k3,k4 = st.columns(4)
-    for _col, _lbl, _val, _sub, _cls in [
-        (k1,"📥 0102 Ingresos",    fmt_eur(modelo.get("ingresos",0)),       f"{len(nombres)} inmuebles","pos"),
-        (k2,"📤 Gastos deducibles",f"−{fmt_eur(modelo.get('total_gastos',0))}","Total deducible",          "neg"),
-        (k3,"⚖️ 0149 Rend. neto",  fmt_eur(modelo.get("rend_neto",0)),      "Antes de reducción",        "acc"),
-        (k4,"🧾 0156 Base imp.",    fmt_eur(modelo.get("rend_final",0)),     "⚠️ Orientativa",            "warn"),
-    ]:
-        _col.markdown(f'<div class="nc-kpi-wrap nc-kpi-{_cls}">', unsafe_allow_html=True)
-        _col.markdown(f"""<div class="nc-card">
-          <div class="nc-label">{_lbl}</div>
-          <div class="nc-number">{_val}</div>
-          <div class="nc-subtitle">{_sub}</div></div>""", unsafe_allow_html=True)
-        _col.markdown('</div>', unsafe_allow_html=True)
+    render_kpi_row([
+        {"label":"📥 0102 Ingresos",
+         "value":fmt_eur(modelo.get("ingresos",0)),
+         "color":GREEN,    "subtitle":f"{len(nombres)} inmuebles"},
+        {"label":"📤 Gastos deducibles",
+         "value":f"−{fmt_eur(modelo.get('total_gastos',0))}",
+         "color":RED,      "subtitle":"Total deducible"},
+        {"label":"⚖️ 0149 Rend. neto",
+         "value":fmt_eur(modelo.get("rend_neto",0)),
+         "color":ACCENT_F, "subtitle":"Antes de reducción"},
+        {"label":"🧾 0156 Base imp.",
+         "value":fmt_eur(modelo.get("rend_final",0)),
+         "color":AMBER,    "subtitle":"⚠️ Orientativa"},
+    ])
 
     st.markdown('<div class="nc-section">Desglose por inmueble</div>', unsafe_allow_html=True)
     if not df_inm.empty:
@@ -1041,19 +1019,12 @@ def pantalla_alertas():
       <div class="nc-page-sub">{len(todas)} alertas · {n_cr} críticas · {n_wn} a revisar</div>
     </div>""", unsafe_allow_html=True)
 
-    k1,k2,k3 = st.columns(3)
-    k1.markdown('<div class="nc-kpi-wrap nc-kpi-neg">', unsafe_allow_html=True)
-    k1.markdown(f"""<div class="nc-card">
-      <div class="nc-label">🚨 Críticas</div>
-      <div class="nc-number">{n_cr}</div>
-      <div class="nc-subtitle">Antes del 30 jun</div></div>""", unsafe_allow_html=True)
-    k1.markdown('</div>', unsafe_allow_html=True)
-    k2.markdown('<div class="nc-kpi-wrap nc-kpi-warn">', unsafe_allow_html=True)
-    k2.markdown(f"""<div class="nc-card">
-      <div class="nc-label">⚡ A revisar</div>
-      <div class="nc-number">{n_wn}</div>
-      <div class="nc-subtitle">Esta semana</div></div>""", unsafe_allow_html=True)
-    k2.markdown('</div>', unsafe_allow_html=True)
+    render_kpi_row([
+        {"label":"🚨 Críticas",  "value":str(n_cr),
+         "color":RED,   "subtitle":"Antes del 30 jun"},
+        {"label":"⚡ A revisar", "value":str(n_wn),
+         "color":AMBER, "subtitle":"Esta semana"},
+    ])
     with k3:
         imp = sum(a.get("impacto",0) for a in todas if a.get("impacto",0)>0)
         st.markdown(f"""<div class="nc-card" style="border-top:3px solid #D97706"><div class="nc-label">Impacto</div>
