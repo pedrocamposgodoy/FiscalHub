@@ -101,16 +101,16 @@ APP_TOKENS = {
         ],
     },
 
-    # ── FISCALHUB — sidebar blanco, acento morado
+    # ── FISCALHUB — sidebar lavanda, acento morado, fondo elegante
     "ficahub": {
-        "sidebar_bg":        "#FFFFFF",
-        "sidebar_border":    _BD,
-        "sidebar_txt":       _TXM,
+        "sidebar_bg":        "#E8E6F8",
+        "sidebar_border":    "#D0CCF0",
+        "sidebar_txt":       "#3D3580",
         "sidebar_txt_hover": "#534AB7",
-        "sidebar_bg_hover":  "#EEEDFE",
-        "body_bg":           "#F0EFF9",
+        "sidebar_bg_hover":  "#D8D5F8",
+        "body_bg":           "#C9C6E8",
         "card_bg":           "#FFFFFF",
-        "card_border":       _BD,
+        "card_border":       "#D8D5F8",
         "accent":            "#534AB7",
         "accent_light":      "#EEEDFE",
         "accent_pastel":     "#D8D5F8",
@@ -120,8 +120,8 @@ APP_TOKENS = {
         "positive":          _POS,
         "negative":          _NEG,
         "warning":           _WARN,
-        "font_display":      "'Playfair Display', serif",
-        "font_body":         "'DM Sans', sans-serif",
+        "font_display":      "'Plus Jakarta Sans', sans-serif",
+        "font_body":         "'Plus Jakarta Sans', sans-serif",
         "bocadillo_bg":      "#FFFFFF",
         "bocadillo_border":  "#534AB7",
         "bocadillo_header":  "#534AB7",
@@ -149,7 +149,7 @@ def inject_global_css(app: str):
 
     css = f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
     /* RESET */
     * {{ box-sizing: border-box; }}
@@ -311,29 +311,36 @@ def inject_global_css(app: str):
     }}
     button[kind="primary"]:hover {{ opacity: 0.88 !important; }}
 
-    /* NC-CARDS */
+    /* NC-CARDS — KPI cuadrado compacto */
     .nc-card {{
         background: {t['card_bg']};
         border-radius: 12px;
-        padding: 24px;
+        padding: 20px 22px;
         border: 1px solid {t['card_border']};
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border-top: 3px solid {t['accent']};
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        min-height: 110px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }}
     .nc-card-sm {{
         background: {t['card_bg']};
         border-radius: 12px;
-        padding: 16px;
+        padding: 14px 16px;
         border: 1px solid {t['card_border']};
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }}
 
     /* TIPOGRAFÍA */
     .nc-number {{
-        font-family: {t['font_display']};
-        font-size: 2.25rem;
-        font-weight: 700;
+        font-family: {t['font_body']};
+        font-size: 1.9rem;
+        font-weight: 800;
         color: {t['text_primary']};
         line-height: 1;
+        letter-spacing: -0.02em;
+        margin: 6px 0 4px;
     }}
     .nc-number-lg {{
         font-family: {t['font_display']};
@@ -343,9 +350,9 @@ def inject_global_css(app: str):
         line-height: 1;
     }}
     .nc-label {{
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.08em;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.10em;
         text-transform: uppercase;
         color: {t['text_muted']};
     }}
