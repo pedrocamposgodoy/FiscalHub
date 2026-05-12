@@ -414,16 +414,15 @@ def pantalla_cartera():
     </div>""", unsafe_allow_html=True)
 
     render_kpi_row([
-        {"label":"👥 Clientes",       "value":str(len(cartera)),
+        {"label":"👥 Clientes",        "value":str(len(cartera)),
          "color":ACCENT_F,
          "subtitle":f"{n_crit} críticos · {n_med} revisar · {n_ok} OK"},
-        {"label":"🏠 Inmuebles",      "value":str(total_inm),
-         "color":ACCENT_F,            "subtitle":"Activos patrimoniales"},
+        {"label":"🏠 Inmuebles",       "value":str(total_inm),
+         "color":ACCENT_F,             "subtitle":"Activos patrimoniales"},
         {"label":"🚨 Alertas críticas","value":str(total_crit),
-         "color":RED,
-         "subtitle":"Antes del 30 jun", "nav":"alertas"},
-        {"label":"💶 Impacto fiscal", "value":fmt_eur(total_imp),
-         "color":AMBER,               "subtitle":"Recuperable · cartera"},
+         "color":RED,                  "subtitle":"Antes del 30 jun"},
+        {"label":"💶 Impacto fiscal",  "value":fmt_eur(total_imp),
+         "color":AMBER,                "subtitle":"Recuperable · cartera"},
     ])
 
 
@@ -1019,16 +1018,15 @@ def pantalla_alertas():
       <div class="nc-page-sub">{len(todas)} alertas · {n_cr} críticas · {n_wn} a revisar</div>
     </div>""", unsafe_allow_html=True)
 
+    imp = sum(a.get("impacto",0) for a in todas if a.get("impacto",0)>0)
     render_kpi_row([
-        {"label":"🚨 Críticas",  "value":str(n_cr),
-         "color":RED,   "subtitle":"Antes del 30 jun"},
-        {"label":"⚡ A revisar", "value":str(n_wn),
-         "color":AMBER, "subtitle":"Esta semana"},
+        {"label":"🚨 Críticas",   "value":str(n_cr),
+         "color":RED,    "subtitle":"Antes del 30 jun"},
+        {"label":"⚡ A revisar",  "value":str(n_wn),
+         "color":AMBER,  "subtitle":"Esta semana"},
+        {"label":"💶 Impacto",    "value":fmt_eur(imp),
+         "color":ACCENT_F, "subtitle":"Recuperable"},
     ])
-    with k3:
-        imp = sum(a.get("impacto",0) for a in todas if a.get("impacto",0)>0)
-        st.markdown(f"""<div class="nc-card" style="border-top:3px solid #D97706"><div class="nc-label">Impacto</div>
-          <div class="nc-number" style="color:#534AB7">{fmt_eur(imp)}</div></div>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
     if not todas: st.success("✅ Sin alertas activas."); return
