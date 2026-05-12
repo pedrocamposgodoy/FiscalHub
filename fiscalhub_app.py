@@ -39,165 +39,6 @@ def _hd():
 # El CSS completo se gestiona desde nolasco_styles.py (único fuente de verdad)
 # Esto se llama UNA VEZ al inicio de la app
 
-# ── CSS CUSTOM FISCALHUB ────────────────────────────────────────
-# Clases específicas de FiscalHub: kpi, fh-tbl, alert-card, m100, etc.
-# nolasco_styles aporta: body, sidebar, botones, inputs, nc-cards.
-FISCALHUB_CSS = """
-<style>
-:root{
-  --acc:#534AB7;--acc2:#3f36a0;
-  --acc-light:#EEEDFE;--acc-pastel:#D8D5F8;
-  --sf:#FFFFFF;--sf2:#F5F4FE;
-  --bd:rgba(83,74,183,0.08);--bd2:rgba(83,74,183,0.15);
-  --tx:#1e293b;--tx2:#0f172a;--txm:#64748B;--txd:#94A3B8;
-  --cr:#DC2626;--cr-b:rgba(220,38,38,0.08);
-  --wn:#D97706;--wn-b:rgba(217,119,6,0.08);
-  --ok:#059669;--ok-b:rgba(5,150,105,0.08);
-  --fd:'Playfair Display',Georgia,serif;
-  --fu:'DM Sans',system-ui,sans-serif;
-  --sb-acc:#bc84ee;
-}
-/* Sidebar custom */
-.sb-brand{padding:16px 14px 12px;border-bottom:1px solid rgba(255,255,255,0.08);}
-.sb-nc{width:28px;height:28px;border:1.5px solid var(--sb-acc);color:var(--sb-acc) !important;display:inline-flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:12px;border-radius:4px;font-weight:700;}
-.sb-wordmark{font-family:var(--fd);font-size:18px;color:#F1F5F9 !important;font-weight:700;}
-.sb-tag{font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#94A3B8 !important;margin-top:5px;padding-left:38px;}
-.sb-advisor{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.08);}
-.sb-avatar{width:32px;height:32px;border-radius:50%;background:rgba(188,132,238,0.18);border:1.5px solid rgba(188,132,238,0.35);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--sb-acc) !important;}
-.sb-irpf{margin:8px 10px 12px;padding:12px;background:rgba(188,132,238,0.08);border:1px solid rgba(188,132,238,0.2);border-radius:8px;}
-.sb-irpf-num{font-family:var(--fd);font-size:24px;font-weight:700;line-height:1.1;}
-.sb-bar{height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:8px;}
-.sb-fill{height:100%;border-radius:2px;}
-/* Página */
-.fh-page{padding:24px 28px 60px;}
-.fh-ey{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--txd);margin-bottom:4px;font-weight:600;}
-.fh-title{font-family:var(--fd);font-size:28px;color:var(--tx2);margin-bottom:4px;line-height:1.1;font-weight:700;}
-.fh-sub{font-size:13px;color:var(--txm);margin-bottom:0;}
-.fh-section{font-family:var(--fd);font-size:17px;color:var(--tx2);border-left:3px solid var(--acc);padding-left:12px;margin:24px 0 16px;line-height:1.1;font-weight:600;}
-/* KPIs */
-.kpi{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:18px 20px;border-top:3px solid var(--acc);box-shadow:0 2px 8px rgba(0,0,0,0.04);}
-.kpi.red{border-top-color:var(--cr);}
-.kpi.gold{border-top-color:var(--wn);}
-.kpi.grn{border-top-color:var(--ok);}
-.kpi-lbl{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--txd);margin-bottom:8px;font-weight:600;}
-.kpi-val{font-family:var(--fd);font-size:28px;font-weight:700;color:var(--tx2);line-height:1.1;}
-.kpi-val.cr{color:var(--cr);}
-.kpi-val.ac{color:var(--acc);}
-.kpi-val.ok{color:var(--ok);}
-.kpi-sub{font-size:11px;color:var(--txm);margin-top:6px;}
-/* Tabla */
-.fh-tbl{width:100%;background:var(--sf);border:1px solid var(--bd);border-radius:12px;border-collapse:separate;border-spacing:0;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
-.fh-tbl thead th{background:var(--acc-light);text-align:left;font-size:9px;letter-spacing:0.10em;text-transform:uppercase;color:var(--acc);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--bd2);}
-.fh-tbl thead th:first-child{border-radius:12px 0 0 0;}
-.fh-tbl thead th:last-child{border-radius:0 12px 0 0;}
-.fh-tbl tbody td{padding:11px 14px;border-bottom:1px solid var(--bd);color:var(--tx);vertical-align:middle;}
-.fh-tbl tbody tr:last-child td{border-bottom:0;}
-.fh-tbl tbody tr:hover td{background:var(--acc-light);}
-.fh-tbl tr.pr td{box-shadow:inset 3px 0 0 var(--cr);}
-.fh-tbl tr.wn td{box-shadow:inset 3px 0 0 var(--wn);}
-.nm{font-weight:600;color:var(--tx2);}
-/* Pills */
-.pill-cr{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 10px;border-radius:6px;background:var(--cr-b);color:var(--cr);}
-.pill-wn{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 10px;border-radius:6px;background:var(--wn-b);color:var(--wn);}
-.pill-ok{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 10px;border-radius:6px;background:var(--ok-b);color:var(--ok);}
-.pill-vl{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 10px;border-radius:6px;background:var(--acc-light);color:var(--acc);}
-.dot{width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block;}
-.bc{display:inline-block;min-width:20px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;text-align:center;background:var(--cr-b);color:var(--cr);}
-.bw{display:inline-block;min-width:20px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;text-align:center;background:var(--wn-b);color:var(--wn);}
-.bz{display:inline-block;min-width:20px;padding:1px 6px;border-radius:5px;font-size:10px;color:var(--txd);text-align:center;}
-.ck-ok{color:var(--ok);font-size:12px;font-weight:500;}
-.ck-no{color:var(--cr);font-size:12px;font-weight:500;}
-/* Callout */
-.callout{padding:12px 14px;border-radius:8px;border-left:3px solid;margin:10px 0;font-size:13px;}
-.callout.cr{background:var(--cr-b);border-color:var(--cr);}
-.callout.wn{background:var(--wn-b);border-color:var(--wn);}
-.callout.ok{background:var(--ok-b);border-color:var(--ok);}
-.callout.inf{background:var(--acc-light);border-color:var(--acc);}
-/* Panel */
-.panel{background:var(--sf);border:1px solid var(--bd);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
-.panel-head{padding:10px 14px;border-bottom:1px solid var(--bd);background:var(--acc-light);border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;}
-.panel-title{font-size:11px;letter-spacing:0.10em;text-transform:uppercase;color:var(--acc);font-weight:600;}
-/* Checks */
-.chk-item{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--bd);font-size:12px;}
-.chk-item:last-child{border-bottom:0;}
-.chk-item:nth-child(even){background:var(--sf2);}
-.chk-on{width:14px;height:14px;background:var(--ok);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;flex-shrink:0;}
-.chk-off{width:14px;height:14px;border:1px solid var(--cr);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;color:var(--cr);font-size:10px;flex-shrink:0;}
-.chk-lbl{flex:1;}
-.chk-hint{font-size:10px;color:var(--txd);}
-.chk-amt{font-size:12px;color:var(--tx2);min-width:90px;text-align:right;}
-.chk-amt.miss{color:var(--cr);}
-/* Modelo 100 */
-.m100{width:100%;background:var(--sf);border:1px solid var(--bd);border-radius:12px;border-collapse:separate;border-spacing:0;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
-.m100 thead th{background:var(--acc-light);font-size:9px;letter-spacing:0.10em;text-transform:uppercase;color:var(--acc);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--bd2);}
-.m100 thead th:first-child{border-radius:12px 0 0 0;}
-.m100 thead th:last-child{border-radius:0 12px 0 0;text-align:right;}
-.m100 tbody td{padding:9px 12px;border-bottom:1px solid var(--bd);color:var(--tx);}
-.m100 tbody td.r{text-align:right;}
-.m100 tbody tr:nth-child(even) td{background:var(--sf2);}
-.m100 tbody tr.sum td{background:var(--acc-light);font-weight:600;border-top:1px solid var(--bd2);}
-.m100 tbody tr.final td{background:var(--acc-pastel);font-weight:600;color:var(--acc2);}
-.cas{color:var(--acc);font-size:10px;}
-.l-sub{font-size:10px;color:var(--txd);margin-top:1px;}
-/* Inmuebles */
-.ok-pill{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;background:var(--ok-b);color:var(--ok);}
-.no-pill{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;background:var(--cr-b);color:var(--cr);}
-.inm-row{display:flex;align-items:center;background:var(--sf);border:1px solid var(--bd);border-radius:12px;margin-bottom:8px;overflow:hidden;transition:box-shadow .15s;}
-.inm-row:hover{box-shadow:0 4px 16px rgba(83,74,183,0.1);}
-.inm-rail{width:4px;align-self:stretch;flex-shrink:0;}
-.inm-rail.cr{background:var(--cr);}
-.inm-rail.wn{background:var(--wn);}
-.inm-rail.ok{background:var(--ok);}
-.inm-rail.vl{background:var(--acc);}
-.inm-body{flex:1;padding:10px 14px;}
-.inm-name{font-size:13px;font-weight:600;color:var(--tx2);}
-.inm-meta{font-size:10px;color:var(--txd);margin-top:1px;}
-.inm-alerts{font-size:11px;color:var(--txm);margin-top:3px;}
-.inm-metrics{display:flex;gap:16px;}
-.inm-metric-lbl{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);}
-.inm-metric-val{font-size:13px;font-weight:600;color:var(--tx2);}
-/* Alert cards */
-.alert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:4px;}
-.alert-card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:box-shadow .15s,transform .15s;}
-.alert-card:hover{box-shadow:0 6px 20px rgba(83,74,183,0.1);transform:translateY(-2px);}
-.alert-card-top{height:4px;width:100%;}
-.alert-card-top.cr{background:var(--cr);}
-.alert-card-top.wn{background:var(--wn);}
-.alert-card-body{padding:14px 16px 16px;}
-.alert-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.alert-card-tipo{font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:3px 8px;border-radius:6px;}
-.alert-card-tipo.cr{background:var(--cr-b);color:var(--cr);}
-.alert-card-tipo.wn{background:var(--wn-b);color:var(--wn);}
-.alert-card-imp{font-size:11px;font-weight:600;color:var(--acc);}
-.alert-card-client{font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:1px;}
-.alert-card-inm{font-size:10px;color:var(--txd);margin-bottom:10px;}
-.alert-card-title{font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:4px;line-height:1.3;}
-.alert-card-desc{font-size:11px;color:var(--txm);line-height:1.4;margin-bottom:10px;}
-.alert-card-action{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--acc);font-weight:500;padding-top:8px;border-top:1px solid var(--bd);}
-/* Resumen global */
-.global-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:4px;}
-.global-card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:box-shadow .15s;}
-.global-card:hover{box-shadow:0 6px 20px rgba(83,74,183,0.10);}
-.global-card-roof{height:5px;background:var(--acc);}
-.global-card-roof.manual{background:var(--wn);}
-.global-card-body{padding:14px 16px;}
-.global-card-name{font-size:14px;font-weight:600;color:var(--tx2);margin-bottom:2px;}
-.global-card-meta{font-size:10px;color:var(--txd);margin-bottom:14px;}
-.global-card-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.global-metric{background:var(--sf2);border-radius:8px;padding:8px 10px;}
-.global-metric-lbl{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin-bottom:3px;}
-.global-metric-val{font-size:15px;font-weight:600;}
-.global-metric-val.ok{color:var(--ok);}
-.global-metric-val.cr{color:var(--cr);}
-.global-metric-val.ac{color:var(--acc);}
-.global-metric-val.tx{color:var(--tx2);}
-.global-card-footer{padding-top:10px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;}
-.global-card-base-lbl{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);}
-.global-card-base-val{font-size:16px;font-weight:700;color:var(--acc);}
-.global-card-badge{font-size:9px;padding:3px 8px;border-radius:6px;background:var(--acc-light);color:var(--acc);font-weight:600;}
-.global-card-badge.manual{background:var(--wn-b);color:var(--wn);}
-</style>
-"""
 
 # ── Helpers ──────────────────────────────────────────────────────
 def sf(v, d=0):
@@ -501,7 +342,6 @@ def render_sidebar():
 # ── LOGIN ─────────────────────────────────────────────────────────
 def pantalla_login():
     inject_global_css("ficahub")
-    st.markdown(FISCALHUB_CSS, unsafe_allow_html=True)
     st.markdown("<div style='height:12vh;'></div>", unsafe_allow_html=True)
     _, col, _ = st.columns([1, 1, 1])
     with col:
@@ -566,21 +406,21 @@ def pantalla_cartera():
     n_ok   = sum(1 for c in cartera if c["estado"]=="ok")
 
     st.markdown(f"""<div style="margin-bottom:20px;">
-      <div class="fh-ey">Granada · Despacho fiscal</div>
-      <div class="fh-title">Cartera de clientes</div>
-      <div class="fh-sub">{len(cartera)} propietarios · {total_inm} inmuebles · campaña IRPF 2025</div>
+      <div class="nc-page-label">Granada · Despacho fiscal</div>
+      <div class="nc-page-title">Cartera de clientes</div>
+      <div class="nc-page-sub">{len(cartera)} propietarios · {total_inm} inmuebles · campaña IRPF 2025</div>
     </div>""", unsafe_allow_html=True)
 
     k1,k2,k3,k4 = st.columns(4)
-    with k1: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">Clientes</div>
-      <div class="kpi-val ac">{len(cartera)}</div>
-      <div class="kpi-sub">{n_crit} críticos · {n_med} revisar · {n_ok} OK</div></div>""", unsafe_allow_html=True)
-    with k2: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">Inmuebles gestionados</div>
-      <div class="kpi-val ac">{total_inm}</div><div class="kpi-sub">Activos patrimoniales</div></div>""", unsafe_allow_html=True)
-    with k3: st.markdown(f"""<div class="kpi red"><div class="kpi-lbl">Alertas críticas</div>
-      <div class="kpi-val cr">{total_crit}</div><div class="kpi-sub">Antes del 30 jun</div></div>""", unsafe_allow_html=True)
-    with k4: st.markdown(f"""<div class="kpi gold"><div class="kpi-lbl">Impacto fiscal</div>
-      <div class="kpi-val" style="color:var(--wn);">{fmt_eur(total_imp)}</div><div class="kpi-sub">Recuperable · cartera</div></div>""", unsafe_allow_html=True)
+    with k1: st.markdown(f"""<div class="nc-card"><div class="nc-label">Clientes</div>
+      <div class="nc-number" style="color:#534AB7">{len(cartera)}</div>
+      <div class="nc-subtitle">{n_crit} críticos · {n_med} revisar · {n_ok} OK</div></div>""", unsafe_allow_html=True)
+    with k2: st.markdown(f"""<div class="nc-card"><div class="nc-label">Inmuebles gestionados</div>
+      <div class="nc-number" style="color:#534AB7">{total_inm}</div><div class="nc-subtitle">Activos patrimoniales</div></div>""", unsafe_allow_html=True)
+    with k3: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #DC2626"><div class="nc-label">Alertas críticas</div>
+      <div class="nc-number" style="color:#DC2626">{total_crit}</div><div class="nc-subtitle">Antes del 30 jun</div></div>""", unsafe_allow_html=True)
+    with k4: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #D97706"><div class="nc-label">Impacto fiscal</div>
+      <div class="nc-number" style="color:var(--wn);">{fmt_eur(total_imp)}</div><div class="nc-subtitle">Recuperable · cartera</div></div>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
 
@@ -594,13 +434,13 @@ def pantalla_cartera():
             (not busqueda or busqueda.lower() in c["nombre"].lower())]
 
     def _pill(e):
-        if e=="critico": return '<span class="pill-cr"><span class="dot"></span>Crítico</span>'
-        if e=="medio":   return '<span class="pill-wn"><span class="dot"></span>Revisar</span>'
-        return '<span class="pill-ok"><span class="dot"></span>OK</span>'
+        if e=="critico": return '<span class="nc-pill-neg"><span class="dot"></span>Crítico</span>'
+        if e=="medio":   return '<span class="nc-pill-warn"><span class="dot"></span>Revisar</span>'
+        return '<span class="nc-pill-pos"><span class="dot"></span>OK</span>'
 
     filas = ""
     for c in rows:
-        rc  = "pr" if c["estado"]=="critico" else ("wn" if c["estado"]=="medio" else "")
+        rc  = "row-neg" if c["estado"]=="critico" else ("wn" if c["estado"]=="medio" else "")
         imp = fmt_eur(c["impacto"]) if c["impacto"] else "—"
         bcrit = f"<span class='bc'>{c['criticas']}</span>" if c['criticas'] else "<span class='bz'>0</span>"
         bmed  = f"<span class='bw'>{c['medias']}</span>" if c['medias'] else "<span class='bz'>0</span>"
@@ -613,7 +453,7 @@ def pantalla_cartera():
           <td>{_pill(c["estado"])}</td>
         </tr>"""
 
-    st.markdown(f"""<table class="fh-tbl">
+    st.markdown(f"""<table class="nc-table">
       <thead><tr>
         <th>Cliente</th><th style="text-align:right;">Inm.</th>
         <th style="text-align:center;">⚠ Críticas</th><th style="text-align:center;">◔ Medias</th>
@@ -621,7 +461,7 @@ def pantalla_cartera():
       </tr></thead><tbody>{filas}</tbody></table>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
-    st.markdown('<div class="fh-ey" style="margin-bottom:6px;">Abrir cliente</div>', unsafe_allow_html=True)
+    st.markdown('<div class="nc-page-label" style="margin-bottom:6px;">Abrir cliente</div>', unsafe_allow_html=True)
     MAX_COLS = 4
     for i in range(0, len(rows), MAX_COLS):
         batch = rows[i:i+MAX_COLS]
@@ -654,21 +494,21 @@ def pantalla_cliente():
         st.rerun()
 
     st.markdown(f"""<div style="margin-bottom:14px;">
-      <div class="fh-ey">Revisión IRPF 2025</div>
-      <div class="fh-title">{nombre}</div>
-      <div class="fh-sub">{cliente["inmuebles"]} inmuebles · Campaña IRPF 2025</div>
+      <div class="nc-page-label">Revisión IRPF 2025</div>
+      <div class="nc-page-title">{nombre}</div>
+      <div class="nc-page-sub">{cliente["inmuebles"]} inmuebles · Campaña IRPF 2025</div>
     </div>""", unsafe_allow_html=True)
 
     k1,k2,k3,k4 = st.columns(4)
-    with k1: st.markdown(f"""<div class="kpi grn"><div class="kpi-lbl">0102 Ingresos</div>
-      <div class="kpi-val ok">{fmt_eur(modelo.get("ingresos",0))}</div></div>""", unsafe_allow_html=True)
-    with k2: st.markdown(f"""<div class="kpi red"><div class="kpi-lbl">Gastos deducibles</div>
-      <div class="kpi-val cr">−{fmt_eur(modelo.get("total_gastos",0))}</div></div>""", unsafe_allow_html=True)
-    with k3: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">0149 Rend. neto</div>
-      <div class="kpi-val ac">{fmt_eur(modelo.get("rend_neto",0))}</div></div>""", unsafe_allow_html=True)
-    with k4: st.markdown(f"""<div class="kpi gold"><div class="kpi-lbl">0156 Base imp. est.</div>
-      <div class="kpi-val" style="color:var(--wn);">{fmt_eur(modelo.get("rend_final",0))}</div>
-      <div class="kpi-sub">⚠️ Orientativa</div></div>""", unsafe_allow_html=True)
+    with k1: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #059669"><div class="nc-label">0102 Ingresos</div>
+      <div class="nc-number" style="color:#059669">{fmt_eur(modelo.get("ingresos",0))}</div></div>""", unsafe_allow_html=True)
+    with k2: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #DC2626"><div class="nc-label">Gastos deducibles</div>
+      <div class="nc-number" style="color:#DC2626">−{fmt_eur(modelo.get("total_gastos",0))}</div></div>""", unsafe_allow_html=True)
+    with k3: st.markdown(f"""<div class="nc-card"><div class="nc-label">0149 Rend. neto</div>
+      <div class="nc-number" style="color:#534AB7">{fmt_eur(modelo.get("rend_neto",0))}</div></div>""", unsafe_allow_html=True)
+    with k4: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #D97706"><div class="nc-label">0156 Base imp. est.</div>
+      <div class="nc-number" style="color:var(--wn);">{fmt_eur(modelo.get("rend_final",0))}</div>
+      <div class="nc-subtitle">⚠️ Orientativa</div></div>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
@@ -682,14 +522,14 @@ def pantalla_cliente():
     ) if nombres_inm else False
 
     if todos_ok:
-        st.markdown("""<div class="callout ok" style="margin-bottom:8px;">
+        st.markdown("""<div class="nc-callout pos" style="margin-bottom:8px;">
           <strong>✅ Todos los inmuebles revisados</strong> — listo para el resumen global y exportar.
         </div>""", unsafe_allow_html=True)
         if st.button("📊 Resumen global → Exportar", type="primary", key="cli_global"):
             st.session_state.fh_menu = "resumen_global"
             st.rerun()
 
-    st.markdown('<div class="fh-section">Inmuebles</div>', unsafe_allow_html=True)
+    st.markdown('<div class="nc-section">Inmuebles</div>', unsafe_allow_html=True)
     if df_inm.empty:
         st.info("Sin inmuebles registrados para este cliente."); return
 
@@ -702,18 +542,18 @@ def pantalla_cliente():
 
         if vld_estado in ("ok","vl"):
             rail_cls  = "vl" if vld_manual else "ok"
-            pill_html = '<span class="pill-vl"><span class="dot"></span>Validado</span>' if vld_manual else \
-                        '<span class="pill-ok"><span class="dot"></span>Correcto</span>'
+            pill_html = '<span class="nc-pill-acc"><span class="dot"></span>Validado</span>' if vld_manual else \
+                        '<span class="nc-pill-pos"><span class="dot"></span>Correcto</span>'
         else:
             rail_cls  = sem["estado"]
             n_cr = len([p for p in sem["problemas"] if p["tipo"]=="crit"])
             n_wn = len([p for p in sem["problemas"] if p["tipo"]=="warn"])
             if sem["estado"]=="cr":
-                pill_html = f'<span class="pill-cr"><span class="dot"></span>{n_cr} crítico{"s" if n_cr>1 else ""}</span>'
+                pill_html = f'<span class="nc-pill-neg"><span class="dot"></span>{n_cr} crítico{"s" if n_cr>1 else ""}</span>'
             elif sem["estado"]=="wn":
-                pill_html = f'<span class="pill-wn"><span class="dot"></span>{n_wn} aviso{"s" if n_wn>1 else ""}</span>'
+                pill_html = f'<span class="nc-pill-warn"><span class="dot"></span>{n_wn} aviso{"s" if n_wn>1 else ""}</span>'
             else:
-                pill_html = '<span class="pill-ok"><span class="dot"></span>Correcto</span>'
+                pill_html = '<span class="nc-pill-pos"><span class="dot"></span>Correcto</span>'
 
         renta    = _gv(row,"renta","Renta")
         ibi      = _gv(row,"ibi_anual","IBI_Anual")
@@ -736,13 +576,13 @@ def pantalla_cliente():
         inquilino = str(row.get("inquilino") or row.get("Inquilino","—"))
 
         st.markdown(f"""
-        <div class="inm-row">
-          <div class="inm-rail {rail_cls}"></div>
-          <div class="inm-body">
+        <div class="nc-inm-row">
+          <div class="nc-inm-rail {rail_cls}"></div>
+          <div class="nc-inm-body">
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <div>
-                <div class="inm-name">{nombre_inm}</div>
-                <div class="inm-meta">{inquilino[:25]} · {tipo_arr}</div>
+                <div class="nc-inm-name">{nombre_inm}</div>
+                <div class="nc-inm-meta">{inquilino[:25]} · {tipo_arr}</div>
                 {alertas_txt}
               </div>
               <div style="display:flex;align-items:center;gap:16px;flex-shrink:0;">
@@ -887,17 +727,17 @@ def pantalla_ficha_inmueble():
         ]
         chk_html = ""
         for cas, label, amt, on, hint in gastos_items:
-            box = '<div class="chk-on">✓</div>' if on else '<div class="chk-off">✗</div>'
+            box = '<div class="nc-chk-on">✓</div>' if on else '<div class="nc-chk-off">✗</div>'
             amt_str = fmt_eur(amt) if amt else "Pendiente"
             amc = "" if on else "miss"
-            chk_html += f"""<div class="chk-item">
+            chk_html += f"""<div class="nc-chk-item">
               {box}<div class="chk-cas">{cas}</div>
               <div class="chk-lbl">{label}<div class="chk-hint">{hint}</div></div>
               <div class="chk-amt {amc}">{amt_str}</div>
             </div>"""
         faltan = sum(1 for _,_,a,on,_ in gastos_items[1:] if not on)
-        st.markdown(f"""<div class="panel">
-          <div class="panel-head"><span class="panel-title">Gastos deducibles</span>
+        st.markdown(f"""<div class="nc-panel">
+          <div class="nc-panel-head"><span class="nc-panel-title">Gastos deducibles</span>
             <span style="font-size:11px;color:var(--txm);">{len(gastos_items)-faltan-1}/{len(gastos_items)-1} registrados</span>
           </div>{chk_html}</div>""", unsafe_allow_html=True)
 
@@ -930,7 +770,7 @@ def pantalla_ficha_inmueble():
               <td>{label}{sub_html}</td>
               <td class="r" {vc}>{fmt_eur(val)}</td>
             </tr>"""
-        st.markdown(f"""<table class="m100">
+        st.markdown(f"""<table class="nc-m100">
           <thead><tr><th style="width:55px;">Casilla</th><th>Descripción</th><th class="r">Importe</th></tr></thead>
           <tbody>{filas_m}</tbody></table>""", unsafe_allow_html=True)
 
@@ -1028,32 +868,32 @@ def pantalla_resumen_global():
         st.session_state.fh_menu = "cliente"; st.rerun()
 
     st.markdown(f"""<div style="margin-bottom:14px;">
-      <div class="fh-ey">Resumen global IRPF 2025</div>
-      <div class="fh-title">{nombre}</div>
-      <div class="fh-sub">{len(nombres)} inmuebles · Modelo 100 consolidado</div>
+      <div class="nc-page-label">Resumen global IRPF 2025</div>
+      <div class="nc-page-title">{nombre}</div>
+      <div class="nc-page-sub">{len(nombres)} inmuebles · Modelo 100 consolidado</div>
     </div>""", unsafe_allow_html=True)
 
     if n_manual > 0:
-        st.markdown(f"""<div class="callout wn">
+        st.markdown(f"""<div class="nc-callout warn">
           <strong>⚠️ {n_manual} inmueble{"s" if n_manual>1 else ""} con validación manual</strong> —
           Verificar antes de presentar a la AEAT.
         </div>""", unsafe_allow_html=True)
 
     k1,k2,k3,k4 = st.columns(4)
-    with k1: st.markdown(f"""<div class="kpi grn"><div class="kpi-lbl">0102 Ingresos</div>
-      <div class="kpi-val ok">{fmt_eur(modelo.get("ingresos",0))}</div>
-      <div class="kpi-sub">{len(nombres)} inmuebles</div></div>""", unsafe_allow_html=True)
-    with k2: st.markdown(f"""<div class="kpi red"><div class="kpi-lbl">Gastos deducibles</div>
-      <div class="kpi-val cr">−{fmt_eur(modelo.get("total_gastos",0))}</div></div>""", unsafe_allow_html=True)
-    with k3: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">0149 Rend. neto</div>
-      <div class="kpi-val">{fmt_eur(modelo.get("rend_neto",0))}</div></div>""", unsafe_allow_html=True)
-    with k4: st.markdown(f"""<div class="kpi gold"><div class="kpi-lbl">0156 Base imp. est.</div>
-      <div class="kpi-val ac">{fmt_eur(modelo.get("rend_final",0))}</div>
-      <div class="kpi-sub">⚠️ Orientativa</div></div>""", unsafe_allow_html=True)
+    with k1: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #059669"><div class="nc-label">0102 Ingresos</div>
+      <div class="nc-number" style="color:#059669">{fmt_eur(modelo.get("ingresos",0))}</div>
+      <div class="nc-subtitle">{len(nombres)} inmuebles</div></div>""", unsafe_allow_html=True)
+    with k2: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #DC2626"><div class="nc-label">Gastos deducibles</div>
+      <div class="nc-number" style="color:#DC2626">−{fmt_eur(modelo.get("total_gastos",0))}</div></div>""", unsafe_allow_html=True)
+    with k3: st.markdown(f"""<div class="nc-card"><div class="nc-label">0149 Rend. neto</div>
+      <div class="nc-number">{fmt_eur(modelo.get("rend_neto",0))}</div></div>""", unsafe_allow_html=True)
+    with k4: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #D97706"><div class="nc-label">0156 Base imp. est.</div>
+      <div class="nc-number" style="color:#534AB7">{fmt_eur(modelo.get("rend_final",0))}</div>
+      <div class="nc-subtitle">⚠️ Orientativa</div></div>""", unsafe_allow_html=True)
 
-    st.markdown('<div class="fh-section">Desglose por inmueble</div>', unsafe_allow_html=True)
+    st.markdown('<div class="nc-section">Desglose por inmueble</div>', unsafe_allow_html=True)
     if not df_inm.empty:
-        cards_html = '<div class="global-grid">'
+        cards_html = '<div class="nc-alert-grid">'
         for _,row in df_inm.iterrows():
             nm     = str(row.get(col_n,""))
             m      = calcular_modelo100_inmueble(row, df_mov)
@@ -1064,11 +904,11 @@ def pantalla_resumen_global():
             badge_html = f'<span class="global-card-badge manual">✎ Manual</span>' if manual else \
                          f'<span class="global-card-badge">✓ Automático</span>'
             cards_html += f"""
-            <div class="global-card">
+            <div class="nc-card">
               <div class="global-card-roof {roof_cls}"></div>
-              <div class="global-card-body">
-                <div class="global-card-name">{nm}</div>
-                <div class="global-card-meta">{inq[:20]} · {tipo}</div>
+              <div class="nc-card">
+                <div class="nc-title">{nm}</div>
+                <div class="nc-subtitle">{inq[:20]} · {tipo}</div>
                 <div class="global-card-metrics">
                   <div class="global-metric">
                     <div class="global-metric-lbl">0102 Ingresos</div>
@@ -1143,20 +983,20 @@ def pantalla_alertas():
     n_wn = len([a for a in todas if a["tipo"]=="warn"])
 
     st.markdown(f"""<div style="margin-bottom:16px;">
-      <div class="fh-ey">Cartera completa · por urgencia</div>
-      <div class="fh-title">Alertas fiscales</div>
-      <div class="fh-sub">{len(todas)} alertas · {n_cr} críticas · {n_wn} a revisar</div>
+      <div class="nc-page-label">Cartera completa · por urgencia</div>
+      <div class="nc-page-title">Alertas fiscales</div>
+      <div class="nc-page-sub">{len(todas)} alertas · {n_cr} críticas · {n_wn} a revisar</div>
     </div>""", unsafe_allow_html=True)
 
     k1,k2,k3 = st.columns(3)
-    with k1: st.markdown(f"""<div class="kpi red"><div class="kpi-lbl">Críticas</div>
-      <div class="kpi-val cr">{n_cr}</div><div class="kpi-sub">Antes del 30 jun</div></div>""", unsafe_allow_html=True)
-    with k2: st.markdown(f"""<div class="kpi"><div class="kpi-lbl">A revisar</div>
-      <div class="kpi-val" style="color:var(--wn);">{n_wn}</div></div>""", unsafe_allow_html=True)
+    with k1: st.markdown(f"""<div class="nc-card" style="border-top:3px solid #DC2626"><div class="nc-label">Críticas</div>
+      <div class="nc-number" style="color:#DC2626">{n_cr}</div><div class="nc-subtitle">Antes del 30 jun</div></div>""", unsafe_allow_html=True)
+    with k2: st.markdown(f"""<div class="nc-card"><div class="nc-label">A revisar</div>
+      <div class="nc-number" style="color:var(--wn);">{n_wn}</div></div>""", unsafe_allow_html=True)
     with k3:
         imp = sum(a.get("impacto",0) for a in todas if a.get("impacto",0)>0)
-        st.markdown(f"""<div class="kpi gold"><div class="kpi-lbl">Impacto</div>
-          <div class="kpi-val ac">{fmt_eur(imp)}</div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="nc-card" style="border-top:3px solid #D97706"><div class="nc-label">Impacto</div>
+          <div class="nc-number" style="color:#534AB7">{fmt_eur(imp)}</div></div>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
     if not todas: st.success("✅ Sin alertas activas."); return
@@ -1166,30 +1006,30 @@ def pantalla_alertas():
     medias   = [a for a in todas if a["tipo"] == "warn"]
 
     def _render_cards(lista):
-        cards_html = '<div class="alert-grid">'
+        cards_html = '<div class="nc-alert-grid">'
         for a in lista:
             tc         = "cr" if a["tipo"] == "crit" else "wn"
             tipo_label = "⚠️ Crítica" if a["tipo"] == "crit" else "◔ Revisar"
             imp_val    = a.get("impacto", 0)
-            imp_html   = '<span class="alert-card-imp">' + _e(fmt_eur(imp_val)) + '</span>' if imp_val and imp_val > 0 else ''
+            imp_html   = '<span class="nc-alert-imp">' + _e(fmt_eur(imp_val)) + '</span>' if imp_val and imp_val > 0 else ''
             nm         = _e(a.get("cliente_nombre", ""))
             inm        = _e(a.get("inmueble", "")[:35])
             titulo     = _e(a.get("titulo", ""))
             desc       = _e(a.get("desc", "")[:100])
             accion     = _e(a.get("accion", "")[:60])
             cards_html += (
-                '<div class="alert-card">'
+                '<div class="nc-alert-card">'
                   '<div class="alert-card-top ' + tc + '"></div>'
-                  '<div class="alert-card-body">'
-                    '<div class="alert-card-header">'
+                  '<div class="nc-alert-body">'
+                    '<div class="nc-alert-header">'
                       '<span class="alert-card-tipo ' + tc + '">' + tipo_label + '</span>'
                       + imp_html +
                     '</div>'
-                    '<div class="alert-card-client">' + nm + '</div>'
-                    '<div class="alert-card-inm">📍 ' + inm + '</div>'
-                    '<div class="alert-card-title">' + titulo + '</div>'
-                    '<div class="alert-card-desc">' + desc + '</div>'
-                    '<div class="alert-card-action">→ ' + accion + '</div>'
+                    '<div class="nc-alert-client">' + nm + '</div>'
+                    '<div class="nc-alert-inm">📍 ' + inm + '</div>'
+                    '<div class="nc-alert-title">' + titulo + '</div>'
+                    '<div class="nc-alert-desc">' + desc + '</div>'
+                    '<div class="nc-alert-action">→ ' + accion + '</div>'
                   '</div>'
                 '</div>'
             )
@@ -1197,20 +1037,20 @@ def pantalla_alertas():
         return cards_html
 
     if criticas:
-        st.markdown('<div class="fh-section">🔴 Críticas — acción urgente</div>', unsafe_allow_html=True)
+        st.markdown('<div class="nc-section">🔴 Críticas — acción urgente</div>', unsafe_allow_html=True)
         st.markdown(_render_cards(criticas), unsafe_allow_html=True)
 
     if medias:
-        st.markdown('<div class="fh-section" style="margin-top:20px;">🟡 A revisar esta semana</div>', unsafe_allow_html=True)
+        st.markdown('<div class="nc-section" style="margin-top:20px;">🟡 A revisar esta semana</div>', unsafe_allow_html=True)
         st.markdown(_render_cards(medias), unsafe_allow_html=True)
 
 # ── EXPORTAR ──────────────────────────────────────────────────────
 def pantalla_exportar():
     cartera = st.session_state.get("fh_cartera",[])
     st.markdown("""<div style="margin-bottom:16px;">
-      <div class="fh-ey">Generación de entregables</div>
-      <div class="fh-title">Exportar</div>
-      <div class="fh-sub">Selecciona un cliente para generar sus documentos IRPF.</div>
+      <div class="nc-page-label">Generación de entregables</div>
+      <div class="nc-page-title">Exportar</div>
+      <div class="nc-page-sub">Selecciona un cliente para generar sus documentos IRPF.</div>
     </div>""", unsafe_allow_html=True)
     if cartera:
         sel = st.selectbox("Cliente:", [c["nombre"] for c in cartera], key="exp_sel")
@@ -1223,11 +1063,11 @@ def pantalla_exportar():
 # ── VINCULAR ──────────────────────────────────────────────────────
 def pantalla_vincular():
     st.markdown("""<div style="margin-bottom:16px;">
-      <div class="fh-ey">Conectar con Nolasco Capital</div>
-      <div class="fh-title">Vincular cliente</div>
-      <div class="fh-sub">Introduce el código de 6 dígitos del propietario.</div>
+      <div class="nc-page-label">Conectar con Nolasco Capital</div>
+      <div class="nc-page-title">Vincular cliente</div>
+      <div class="nc-page-sub">Introduce el código de 6 dígitos del propietario.</div>
     </div>""", unsafe_allow_html=True)
-    st.markdown("""<div class="callout inf" style="max-width:560px;margin-bottom:20px;">
+    st.markdown("""<div class="nc-callout info" style="max-width:560px;margin-bottom:20px;">
       <strong>¿Cómo funciona?</strong> El propietario entra en Nolasco Capital →
       Privacidad → "Compartir con Asesor" → genera un código. Te lo envía y lo introduces aquí.
     </div>""", unsafe_allow_html=True)
@@ -1247,7 +1087,6 @@ def pantalla_vincular():
 # ── MAIN ──────────────────────────────────────────────────────────
 def main():
     inject_global_css("ficahub")
-    st.markdown(FISCALHUB_CSS, unsafe_allow_html=True)
     if "fh_logged" not in st.session_state: st.session_state.fh_logged = False
     if "fh_menu"   not in st.session_state: st.session_state.fh_menu   = "cartera"
 
@@ -1263,7 +1102,7 @@ def main():
         render_sidebar()
 
     menu = st.session_state.get("fh_menu","cartera")
-    st.markdown('<div class="fh-page">', unsafe_allow_html=True)
+    st.markdown('<div class="nc-page">', unsafe_allow_html=True)
     if   menu == "cartera":        pantalla_cartera()
     elif menu == "cliente":        pantalla_cliente()
     elif menu == "ficha":          pantalla_ficha_inmueble()
