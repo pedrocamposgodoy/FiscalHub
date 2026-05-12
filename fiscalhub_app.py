@@ -437,62 +437,81 @@ def pantalla_cartera():
              (filtro=="A revisar" and c["estado"]=="medio") or (filtro=="OK" and c["estado"]=="ok")) and
             (not busqueda or busqueda.lower() in c["nombre"].lower())]
 
-    # Pool de iconos determinista por índice
-    _ICONS = ["🏠","🏢","🏗","🏦","🏛","🏪","🏬","🏨","🏩","🏫",
-              "🏭","🏯","🏰","🗼","🗽","⛪","🕌","🕍","🛖","🏡"]
-    _ELBL  = {"critico":"⚠ Crítico","medio":"◔ Revisar","ok":"✓ OK"}
-    _ECOL  = {"critico":"#DC2626","medio":"#D97706","ok":"#059669"}
-    _EBG   = {"critico":"rgba(220,38,38,0.08)","medio":"rgba(217,119,6,0.08)","ok":"rgba(5,150,105,0.08)"}
+    # Colores header por estado
+    _HDR_COL = {"critico":"#7F1D1D","medio":"#78350F","ok":"#14532D"}
+    _ECOL    = {"critico":"#DC2626","medio":"#D97706","ok":"#059669"}
+    _ELBL    = {"critico":"⚠ Crítico","medio":"◔ Revisar","ok":"✓ OK"}
+    _BADGE   = {"critico":"rgba(220,38,38,0.12)",
+                "medio":"rgba(217,119,6,0.12)","ok":"rgba(5,150,105,0.12)"}
 
-    for idx, c in enumerate(rows):
-        icon   = _ICONS[idx % len(_ICONS)]
-        estado = c["estado"]
-        color  = _ECOL[estado]
-        imp_v  = fmt_eur(abs(c["impacto"])) if c["impacto"] else "—"
-        imp_cls= "neg" if c["impacto"] < 0 else ("pos" if c["impacto"] > 0 else "acc")
-        c_cls  = "neg" if c["criticas"] > 0 else "acc"
-        m_cls  = "warn" if c["medias"] > 0 else "acc"
+    def _cli_icon(nombre):
+        n = nombre.lower()
+        if any(x in n for x in ["bufete","abogad","juríd","legal"]): return "⚖️","Bufete"
+        if any(x in n for x in ["inmo","piso","alquil"]): return "🏢","Inmobiliaria"
+        if any(x in n for x in ["médic","clínic","salud"]): return "🏥","Clínica"
+        if any(x in n for x in ["restaur","hostel","bar","café"]): return "🍽️","Hostelería"
+        if any(x in n for x in ["sl","slu","s.l","s.a"]): return "🏛️","Empresa"
+        return "👤","Particular"
 
-        st.markdown(f'<div class="nc-cli-wrap">', unsafe_allow_html=True)
-        st.markdown(
-            f'''<div class="nc-cli-card {estado}">
-  <div class="nc-cli-header">
-    <div class="nc-cli-icon {estado}">{icon}</div>
-    <div style="flex:1;min-width:0;">
-      <div class="nc-cli-name">{c["nombre"]}</div>
-      <div class="nc-cli-sub">{c["inmuebles"]} inmuebles · campaña 2025</div>
-    </div>
-    <span style="background:{_EBG[estado]};color:{color};font-size:10px;font-weight:700;
-                 padding:3px 10px;border-radius:6px;white-space:nowrap;">{_ELBL[estado]}</span>
-  </div>
-  <div class="nc-cli-metrics">
-    <div class="nc-cli-metric">
-      <div class="nc-cli-metric-lbl">🏠 Inmuebles</div>
-      <div class="nc-cli-metric-val acc">{c["inmuebles"]}</div>
-    </div>
-    <div class="nc-cli-metric">
-      <div class="nc-cli-metric-lbl">🚨 Críticas</div>
-      <div class="nc-cli-metric-val {c_cls}">{c["criticas"]}</div>
-    </div>
-    <div class="nc-cli-metric">
-      <div class="nc-cli-metric-lbl">⚡ Revisar</div>
-      <div class="nc-cli-metric-val {m_cls}">{c["medias"]}</div>
-    </div>
-  </div>
-  <div class="nc-cli-footer">
-    <span>💶 Impacto fiscal: {imp_v}</span>
-    <span>Ver detalle →</span>
-  </div>
-</div>''', unsafe_allow_html=True)
+    MAX_COLS = 4
+    for fila_start in range(0, len(rows), MAX_COLS):
+        fila_rows = rows[fila_start:fila_start+MAX_COLS]
+        cols = st.columns(MAX_COLS)
+        for col_idx, c in enumerate(fila_rows):
+            estado   = c["estado"]
+            hdr      = _HDR_COL[estado]
+            txt      = _ECOL[estado]
+            lbl      = _ELBL[estado]
+            badge_bg = _BADGE[estado]
+            icon, tipo = _cli_icon(c["nombre"])
+            imp_v    = fmt_eur(abs(c["impacto"])) if c["impacto"] else "—"
+            cr_col   = "#DC2626" if c["criticas"]>0 else "#64748B"
+            med_col  = "#D97706" if c["medias"]>0   else "#64748B"
+            modelo   = c.get("modelo100",{})
+            ingresos = fmt_eur(modelo.get("ingresos",0))
+            base_imp = fmt_eur(modelo.get("rend_final",0))
+            with cols[col_idx]:
+                hdr_html = (
+                    f'<div style="background:{hdr};border-radius:12px 12px 0 0;' +
+                    f'padding:14px 16px 12px;display:flex;align-items:center;gap:10px;margin-bottom:-1px;">' +
+                    f'<span style="font-size:22px;">{icon}</span>' +
+                    f'<div style="flex:1;min-width:0;">' +
+                    f'<div style="font-size:14px;font-weight:800;color:#FFF;line-height:1.2;' +
+                    f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{c["nombre"]}</div>' +
+                    f'<div style="font-size:10px;color:rgba(255,255,255,0.65);margin-top:2px;">' +
+                    f'{tipo} · {c["inmuebles"]} inmuebles</div></div>' +
+                    f'<span style="background:rgba(255,255,255,0.15);color:#FFF;font-size:9px;' +
+                    f'font-weight:700;padding:3px 8px;border-radius:6px;">{lbl}</span></div>'
+                )
+                body_html = (
+                    '<div style="background:#FFF;border:2px solid #E2E8F0;border-top:none;' +
+                    'border-radius:0 0 12px 12px;padding:14px 16px 12px;">' +
+                    '<div style="display:flex;justify-content:space-between;margin-bottom:8px;' +
+                    'padding-bottom:8px;border-bottom:1px solid #F1F5F9;">' +
+                    f'<span style="font-size:11px;color:#94A3B8;font-weight:600;">Tipo</span>' +
+                    f'<span style="font-size:11px;color:#1e293b;font-weight:700;">{tipo}</span></div>' +
+                    f'<div style="display:flex;justify-content:space-between;margin-bottom:5px;">' +
+                    f'<span style="font-size:11px;color:#94A3B8;">📥 0102 Ingresos</span>' +
+                    f'<span style="font-size:12px;font-weight:700;color:#059669;">{ingresos}</span></div>' +
+                    f'<div style="display:flex;justify-content:space-between;margin-bottom:5px;">' +
+                    f'<span style="font-size:11px;color:#94A3B8;">🚨 Alertas críticas</span>' +
+                    f'<span style="font-size:12px;font-weight:700;color:{cr_col};">{c["criticas"]}</span></div>' +
+                    f'<div style="display:flex;justify-content:space-between;margin-bottom:10px;">' +
+                    f'<span style="font-size:11px;color:#94A3B8;">⚡ A revisar</span>' +
+                    f'<span style="font-size:12px;font-weight:700;color:{med_col};">{c["medias"]}</span></div>' +
+                    f'<div style="background:{badge_bg};border-radius:6px;padding:5px 10px;' +
+                    f'text-align:center;font-size:11px;font-weight:700;color:{txt};">' +
+                    f'Base imp. est.: {base_imp}</div></div>'
+                )
+                st.markdown(hdr_html + body_html, unsafe_allow_html=True)
+                if st.button("→ Ver expediente completo",
+                             key=f"cli_{c['id']}_{fila_start}_{col_idx}",
+                             use_container_width=True):
+                    st.session_state.fh_cliente_sel = c["id"]
+                    st.session_state.fh_menu = "cliente"
+                    st.rerun()
+                st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-        # Botón transparente superpuesto (invisible, cubre la card)
-        if st.button(" ", key=f"sel_{c['id']}", use_container_width=True,
-                     help=f"Ver detalle de {c['nombre']}"):
-            st.session_state.fh_cliente_sel = c["id"]
-            st.session_state.fh_menu = "cliente"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
 
 # ── PANTALLA CLIENTE ──────────────────────────────────────────────
