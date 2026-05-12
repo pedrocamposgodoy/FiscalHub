@@ -96,3 +96,50 @@ def render_kpi_large(label: str, value: str,
         f'</div>'
     )
     st.markdown(html, unsafe_allow_html=True)
+
+def render_kpi_grid(kpis_data: list):
+    """
+    Renderiza KPIs en CSS Grid nativo — sin st.columns().
+    Esto garantiza que padding-top:38% crea altura proporcional real.
+    Ideal para 4 KPIs de revisión de cliente.
+
+    kpis_data: lista de dicts: label, value, color, subtitle (opcional)
+    """
+    n = len(kpis_data)
+    cards_html = (
+        f'<div style="display:grid;grid-template-columns:repeat({n},1fr);' +
+        f'gap:12px;margin-bottom:16px;">'
+    )
+
+    for kpi in kpis_data:
+        label    = kpi.get("label","")
+        value    = str(kpi.get("value",""))
+        color    = kpi.get("color", GREY)
+        subtitle = kpi.get("subtitle","")
+
+        sub = (
+            f'<p style="font-size:13px;color:#94A3B8;margin:4px 0 0;' +
+            f'font-family:{_FONT};font-weight:500;">{subtitle}</p>'
+        ) if subtitle else ""
+
+        cards_html += (
+            f'<div style="' +
+            f'background:#FFFFFF;' +
+            f'border-radius:12px;' +
+            f'padding:22px 20px 18px;' +
+            f'border:{_BORDER};' +
+            f'border-top:5px solid {color};' +
+            f'box-shadow:{_SHADOW};' +
+            f'box-sizing:border-box;">' +
+            f'<p style="font-family:{_FONT};font-size:13px;font-weight:800;' +
+            f'color:#94A3B8;margin:0 0 8px;text-transform:uppercase;' +
+            f'letter-spacing:0.10em;">{label}</p>' +
+            f'<p style="font-family:{_FONT};font-size:2.6rem;font-weight:900;' +
+            f'color:{color};margin:0;line-height:1;' +
+            f'letter-spacing:-0.02em;">{value}</p>' +
+            f'{sub}' +
+            f'</div>'
+        )
+
+    cards_html += '</div>'
+    st.markdown(cards_html, unsafe_allow_html=True)
