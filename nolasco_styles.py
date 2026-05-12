@@ -101,16 +101,16 @@ APP_TOKENS = {
         ],
     },
 
-    # ── FISCALHUB — sidebar lavanda, acento morado, fondo elegante
+    # ── FISCALHUB — sidebar pizarra oscuro, fondo gris perla
     "ficahub": {
-        "sidebar_bg":        "#E8E6F8",
-        "sidebar_border":    "#D0CCF0",
-        "sidebar_txt":       "#3D3580",
-        "sidebar_txt_hover": "#534AB7",
-        "sidebar_bg_hover":  "#D8D5F8",
-        "body_bg":           "#C9C6E8",
+        "sidebar_bg":        "#4A5568",
+        "sidebar_border":    "#374151",
+        "sidebar_txt":       "#CBD5E0",
+        "sidebar_txt_hover": "#FFFFFF",
+        "sidebar_bg_hover":  "#536278",
+        "body_bg":           "#F8F9FA",
         "card_bg":           "#FFFFFF",
-        "card_border":       "#D8D5F8",
+        "card_border":       "#E2E8F0",
         "accent":            "#534AB7",
         "accent_light":      "#EEEDFE",
         "accent_pastel":     "#D8D5F8",
@@ -495,21 +495,156 @@ def inject_global_css(app: str):
     .nc-bocadillo-label {{ font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:{t['bocadillo_header']};margin-bottom:8px; }}
     .nc-bocadillo-text  {{ font-size:13px;color:{t['text_primary']};line-height:1.65; }}
     .nc-bocadillo-response {{ background:{t['bocadillo_response']};border-radius:12px;padding:12px 14px;font-size:12px;color:{t['text_primary']};line-height:1.6;margin-top:12px;border-left:3px solid {t['accent']}; }}
-  /* --- FORZAR COLORES EN FISCAL HUB --- */
-    .stApp, .main, .fh-page {{
-        background-color: var(--body-bg) !important;
+
+    /* ── PAGE HEADER celeste (brief fiscal) ── */
+    .nc-page-header {{
+        background: #D1E9F6;
+        border-radius: 12px 12px 0 0;
+        padding: 20px 28px 16px;
+        margin-bottom: 0;
     }}
-    [data-testid="stSidebar"] > div:first-child {{
-        background-color: var(--sidebar-bg) !important;
+    .nc-page-header .nc-page-title {{
+        font-family: {t['font_body']};
+        font-size: 26px;
+        font-weight: 700;
+        color: #0F172A;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin: 0;
     }}
-    .fh-card, .fh-tbl {{
-        background-color: var(--card-bg) !important;
-        border: 1px solid var(--card-border) !important;
+
+    /* ── METRICS BAR (barra horizontal de KPIs top) ── */
+    .nc-metrics-bar {{
+        background: #E2E8F0;
+        border-radius: 0 0 12px 12px;
+        padding: 10px 28px;
+        display: flex;
+        gap: 32px;
+        align-items: center;
+        margin-bottom: 20px;
+        font-family: {t['font_body']};
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+    }}
+    .nc-metrics-bar span {{
+        color: {t['accent']};
+        font-weight: 800;
+    }}
+
+    /* ── CARD PRIORITARIA — borde ámbar + glow ── */
+    .nc-card-priority {{
+        background: {t['card_bg']};
+        border-radius: 12px;
+        padding: 20px 22px;
+        border: 2px solid #FFC107 !important;
+        border-top: 3px solid #FFC107 !important;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1),
+                    0 2px 4px -1px rgba(0,0,0,0.06),
+                    0 0 0 3px rgba(255,193,7,0.15);
+        min-height: 110px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        transition: box-shadow 0.2s, transform 0.2s;
+    }}
+    .nc-card-priority:hover {{
+        box-shadow: 0 8px 16px -2px rgba(0,0,0,0.12),
+                    0 4px 8px -2px rgba(0,0,0,0.08),
+                    0 0 0 4px rgba(255,193,7,0.25);
+        transform: translateY(-2px);
+    }}
+
+    /* ── BADGE PRIORITARIO — ámbar con texto marrón ── */
+    .nc-badge-priority {{
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 6px;
+        background: #FFC107;
+        color: #795548;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }}
+
+    /* ── CARD CLIENTE (grid de cartera estilo brief) ── */
+    .nc-client-card {{
+        background: {t['card_bg']};
         border-radius: 8px;
-        padding: 16px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        padding: 14px 16px;
+        border: 1px solid {t['card_border']};
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.10),
+                    0 2px 4px -1px rgba(0,0,0,0.06);
+        transition: box-shadow 0.2s, transform 0.15s;
+        font-family: {t['font_body']};
     }}
-     
+    .nc-client-card:hover {{
+        box-shadow: 0 8px 16px -2px rgba(0,0,0,0.12),
+                    0 4px 8px -2px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+    }}
+    .nc-client-card .nc-client-label {{
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.10em;
+        text-transform: uppercase;
+        color: {t['text_muted']};
+        margin-bottom: 2px;
+    }}
+    .nc-client-card .nc-client-name {{
+        font-size: 14px;
+        font-weight: 700;
+        color: {t['text_primary']};
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        line-height: 1.2;
+    }}
+    .nc-client-card .nc-client-row {{
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: {t['text_muted']};
+        margin-bottom: 3px;
+    }}
+    .nc-client-card .nc-client-row span {{
+        color: {t['text_primary']};
+        font-weight: 500;
+    }}
+    /* Badges de estado en client cards */
+    .nc-badge-proceso    {{ display:inline-flex;align-items:center;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:#DBEAFE;color:#1E40AF;text-transform:uppercase;letter-spacing:0.05em; }}
+    .nc-badge-pendiente  {{ display:inline-flex;align-items:center;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:#4A5568;color:#FFFFFF;text-transform:uppercase;letter-spacing:0.05em; }}
+    .nc-badge-finalizado {{ display:inline-flex;align-items:center;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;background:#D1FAE5;color:#065F46;text-transform:uppercase;letter-spacing:0.05em; }}
+    .nc-client-card .nc-client-actions {{
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid {t['card_border']};
+    }}
+    .nc-client-action-btn {{
+        flex: 1;
+        background: {t['accent_light']};
+        border-radius: 6px;
+        padding: 6px 0;
+        text-align: center;
+        font-size: 14px;
+        cursor: pointer;
+        border: none;
+        transition: background 0.15s;
+    }}
+    .nc-client-action-btn:hover {{ background: {t['accent_pastel']}; }}
+
+    /* ── KPI SIZE — CSS variable controlable ── */
+    /* El tamaño base se puede anular con la clase nc-kpi-size-* */
+    .nc-kpi-sm  .nc-number {{ font-size: 1.4rem !important; }}
+    .nc-kpi-md  .nc-number {{ font-size: 1.9rem !important; }}
+    .nc-kpi-lg  .nc-number {{ font-size: 2.4rem !important; }}
+    .nc-kpi-xl  .nc-number {{ font-size: 2.9rem !important; }}
+
     </style>
     """
 
