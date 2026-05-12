@@ -91,14 +91,15 @@ LABELS = {
 
 # ── API ─────────────────────────────────────────────────────────
 def _get_api_key() -> str:
-    # Primero secrets de Streamlit Cloud
-    try:
-        key = st.secrets["ANTHROPIC_API_KEY"]
-        if key: return key
-    except Exception:
-        pass
+    # Intentar todas las variantes posibles del nombre
+    for nombre in ["ANTHROPIC_API_KEY", "anthropic_api_key", "ANTHROPIC_KEY"]:
+        try:
+            key = st.secrets[nombre]
+            if key: return str(key)
+        except Exception:
+            pass
     # Fallback variable de entorno
-    return os.getenv("ANTHROPIC_API_KEY", "")
+    return os.getenv("ANTHROPIC_API_KEY", os.getenv("ANTHROPIC_KEY", ""))
 
 
 def _llamar_claude(system: str, pregunta: str, max_tokens: int = 350) -> str:
@@ -158,9 +159,10 @@ def render_sabio_fiscal(seccion: str, contexto: dict, decisiones: dict,
     base_original: base imponible sin cambios
     base_simulada: base imponible con las decisiones aplicadas
     """
-    hist_key = f"sabio_fiscal_hist_{seccion}"
-    if hist_key not in st.session_state:
-        st.session_state[hist_key] = []
+    hist_key    = f"sabio_fiscal_hist_{seccion}"
+    counter_key = f"sabio_fiscal_cnt_{seccion}"
+    if hist_key    not in st.session_state: st.session_state[hist_key]    = []
+    if counter_key not in st.session_state: st.session_state[counter_key] = 0
 
     label  = LABELS.get(seccion, "◈ Asesor Fiscal IA")
     chips  = CHIPS.get(seccion, [])
@@ -198,15 +200,16 @@ def render_sabio_fiscal(seccion: str, contexto: dict, decisiones: dict,
             st.markdown(f'<div style="margin:6px 0 12px">{chip_html}</div>',
                         unsafe_allow_html=True)
 
-        # Input conversacional
+        # Input conversacional — key con counter para vaciar tras envío
+        cnt = st.session_state[counter_key]
         col_inp, col_btn = st.columns([0.82, 0.18])
         with col_inp:
             pregunta = st.text_input("",
-                key=f"sabio_fiscal_input_{seccion}",
+                key=f"sabio_fiscal_input_{seccion}_{cnt}",
                 placeholder="Pregunta sobre estas decisiones fiscales...",
                 label_visibility="collapsed")
         with col_btn:
-            enviar = st.button("Enviar", key=f"sabio_fiscal_btn_{seccion}")
+            enviar = st.button("Enviar", key=f"sabio_fiscal_btn_{seccion}_{cnt}")
 
         # Procesar pregunta
         if enviar and pregunta.strip():
@@ -228,6 +231,9 @@ def render_sabio_fiscal(seccion: str, contexto: dict, decisiones: dict,
                 {"role": "user",      "content": pregunta.strip()})
             st.session_state[hist_key].append(
                 {"role": "assistant", "content": respuesta})
+            # Vaciar input incrementando el counter
+            st.session_state[counter_key] += 1
+            st.rerun()
 
         # Historial
         for msg in st.session_state[hist_key]:
@@ -252,8 +258,9 @@ def render_sabio_fiscal(seccion: str, contexto: dict, decisiones: dict,
         # Botón limpiar
         if st.session_state[hist_key]:
             if st.button("🗑 Limpiar conversación",
-                         key=f"sabio_fiscal_clear_{seccion}"):
-                st.session_state[hist_key] = []
+                         key=f"sabio_fiscal_clear_{seccion}_{cnt}"):
+                st.session_state[hist_key]    = []
+                st.session_state[counter_key] = 0
                 st.session_state.pop(f"sabio_fiscal_{seccion}_"
                                      f"{hash(str(decisiones))}", None)
                 st.rerun()
