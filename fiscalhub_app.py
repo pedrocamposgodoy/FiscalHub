@@ -918,46 +918,16 @@ def pantalla_ficha_inmueble():
 
     dec = st.session_state[dec_key]
 
-    # ── KPI IMPACTO: Antes vs. Después (arriba, siempre visible) ─
-    m_sim = _simular(row, dec)
-    base_orig  = m.get("rend_final", 0)
-    base_sim   = m_sim["rend_final"]
-    ahorro     = base_orig - base_sim
-    ahorro_pct = round(ahorro / base_orig * 100, 1) if base_orig else 0
-
-    col_imp = st.columns(4)
-    for _col, _lbl, _val, _color, _border in [
-        (col_imp[0], "📊 Base original",  fmt_eur(base_orig), "#475569", "#94A3B8"),
+    for _col, _lbl, _val2, _color2, _border2 in [
+        (col_imp[0], "📊 Base original",  fmt_eur(base_orig), "#475569",              "#94A3B8"),
         (col_imp[1], "🔬 Base simulada",  fmt_eur(base_sim),  _color_cli(cliente_id), _color_cli(cliente_id)),
-        (col_imp[2], "💶 Ahorro estimado",fmt_eur(ahorro),
-         "#059669" if ahorro > 0 else "#DC2626",
-         "#059669" if ahorro > 0 else "#DC2626"),
-        (col_imp[3], "📉 Reducción base", f"{ahorro_pct}%",
-         "#059669" if ahorro_pct > 0 else "#475569",
-         "#059669" if ahorro_pct > 0 else "#94A3B8"),
-    ]:
-        _color = _val  # reuse variable name fix
-        _col.markdown(
-            f'<div style="background:#FFF;border-radius:10px;padding:14px 16px;'
-            f'border:2px solid #94A3B8;border-top:4px solid {_border};'
-            f'box-shadow:0 4px 12px rgba(0,0,0,0.08);">'
-            f'<div style="font-size:10px;font-weight:800;color:#94A3B8;'
-            f'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">{_lbl}</div>'
-            f'<div style="font-size:1.6rem;font-weight:900;color:{_color2};line-height:1;">{_val2}</div>'
-            f'</div>',
-            unsafe_allow_html=True)
-
-    # Fix: usar nombres correctos
-    for idx_c, (_col, _lbl, _val2, _color2, _border2) in enumerate([
-        (col_imp[0], "📊 Base original",  fmt_eur(base_orig), "#475569",                  "#94A3B8"),
-        (col_imp[1], "🔬 Base simulada",  fmt_eur(base_sim),  _color_cli(cliente_id),     _color_cli(cliente_id)),
-        (col_imp[2], "💶 Ahorro est.",     fmt_eur(ahorro),
+        (col_imp[2], "💶 Ahorro est.",    fmt_eur(ahorro),
          "#059669" if ahorro>0 else "#DC2626",
          "#059669" if ahorro>0 else "#DC2626"),
         (col_imp[3], "📉 Reducción",      f"{ahorro_pct}%",
          "#059669" if ahorro_pct>0 else "#475569",
          "#059669" if ahorro_pct>0 else "#94A3B8"),
-    ]):
+    ]:
         _col.markdown(
             f'<div style="background:#FFF;border-radius:10px;padding:14px 16px;'
             f'border:2px solid #94A3B8;border-top:4px solid {_border2};'
