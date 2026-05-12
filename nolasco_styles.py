@@ -311,19 +311,25 @@ def inject_global_css(app: str):
     }}
     button[kind="primary"]:hover {{ opacity: 0.88 !important; }}
 
-    /* NC-CARDS — KPI cuadrado compacto */
+    /* NC-CARDS — KPI altura fija + relieve */
     .nc-card {{
         background: {t['card_bg']};
         border-radius: 12px;
-        padding: 20px 22px 20px;
-        border: 1px solid {t['card_border']};
-        border-top: 4px solid {t['accent']};
-        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-        aspect-ratio: 1.6 / 1;
+        padding: 18px 20px;
+        border: 2px solid {t['card_border']};
+        border-top: 5px solid {t['accent']};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06);
+        height: 130px;
         display: flex;
         flex-direction: column;
         justify-content: center;
         overflow: hidden;
+        transition: box-shadow 0.2s, transform 0.15s;
+        cursor: pointer;
+    }}
+    .nc-card:hover {{
+        box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
     }}
     .nc-card-sm {{
         background: {t['card_bg']};
@@ -465,6 +471,105 @@ def inject_global_css(app: str):
     .sb-bar  {{ height:4px;background:rgba(255,255,255,0.12);border-radius:2px;margin-top:10px;overflow:hidden; }}
     .sb-fill {{ height:100%;border-radius:2px; }}
     .sb-bar-labels {{ display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.4);margin-top:4px; }}
+
+    /* CARDS CLIENTE — tabla visual con icono y métricas */
+    .nc-cli-grid {{
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+    }}
+    .nc-cli-card {{
+        background: {t['card_bg']};
+        border-radius: 14px;
+        border: 2px solid {t['card_border']};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+        overflow: hidden;
+        transition: box-shadow 0.2s, transform 0.15s;
+        cursor: pointer;
+    }}
+    .nc-cli-card:hover {{
+        box-shadow: 0 8px 24px rgba(0,0,0,0.13);
+        transform: translateY(-2px);
+    }}
+    .nc-cli-card.critico {{
+        border-color: #FCA5A5;
+        border-left: 5px solid #DC2626;
+    }}
+    .nc-cli-card.medio {{
+        border-color: #FDE68A;
+        border-left: 5px solid #D97706;
+    }}
+    .nc-cli-card.ok {{
+        border-color: #A7F3D0;
+        border-left: 5px solid #059669;
+    }}
+    .nc-cli-header {{
+        padding: 14px 16px 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid {t['card_border']};
+    }}
+    .nc-cli-icon {{
+        width: 42px; height: 42px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }}
+    .nc-cli-icon.critico {{ background: rgba(220,38,38,0.08); }}
+    .nc-cli-icon.medio   {{ background: rgba(217,119,6,0.08); }}
+    .nc-cli-icon.ok      {{ background: rgba(5,150,105,0.08); }}
+    .nc-cli-name {{
+        font-size: 14px;
+        font-weight: 700;
+        color: {t['text_primary']};
+        line-height: 1.2;
+    }}
+    .nc-cli-sub {{
+        font-size: 10px;
+        color: {t['text_muted']};
+        margin-top: 2px;
+    }}
+    .nc-cli-metrics {{
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0;
+    }}
+    .nc-cli-metric {{
+        padding: 10px 14px;
+        border-right: 1px solid {t['card_border']};
+        text-align: center;
+    }}
+    .nc-cli-metric:last-child {{ border-right: none; }}
+    .nc-cli-metric-lbl {{
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: {t['text_muted']};
+        margin-bottom: 3px;
+    }}
+    .nc-cli-metric-val {{
+        font-size: 18px;
+        font-weight: 800;
+        line-height: 1;
+    }}
+    .nc-cli-metric-val.neg  {{ color: #DC2626; }}
+    .nc-cli-metric-val.warn {{ color: #D97706; }}
+    .nc-cli-metric-val.pos  {{ color: #059669; }}
+    .nc-cli-metric-val.acc  {{ color: {t['accent']}; }}
+    .nc-cli-footer {{
+        padding: 8px 14px;
+        background: {t['accent_light']};
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11px;
+        font-weight: 600;
+        color: {t['accent']};
+    }}
 
     /* INMUEBLE ROWS */
     .nc-inm-row {{ display:flex;align-items:center;background:{t['card_bg']};border:1px solid {t['card_border']};border-radius:12px;margin-bottom:8px;overflow:hidden;transition:box-shadow 0.15s;box-shadow:0 1px 3px rgba(0,0,0,0.04); }}
