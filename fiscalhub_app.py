@@ -1268,7 +1268,7 @@ def pantalla_ficha_inmueble():
         gen_pdf = st.button("📄 Generar PDF", key="fic_pdf",
                             use_container_width=True, type="primary")
     with e2:
-        if st.button("← Volver", key="fic_back", use_container_width=True):
+        if st.button("← Volver", key="ficha_volver", use_container_width=True):
             st.session_state.fh_menu = "cliente"
             st.rerun()
 
