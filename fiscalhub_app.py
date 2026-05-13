@@ -1263,10 +1263,211 @@ def pantalla_ficha_inmueble():
                     st.rerun()
 
     st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
-    e1,e2,_ = st.columns([1,1,2])
+    e1, e2, _ = st.columns([1, 1, 2])
     with e1:
         gen_pdf = st.button("📄 Generar PDF", key="fic_pdf",
                             use_container_width=True, type="primary")
+    with e2:
+        if st.button("← Volver", key="fic_back", use_container_width=True):
+            st.session_state.fh_menu = "cliente"
+            st.rerun()
+
+    if gen_pdf:
+        try:
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib import colors
+            from reportlab.lib.units import cm
+            from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,
+                                             Table, TableStyle, HRFlowable)
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+            import io
+            from datetime import date as _d
+
+            buf = io.BytesIO()
+            doc = SimpleDocTemplate(buf, pagesize=A4,
+                leftMargin=2*cm, rightMargin=2*cm,
+                topMargin=2*cm, bottomMargin=2*cm)
+
+            styles = getSampleStyleSheet()
+            PURPLE = colors.HexColor("#534AB7")
+            DARK   = colors.HexColor("#0F172A")
+            GRAY   = colors.HexColor("#64748B")
+            GREEN_ = colors.HexColor("#059669")
+            RED_   = colors.HexColor("#DC2626")
+
+            h1 = ParagraphStyle("h1", parent=styles["Normal"],
+                fontSize=18, textColor=PURPLE, fontName="Helvetica-Bold",
+                spaceAfter=4)
+            h2 = ParagraphStyle("h2", parent=styles["Normal"],
+                fontSize=11, textColor=DARK, fontName="Helvetica-Bold",
+                spaceBefore=12, spaceAfter=4)
+            body = ParagraphStyle("body", parent=styles["Normal"],
+                fontSize=9, textColor=DARK, leading=14)
+            small = ParagraphStyle("small", parent=styles["Normal"],
+                fontSize=8, textColor=GRAY, leading=12)
+            right = ParagraphStyle("right", parent=styles["Normal"],
+                fontSize=9, textColor=GRAY, alignment=TA_RIGHT)
+
+            elems = []
+
+            # Cabecera
+            elems.append(Paragraph("FiscalHub · Informe Fiscal", h1))
+            elems.append(Paragraph(
+                f"<b>{nombre_inm}</b> &nbsp;·&nbsp; "
+                f"{row.get('tipo_arrendamiento','Larga Duración')} &nbsp;·&nbsp; "
+                f"Inquilino: {row.get('inquilino') or row.get('Inquilino','—')}",
+                body))
+            elems.append(Paragraph(
+                f"Generado el {_d.today().strftime('%d/%m/%Y')} &nbsp;·&nbsp; "
+                f"Asesor: {st.session_state.get('fh_nombre_asesor','—')}",
+                right))
+            elems.append(HRFlowable(width="100%", thickness=1,
+                color=PURPLE, spaceAfter=8))
+
+            # Modelo 100 — comparativa
+            m_opt_pdf = _simular_tabla(row, dec)
+            base_o  = m_base["rend_final"]
+            base_s  = m_opt_pdf["rend_final"]
+            cuota_o = round(max(base_o * 0.30, 0), 2)
+            cuota_s = round(max(base_s * 0.30, 0), 2)
+            ahorro_pdf = round(cuota_o - cuota_s, 2)
+
+            elems.append(Paragraph("Impacto Fiscal — Sin optimizar vs. Con asesor", h2))
+            tbl_data = [
+                ["Concepto", "Sin optimizar", "Con tu asesor", "Diferencia"],
+                ["Ingresos anuales",
+                 fmt_eur(m_base["ingresos"]),
+                 fmt_eur(m_opt_pdf["ingresos"]), "—"],
+                ["Gastos deducibles",
+                 fmt_eur(m_base["total_gastos"]),
+                 fmt_eur(m_opt_pdf["total_gastos"]),
+                 fmt_eur(m_opt_pdf["total_gastos"] - m_base["total_gastos"])],
+                ["Rendimiento neto",
+                 fmt_eur(m_base["rend_neto"]),
+                 fmt_eur(m_opt_pdf["rend_neto"]), "—"],
+                ["Reducción aplicada",
+                 f"{m_base['red_pct']}%",
+                 f"{m_opt_pdf['red_pct']}%", "—"],
+                ["BASE IMPONIBLE",
+                 fmt_eur(base_o),
+                 fmt_eur(base_s),
+                 fmt_eur(base_s - base_o)],
+                ["Cuota est. IRPF (30%)",
+                 fmt_eur(cuota_o),
+                 fmt_eur(cuota_s),
+                 fmt_eur(cuota_s - cuota_o)],
+                ["AHORRO FISCAL", "", fmt_eur(ahorro_pdf), ""],
+            ]
+            tbl = Table(tbl_data, colWidths=[5.5*cm, 3.5*cm, 3.5*cm, 3.5*cm])
+            tbl.setStyle(TableStyle([
+                ("BACKGROUND",  (0,0), (-1,0), PURPLE),
+                ("TEXTCOLOR",   (0,0), (-1,0), colors.white),
+                ("FONTNAME",    (0,0), (-1,0), "Helvetica-Bold"),
+                ("FONTSIZE",    (0,0), (-1,-1), 8),
+                ("ROWBACKGROUNDS", (0,1), (-1,-2),
+                 [colors.HexColor("#F8FAFC"), colors.white]),
+                ("BACKGROUND",  (0,-1), (-1,-1), colors.HexColor("#F0EEFF")),
+                ("FONTNAME",    (0,-1), (-1,-1), "Helvetica-Bold"),
+                ("TEXTCOLOR",   (0,-1), (-1,-1), PURPLE),
+                ("FONTNAME",    (0,5), (-1,5), "Helvetica-Bold"),
+                ("GRID",        (0,0), (-1,-1), 0.3, colors.HexColor("#E2E8F0")),
+                ("ALIGN",       (1,0), (-1,-1), "RIGHT"),
+                ("PADDING",     (0,0), (-1,-1), 5),
+            ]))
+            elems.append(tbl)
+
+            # Decisiones aplicadas
+            elems.append(Paragraph("Decisiones del Asesor", h2))
+            _dec_rows = [["Partida", "Importe", "Acción aplicada"]]
+            for _dk, _lbl, _val in [
+                ("intereses", "Intereses hipoteca",
+                 sf(row.get("intereses_hipoteca",0))),
+                ("ibi",       "IBI y tributos",
+                 sf(row.get("ibi_anual",0))),
+                ("comunidad", "Comunidad",
+                 sf(row.get("comunidad",0))*12),
+                ("seguro",    "Seguro",
+                 sf(row.get("seguro_anual",0))),
+                ("suministros","Suministros",
+                 sf(row.get("suministros_anual",0))),
+                ("juridicos", "Gastos jurídicos",
+                 sf(row.get("gastos_juridicos_anual",0))),
+            ]:
+                acc = dec.get(f"acc_{_dk}","incluir")
+                _dec_rows.append([
+                    _lbl, fmt_eur(_val),
+                    "✅ Incluido" if acc=="incluir" else "❌ Excluido"])
+            # Reparaciones
+            _rep_acc = dec.get("acc_rep","gasto")
+            _dec_rows.append([
+                "Reparaciones",
+                fmt_eur(sf(row.get("reparaciones_anual",0))),
+                {"gasto":"🛠️ Gasto directo",
+                 "inversion":"📈 Inversión (5%/año)",
+                 "excluir":"❌ Excluido"}.get(_rep_acc,"—")])
+            # Amortización
+            _am_acc = dec.get("acc_amort","aplicar")
+            _dec_rows.append([
+                "Amortización 3%",
+                fmt_eur(amort_calc) if _am_acc=="aplicar" else "0 €",
+                "✅ Aplicada" if _am_acc=="aplicar" else "❌ No aplicada"])
+
+            dec_tbl = Table(_dec_rows, colWidths=[6*cm, 3*cm, 7*cm])
+            dec_tbl.setStyle(TableStyle([
+                ("BACKGROUND",  (0,0), (-1,0), colors.HexColor("#F1F5F9")),
+                ("FONTNAME",    (0,0), (-1,0), "Helvetica-Bold"),
+                ("FONTSIZE",    (0,0), (-1,-1), 8),
+                ("ROWBACKGROUNDS", (0,1), (-1,-1),
+                 [colors.HexColor("#F8FAFC"), colors.white]),
+                ("GRID",        (0,0), (-1,-1), 0.3, colors.HexColor("#E2E8F0")),
+                ("PADDING",     (0,0), (-1,-1), 5),
+                ("ALIGN",       (1,0), (1,-1), "RIGHT"),
+            ]))
+            elems.append(dec_tbl)
+
+            # Alertas del semáforo
+            _sem_pdf = calcular_semaforo_inmueble(row)
+            if _sem_pdf.get("problemas"):
+                elems.append(Paragraph("Alertas detectadas por semáforo", h2))
+                for p in _sem_pdf["problemas"]:
+                    color_p = RED_ if p.get("tipo")=="crit" else colors.HexColor("#D97706")
+                    elems.append(Paragraph(
+                        f"{'🔴' if p.get('tipo')=='crit' else '🟡'} "
+                        f"<b>{p.get('titulo','')}</b> — {p.get('descripcion','')}",
+                        body))
+                    elems.append(Spacer(1, 3))
+
+            # Análisis IA si existe
+            ia_txt = st.session_state.get(analisis_key)
+            if ia_txt:
+                elems.append(Paragraph("Análisis del Sabio IA", h2))
+                elems.append(Paragraph(ia_txt, body))
+
+            # Nota legal
+            elems.append(Spacer(1, 16))
+            elems.append(HRFlowable(width="100%", thickness=0.5,
+                color=GRAY, spaceAfter=4))
+            elems.append(Paragraph(
+                "Documento orientativo generado por FiscalHub. "
+                "Las cuotas IRPF son estimaciones al tipo marginal del 30%. "
+                "Verificar con el software oficial de la AEAT antes de presentar.",
+                small))
+
+            doc.build(elems)
+            buf.seek(0)
+            st.download_button(
+                "⬇️ Descargar PDF",
+                data=buf,
+                file_name=f"FiscalHub_{nombre_inm.replace(' ','_')}.pdf",
+                mime="application/pdf",
+                key="fic_pdf_dl")
+
+        except ImportError:
+            st.error("ReportLab no está instalado. Añade `reportlab` a requirements.txt")
+        except Exception as e_pdf:
+            st.error(f"Error generando PDF: {str(e_pdf)[:120]}")
+
 def pantalla_resumen_global():
     cliente_id = st.session_state.get("fh_cliente_sel")
     cartera    = st.session_state.get("fh_cartera", [])
