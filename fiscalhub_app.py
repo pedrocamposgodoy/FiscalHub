@@ -884,7 +884,7 @@ def pantalla_ficha_inmueble():
         st.markdown("""
         <div style="display:grid;grid-template-columns:32px 1fr 90px 1fr;
                     gap:0;background:#F1F5F9;border-radius:8px 8px 0 0;
-                    padding:8px 12px;font-size:10px;font-weight:800;
+                    padding:8px 12px;font-size:17px;font-weight:800;
                     color:#64748B;text-transform:uppercase;letter-spacing:0.08em;
                     margin-bottom:2px;">
             <div></div><div>Concepto</div>
@@ -901,7 +901,7 @@ def pantalla_ficha_inmueble():
 
         def _fila_header(titulo, color="#534AB7"):
             st.markdown(
-                f'<div style="font-size:10px;font-weight:800;color:{color};' +
+                f'<div style="font-size:17px;font-weight:800;color:{color};' +
                 f'text-transform:uppercase;letter-spacing:0.06em;' +
                 f'padding:10px 12px 4px;border-bottom:1px solid #E2E8F0;' +
                 f'margin-bottom:4px;">{titulo}</div>',
@@ -915,10 +915,10 @@ def pantalla_ficha_inmueble():
             f'gap:0;padding:8px 12px;border-bottom:1px solid #F8FAFC;' +
             f'align-items:center;">' +
             f'<div>{_sem_dot("verde","Ingresos registrados")}</div>' +
-            f'<div style="font-size:12px;color:#1e293b;font-weight:500;">0102 · Renta anual</div>' +
-            f'<div style="font-size:13px;font-weight:800;color:#059669;text-align:right;">' +
+            f'<div style="font-size:16px;color:#1e293b;font-weight:500;">0102 · Renta anual</div>' +
+            f'<div style="font-size:17px;font-weight:800;color:#059669;text-align:right;">' +
             f'{fmt_eur(renta_mes_*12)}</div>' +
-            f'<div style="padding-left:12px;font-size:10px;color:#94A3B8;">' +
+            f'<div style="padding-left:12px;font-size:17px;color:#94A3B8;">' +
             f'{fmt_eur(renta_mes_)}/mes</div></div>',
             unsafe_allow_html=True)
 
@@ -956,14 +956,14 @@ def pantalla_ficha_inmueble():
                 st.markdown(_sem_dot(sem, tip), unsafe_allow_html=True)
             with col_l:
                 st.markdown(
-                    f'<div style="font-size:12px;color:#1e293b;">' +
-                    f'<span style="color:#94A3B8;font-size:10px;">{cas} </span>' +
+                    f'<div style="font-size:16px;color:#1e293b;">' +
+                    f'<span style="color:#94A3B8;font-size:17px;">{cas} </span>' +
                     f'{label}</div>',
                     unsafe_allow_html=True)
             with col_v:
                 color_v = "#059669" if valor > 0 else "#DC2626"
                 st.markdown(
-                    f'<div style="font-size:13px;font-weight:700;' +
+                    f'<div style="font-size:17px;font-weight:700;' +
                     f'color:{color_v};text-align:right;">' +
                     f'{fmt_eur(valor)}</div>',
                     unsafe_allow_html=True)
@@ -993,14 +993,14 @@ def pantalla_ficha_inmueble():
             st.markdown(_sem_dot(rep_sem, rep_tip), unsafe_allow_html=True)
         with col_l:
             st.markdown(
-                f'<div style="font-size:12px;color:#1e293b;">' +
-                f'<span style="color:#94A3B8;font-size:10px;">0104 </span>' +
+                f'<div style="font-size:16px;color:#1e293b;">' +
+                f'<span style="color:#94A3B8;font-size:17px;">0104 </span>' +
                 f'Reparaciones</div>',
                 unsafe_allow_html=True)
         with col_v:
             color_r = "#059669" if rep_v > 0 else "#94A3B8"
             st.markdown(
-                f'<div style="font-size:13px;font-weight:700;' +
+                f'<div style="font-size:17px;font-weight:700;' +
                 f'color:{color_r};text-align:right;">' +
                 f'{fmt_eur(rep_v)}</div>',
                 unsafe_allow_html=True)
@@ -1040,27 +1040,27 @@ def pantalla_ficha_inmueble():
             st.markdown(_sem_dot(sem_a, tip_a), unsafe_allow_html=True)
         with col_l:
             st.markdown(
-                '<div style="font-size:12px;color:#1e293b;">' +
-                '<span style="color:#94A3B8;font-size:10px;">0109 </span>' +
+                '<div style="font-size:16px;color:#1e293b;">' +
+                '<span style="color:#94A3B8;font-size:17px;">0109 </span>' +
                 'Amort. 3% construcción</div>',
                 unsafe_allow_html=True)
             if datos_ok:
                 st.markdown(
-                    f'<div style="font-size:10px;color:#94A3B8;">' +
+                    f'<div style="font-size:17px;color:#94A3B8;">' +
                     f'MAX({fmt_eur(precio_c)},{fmt_eur(catastral)}) × {pct_const*100:.0f}% × 3%' +
                     f' = {fmt_eur(amort_calc)}</div>',
                     unsafe_allow_html=True)
         with col_v:
             color_am = "#059669" if amort_actual > 0 else "#D97706" if datos_ok else "#DC2626"
             st.markdown(
-                f'<div style="font-size:13px;font-weight:700;' +
+                f'<div style="font-size:17px;font-weight:700;' +
                 f'color:{color_am};text-align:right;">' +
                 f'{fmt_eur(amort_actual)}</div>',
                 unsafe_allow_html=True)
         with col_a:
             if not datos_ok:
                 st.markdown(
-                    '<div style="font-size:11px;color:#DC2626;padding-left:8px;">' +
+                    '<div style="font-size:14px;color:#DC2626;padding-left:8px;">' +
                     '🔴 Faltan datos</div>',
                     unsafe_allow_html=True)
                 dec["acc_amort"] = "excluir"
@@ -1085,7 +1085,7 @@ def pantalla_ficha_inmueble():
             f'<div style="display:grid;grid-template-columns:32px 1fr;' +
             f'gap:0;padding:8px 12px;align-items:center;">' +
             f'<div>{_sem_dot("verde" if not es_temporada else "amarillo")}</div>' +
-            f'<div style="font-size:12px;color:#475569;">{red_label}</div></div>',
+            f'<div style="font-size:16px;color:#475569;">{red_label}</div></div>',
             unsafe_allow_html=True)
         dec["reduccion_pct"] = red_pct_v
 
@@ -1514,51 +1514,77 @@ def pantalla_resumen_global():
 
     st.markdown('<div class="nc-section">Desglose por inmueble</div>', unsafe_allow_html=True)
     if not df_inm.empty:
-        cards_html = '<div class="nc-alert-grid">'
-        for _,row in df_inm.iterrows():
-            nm     = str(row.get(col_n,""))
-            m      = calcular_modelo100_inmueble(row, df_mov)
-            manual = vlds.get(nm,{}).get("manual",False)
-            tipo   = str(row.get("tipo_arrendamiento") or row.get("Tipo_Arrendamiento","Larga Duración"))
-            inq    = str(row.get("inquilino") or row.get("Inquilino","—"))
-            roof_cls  = "manual" if manual else ""
-            badge_html = f'<span class="global-card-badge manual">✎ Manual</span>' if manual else \
-                         f'<span class="global-card-badge">✓ Automático</span>'
-            cards_html += f"""
-            <div class="nc-card">
-              <div class="global-card-roof {roof_cls}"></div>
-              <div class="nc-card">
-                <div class="nc-title">{nm}</div>
-                <div class="nc-subtitle">{inq[:20]} · {tipo}</div>
-                <div class="global-card-metrics">
-                  <div class="global-metric">
-                    <div class="global-metric-lbl">0102 Ingresos</div>
-                    <div class="global-metric-val ok">{fmt_eur(m["ingresos"])}</div>
-                  </div>
-                  <div class="global-metric">
-                    <div class="global-metric-lbl">Gastos totales</div>
-                    <div class="global-metric-val cr">−{fmt_eur(m["total_gastos"])}</div>
-                  </div>
-                  <div class="global-metric">
-                    <div class="global-metric-lbl">0149 Rend. neto</div>
-                    <div class="global-metric-val tx">{fmt_eur(m["rend_neto"])}</div>
-                  </div>
-                  <div class="global-metric">
-                    <div class="global-metric-lbl">Reducción {m["red_pct"]}%</div>
-                    <div class="global-metric-val tx">−{fmt_eur(m["reduccion"])}</div>
-                  </div>
+        # Grid 3 columnas — mismo patrón de cards que pantalla_cliente
+        cols_grid = st.columns(3)
+        for idx_, (_, row_g) in enumerate(df_inm.iterrows()):
+            nm_g   = str(row_g.get(col_n,""))
+            m_g    = calcular_modelo100_inmueble(row_g, df_mov)
+            manual = vlds.get(nm_g,{}).get("manual",False)
+            tipo_g = str(row_g.get("tipo_arrendamiento") or
+                         row_g.get("Tipo_Arrendamiento","Larga Duración"))
+            inq_g  = str(row_g.get("inquilino") or row_g.get("Inquilino","—"))
+            hdr_c  = _color_cli(cliente_id)
+            badge  = ("✎ Manual" if manual else "✓ Auto")
+            badge_c= ("#D97706" if manual else "#059669")
+            rend_c = "#059669" if m_g["rend_final"] >= 0 else "#DC2626"
+
+            hdr_html = f"""
+            <div style="background:{hdr_c};border-radius:10px 10px 0 0;
+                        padding:12px 14px 10px;">
+              <div style="font-size:15px;font-weight:800;color:#FFF;
+                          line-height:1.2;margin-bottom:4px;">{nm_g}</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.8);">
+                {inq_g[:22]} · {tipo_g}</div>
+              <div style="margin-top:6px;">
+                <span style="background:rgba(255,255,255,0.18);color:#FFF;
+                             font-size:10px;font-weight:700;padding:2px 8px;
+                             border-radius:12px;">{badge}</span>
+              </div>
+            </div>"""
+            body_html = f"""
+            <div style="background:#FFF;border:1px solid #E2E8F0;
+                        border-top:none;border-radius:0 0 10px 10px;
+                        padding:12px 14px;margin-bottom:4px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div>
+                  <div style="font-size:10px;color:#94A3B8;margin-bottom:2px;">
+                    0102 Ingresos</div>
+                  <div style="font-size:15px;font-weight:800;color:#059669;">
+                    {fmt_eur(m_g["ingresos"])}</div>
                 </div>
-                <div class="global-card-footer">
-                  <div>
-                    <div class="global-card-base-lbl">0156 Base imp. estimada</div>
-                    <div class="global-card-base-val">{fmt_eur(m["rend_final"])}</div>
-                  </div>
-                  {badge_html}
+                <div>
+                  <div style="font-size:10px;color:#94A3B8;margin-bottom:2px;">
+                    Gastos totales</div>
+                  <div style="font-size:15px;font-weight:800;color:#DC2626;">
+                    −{fmt_eur(m_g["total_gastos"])}</div>
+                </div>
+                <div>
+                  <div style="font-size:10px;color:#94A3B8;margin-bottom:2px;">
+                    0149 Rend. neto</div>
+                  <div style="font-size:14px;font-weight:700;color:#534AB7;">
+                    {fmt_eur(m_g["rend_neto"])}</div>
+                </div>
+                <div>
+                  <div style="font-size:10px;color:#94A3B8;margin-bottom:2px;">
+                    Reducción {m_g["red_pct"]}%</div>
+                  <div style="font-size:14px;font-weight:700;color:#475569;">
+                    −{fmt_eur(m_g["reduccion"])}</div>
+                </div>
+              </div>
+              <div style="margin-top:10px;padding-top:8px;
+                          border-top:1px solid #F1F5F9;
+                          display:flex;justify-content:space-between;
+                          align-items:center;">
+                <div>
+                  <div style="font-size:10px;color:#94A3B8;">0156 Base imp. est.</div>
+                  <div style="font-size:1.3rem;font-weight:900;color:{rend_c};">
+                    {fmt_eur(m_g["rend_final"])}</div>
                 </div>
               </div>
             </div>"""
-        cards_html += '</div>'
-        st.markdown(cards_html, unsafe_allow_html=True)
+            with cols_grid[idx_ % 3]:
+                st.markdown(hdr_html + body_html, unsafe_allow_html=True)
+
 
     st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
     asesor = st.session_state.get("fh_asesor",{})
@@ -1689,17 +1715,126 @@ def pantalla_resumen_global():
     with e2:
         if st.button("📊 Exportar Excel", use_container_width=True, key="gl_xlsx"):
             try:
-                from fiscal_export import generar_excel_asesor
-                filas = [_build_fila_export(row,df_mov,calcular_modelo100_inmueble(row,df_mov)) for _,row in df_inm.iterrows()]
-                xlsx = generar_excel_asesor(_build_totales_export(filas),_build_totales_export(filas),
-                    nombre_propietario=nombre,nombre_asesoria=nombre_asesor,año_fiscal=2025)
-                if xlsx: st.session_state["fh_gl_xlsx"] = xlsx.getvalue()
-            except Exception as e: st.error(f"Error Excel: {e}")
+                import openpyxl
+                from openpyxl.styles import (Font, PatternFill, Alignment,
+                                              Border, Side)
+                from openpyxl.utils import get_column_letter
+                import io as _io2
+
+                wb  = openpyxl.Workbook()
+                ws  = wb.active
+                ws.title = "Modelo 100"
+
+                _PU_xl = "FF534AB7"
+                _GN_xl = "FF059669"
+                _RD_xl = "FFDC2626"
+                _LG_xl = "FFF0EEFF"
+                _GR_xl = "FFF1F5F9"
+
+                def _hdr_cell(cell, txt, bg=_PU_xl):
+                    cell.value = txt
+                    cell.font  = Font(bold=True, color="FFFFFFFF", size=10)
+                    cell.fill  = PatternFill("solid", fgColor=bg)
+                    cell.alignment = Alignment(horizontal="center",
+                                               vertical="center", wrap_text=True)
+
+                def _data_cell(cell, val, bold=False, color="FF0F172A", align="left"):
+                    cell.value = val
+                    cell.font  = Font(bold=bold, color=color, size=9)
+                    cell.alignment = Alignment(horizontal=align, vertical="center")
+
+                thin = Side(style="thin", color="FFE2E8F0")
+                brd  = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+                # ── Cabecera ──────────────────────────────────────
+                ws.merge_cells("A1:G1")
+                c = ws["A1"]
+                c.value = f"FiscalHub · Resumen IRPF 2025 — {nombre}"
+                c.font  = Font(bold=True, size=13, color="FF534AB7")
+                c.alignment = Alignment(horizontal="center")
+                ws.row_dimensions[1].height = 22
+
+                ws.merge_cells("A2:G2")
+                ws["A2"].value = (f"Asesor: {nombre_asesor or '—'} · "
+                                  f"Generado: {_d2.today().strftime('%d/%m/%Y')}")
+                ws["A2"].font  = Font(size=8, color="FF64748B")
+                ws["A2"].alignment = Alignment(horizontal="center")
+                ws.row_dimensions[2].height = 14
+
+                # ── Cabecera columnas ─────────────────────────────
+                hdrs = ["Inmueble","Tipo","Inquilino",
+                        "Ingresos €","Gastos €","Rend. neto €",
+                        "Base imp. €"]
+                for ci, h in enumerate(hdrs, 1):
+                    _hdr_cell(ws.cell(4, ci), h)
+                ws.row_dimensions[4].height = 18
+
+                # ── Filas por inmueble ────────────────────────────
+                totales_i = totales_g = totales_n = totales_b = 0
+                for ri, (_, row_x) in enumerate(df_inm.iterrows(), 5):
+                    nm_x  = str(row_x.get(col_n,""))
+                    m_x   = calcular_modelo100_inmueble(row_x, df_mov)
+                    tp_x  = str(row_x.get("tipo_arrendamiento") or "—")
+                    iq_x  = str(row_x.get("inquilino") or "—")
+                    bg_row = _GR_xl if ri % 2 == 0 else "FFFFFFFF"
+                    for ci_ in range(1, 8):
+                        ws.cell(ri, ci_).fill = PatternFill("solid", fgColor=bg_row)
+                        ws.cell(ri, ci_).border = brd
+
+                    _data_cell(ws.cell(ri,1), nm_x, bold=True)
+                    _data_cell(ws.cell(ri,2), tp_x)
+                    _data_cell(ws.cell(ri,3), iq_x)
+                    _data_cell(ws.cell(ri,4), m_x["ingresos"],
+                               color=_GN_xl, align="right")
+                    _data_cell(ws.cell(ri,5), -m_x["total_gastos"],
+                               color=_RD_xl, align="right")
+                    _data_cell(ws.cell(ri,6), m_x["rend_neto"], align="right")
+                    _data_cell(ws.cell(ri,7), m_x["rend_final"],
+                               bold=True, color="FF534AB7", align="right")
+                    totales_i += m_x["ingresos"]
+                    totales_g += m_x["total_gastos"]
+                    totales_n += m_x["rend_neto"]
+                    totales_b += m_x["rend_final"]
+                    ws.row_dimensions[ri].height = 16
+
+                # ── Fila totales ──────────────────────────────────
+                tr = len(list(df_inm.iterrows())) + 5
+                _hdr_cell(ws.cell(tr,1), "TOTAL", bg=_PU_xl)
+                for ci_ in range(2,4):
+                    ws.cell(tr,ci_).fill = PatternFill("solid", fgColor=_PU_xl)
+                _data_cell(ws.cell(tr,4), totales_i,
+                           bold=True, color="FFFFFFFF", align="right")
+                ws.cell(tr,4).fill = PatternFill("solid", fgColor=_PU_xl)
+                _data_cell(ws.cell(tr,5), -totales_g,
+                           bold=True, color="FFFFFFFF", align="right")
+                ws.cell(tr,5).fill = PatternFill("solid", fgColor=_PU_xl)
+                _data_cell(ws.cell(tr,6), totales_n,
+                           bold=True, color="FFFFFFFF", align="right")
+                ws.cell(tr,6).fill = PatternFill("solid", fgColor=_PU_xl)
+                _data_cell(ws.cell(tr,7), totales_b,
+                           bold=True, color="FFFFFFFF", align="right")
+                ws.cell(tr,7).fill = PatternFill("solid", fgColor=_PU_xl)
+                ws.row_dimensions[tr].height = 18
+
+                # Ancho columnas
+                for ci_, w_ in enumerate([28,18,18,14,14,14,14], 1):
+                    ws.column_dimensions[get_column_letter(ci_)].width = w_
+
+                ws.freeze_panes = "A5"
+
+                _xbuf = _io2.BytesIO()
+                wb.save(_xbuf)
+                _xbuf.seek(0)
+                st.session_state["fh_gl_xlsx"] = _xbuf.read()
+            except Exception as _ex:
+                st.error(f"Error Excel: {str(_ex)[:150]}")
         if "fh_gl_xlsx" in st.session_state:
-            st.download_button("⬇️ Descargar Excel",data=st.session_state["fh_gl_xlsx"],
+            st.download_button("⬇️ Descargar Excel",
+                data=st.session_state["fh_gl_xlsx"],
                 file_name=f"IRPF_{nombre.replace(' ','_')}_2025.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True,key="gl_xlsx_dl")
+                use_container_width=True, key="gl_xlsx_dl")
+
 
 # ── ALERTAS ───────────────────────────────────────────────────────
 def pantalla_alertas():
