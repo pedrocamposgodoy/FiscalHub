@@ -1191,31 +1191,47 @@ def pantalla_ficha_inmueble():
         if st.button("🔬 Generar análisis fiscal",
                      key=f"btn_ia_{dec_key}",
                      use_container_width=True, type="primary"):
+            # Leer estados actuales de la tabla
+            _sem_local  = calcular_semaforo_inmueble(row)
+            _alertas    = "; ".join([p.get("titulo","")
+                          for p in _sem_local.get("problemas",[])])
+            _acc_rep    = dec.get("acc_rep","gasto")
+            _acc_amort  = dec.get("acc_amort","aplicar")
+            _rep_v      = sf(row.get("reparaciones_anual",0))
+            _amort_v    = amort_calc if _acc_amort=="aplicar" else 0
+            # Gastos incluidos/excluidos
+            _gastos_inc = []
+            _gastos_exc = []
+            for _dk, _lbl in [("intereses","Intereses"),("ibi","IBI"),
+                               ("comunidad","Comunidad"),("seguro","Seguro"),
+                               ("suministros","Suministros"),("juridicos","Jurídicos")]:
+                if dec.get(f"acc_{_dk}","incluir") == "incluir":
+                    _gastos_inc.append(_lbl)
+                else:
+                    _gastos_exc.append(_lbl)
+
             prompt = (
                 f"Inmueble: {nombre_inm} · "
                 f"{row.get('tipo_arrendamiento','Larga Duración')} · "
                 f"Renta {fmt_eur(renta_mes)}/mes\n\n"
                 f"SIN OPTIMIZAR: Base {fmt_eur(base_orig)} · "
                 f"Cuota {fmt_eur(cuota_orig)}\n\n"
-                f"DECISIONES APLICADAS:\n"
-                f"  Amortización 3%: "
-                f"{fmt_eur(dec.get('amortizacion_3pct',0))} "
+                f"DECISIONES DEL ASESOR:\n"
+                f"  Gastos incluidos: {', '.join(_gastos_inc) or 'ninguno'}\n"
+                f"  Gastos excluidos: {', '.join(_gastos_exc) or 'ninguno'}\n"
+                f"  Reparaciones ({fmt_eur(_rep_v)}): {_acc_rep} — "
+                f"{'deducción 100%' if _acc_rep=='gasto' else 'amort. 5%/año' if _acc_rep=='inversion' else 'excluido'}\n"
+                f"  Amortización 3%: {'aplicada ' + fmt_eur(_amort_v) if _acc_amort=='aplicar' else 'excluida'} "
                 f"(correcta: {fmt_eur(amort_calc)})\n"
-                f"  Reparación directa: {fmt_eur(dec.get('rep_como_gasto',0))}\n"
-                f"  Como mejora: {fmt_eur(dec.get('rep_como_mejora',0))}\n"
-                f"  Mobiliario: {fmt_eur(dec.get('amortizacion_mobiliario',0))}\n"
-                f"  Inversión proactiva: "
-                f"{fmt_eur(dec.get('inversion_proactiva',0))} "
-                f"({dec.get('tipo_inversion','—')})\n"
                 f"  Reducción: {m_opt['red_pct']}%\n\n"
                 f"RESULTADO: Base fin ejercicio {fmt_eur(base_opt)} · "
                 f"Cuota {fmt_eur(cuota_opt)} · "
                 f"Ahorro fiscal {fmt_eur(ahorro_c)}\n\n"
-                f"ALERTAS: {'; '.join([p.get('titulo','') for p in sem.get('problemas',[])])}\n\n"
-                f"4 frases: (1) valoración decisiones, "
-                f"(2) algo más a optimizar, "
-                f"(3) riesgo Hacienda, "
-                f"(4) acción antes 31/12."
+                f"ALERTAS SEMÁFORO: {_alertas or 'ninguna'}\n\n"
+                f"4 frases: (1) valoración de las decisiones tomadas, "
+                f"(2) algo más que optimizar o corregir, "
+                f"(3) riesgo ante inspección de Hacienda, "
+                f"(4) acción concreta antes del 31/12."
             )
             system = (
                 "Eres el Asesor Fiscal IA de FiscalHub. Hablas con un asesor "
