@@ -1567,12 +1567,121 @@ def pantalla_resumen_global():
     with e1:
         if st.button("📄 Exportar PDF completo", type="primary", use_container_width=True, key="gl_pdf"):
             try:
-                import reportlab; from fiscal_export import generar_pdf_global
-                filas = [_build_fila_export(row,df_mov,calcular_modelo100_inmueble(row,df_mov)) for _,row in df_inm.iterrows()]
-                totales = _build_totales_export(filas)
-                pdf = generar_pdf_global(filas,totales,nombre_propietario=nombre,nombre_asesoria=nombre_asesor,año_fiscal=2025)
-                st.session_state["fh_gl_pdf"] = pdf.getvalue() if pdf else _pdf_simple(f"Global ({len(nombres)} inm.)",nombre,modelo)
-            except: st.session_state["fh_gl_pdf"] = _pdf_simple(f"Global ({len(nombres)} inm.)",nombre,modelo)
+                from reportlab.lib.pagesizes import A4
+                from reportlab.lib import colors
+                from reportlab.lib.units import cm
+                from reportlab.platypus import (SimpleDocTemplate, Paragraph,
+                    Spacer, Table, TableStyle, HRFlowable)
+                from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+                from reportlab.lib.enums import TA_RIGHT
+                import io
+                from datetime import date as _d2
+
+                _buf = io.BytesIO()
+                _doc = SimpleDocTemplate(_buf, pagesize=A4,
+                    leftMargin=2*cm, rightMargin=2*cm,
+                    topMargin=2*cm, bottomMargin=2*cm)
+                _st  = getSampleStyleSheet()
+                _PU  = colors.HexColor("#534AB7")
+                _DK  = colors.HexColor("#0F172A")
+                _GR  = colors.HexColor("#64748B")
+                _h1  = ParagraphStyle("gh1", parent=_st["Normal"],
+                    fontSize=18, textColor=_PU, fontName="Helvetica-Bold", spaceAfter=4)
+                _h2  = ParagraphStyle("gh2", parent=_st["Normal"],
+                    fontSize=11, textColor=_DK, fontName="Helvetica-Bold",
+                    spaceBefore=12, spaceAfter=4)
+                _bd  = ParagraphStyle("gbd", parent=_st["Normal"],
+                    fontSize=9, textColor=_DK, leading=14)
+                _sm  = ParagraphStyle("gsm", parent=_st["Normal"],
+                    fontSize=8, textColor=_GR, leading=12)
+                _rt  = ParagraphStyle("grt", parent=_st["Normal"],
+                    fontSize=9, textColor=_GR, alignment=TA_RIGHT)
+
+                _el = []
+                _el.append(Paragraph("FiscalHub · Resumen Global IRPF", _h1))
+                _el.append(Paragraph(
+                    f"<b>{nombre}</b> &nbsp;·&nbsp; "
+                    f"{len(nombres)} inmuebles &nbsp;·&nbsp; "
+                    f"Ejercicio 2025", _bd))
+                _el.append(Paragraph(
+                    f"Generado el {_d2.today().strftime('%d/%m/%Y')} &nbsp;·&nbsp; "
+                    f"Asesor: {nombre_asesor or '—'}", _rt))
+                _el.append(HRFlowable(width="100%", thickness=1,
+                    color=_PU, spaceAfter=8))
+
+                # KPIs globales
+                _el.append(Paragraph("Modelo 100 consolidado", _h2))
+                _gl_rows = [
+                    ["Casilla", "Concepto", "Importe"],
+                    ["0102", "Ingresos totales",
+                     fmt_eur(modelo.get("ingresos",0))],
+                    ["0105-0112", "Gastos deducibles totales",
+                     f"−{fmt_eur(modelo.get('total_gastos',0))}"],
+                    ["0149", "Rendimiento neto",
+                     fmt_eur(modelo.get("rend_neto",0))],
+                    ["0150", "Reducción aplicada",
+                     f"−{fmt_eur(modelo.get('reduccion',0))}"],
+                    ["0156", "BASE IMPONIBLE ESTIMADA",
+                     fmt_eur(modelo.get("rend_final",0))],
+                ]
+                _gl_tbl = Table(_gl_rows, colWidths=[3*cm, 9*cm, 4*cm])
+                _gl_tbl.setStyle(TableStyle([
+                    ("BACKGROUND",  (0,0), (-1,0), _PU),
+                    ("TEXTCOLOR",   (0,0), (-1,0), colors.white),
+                    ("FONTNAME",    (0,0), (-1,0), "Helvetica-Bold"),
+                    ("FONTSIZE",    (0,0), (-1,-1), 8),
+                    ("ROWBACKGROUNDS",(0,1),(-1,-2),
+                     [colors.HexColor("#F8FAFC"), colors.white]),
+                    ("BACKGROUND",  (0,-1),(-1,-1), colors.HexColor("#F0EEFF")),
+                    ("FONTNAME",    (0,-1),(-1,-1), "Helvetica-Bold"),
+                    ("TEXTCOLOR",   (0,-1),(-1,-1), _PU),
+                    ("GRID",        (0,0), (-1,-1), 0.3,
+                     colors.HexColor("#E2E8F0")),
+                    ("ALIGN",       (2,0), (2,-1), "RIGHT"),
+                    ("PADDING",     (0,0), (-1,-1), 5),
+                ]))
+                _el.append(_gl_tbl)
+
+                # Desglose por inmueble
+                _el.append(Paragraph("Desglose por inmueble", _h2))
+                _inm_rows = [["Inmueble","Ingresos","Gastos","Rend. neto","Base imp."]]
+                for _, _r in df_inm.iterrows():
+                    _nm = str(_r.get(col_n,""))
+                    _mi = calcular_modelo100_inmueble(_r, df_mov)
+                    _inm_rows.append([
+                        _nm[:28],
+                        fmt_eur(_mi.get("ingresos",0)),
+                        fmt_eur(_mi.get("total_gastos",0)),
+                        fmt_eur(_mi.get("rend_neto",0)),
+                        fmt_eur(_mi.get("rend_final",0)),
+                    ])
+                _inm_tbl = Table(_inm_rows,
+                    colWidths=[5.5*cm,3*cm,3*cm,3*cm,3*cm])
+                _inm_tbl.setStyle(TableStyle([
+                    ("BACKGROUND",  (0,0),(-1,0), colors.HexColor("#F1F5F9")),
+                    ("FONTNAME",    (0,0),(-1,0), "Helvetica-Bold"),
+                    ("FONTSIZE",    (0,0),(-1,-1), 8),
+                    ("ROWBACKGROUNDS",(0,1),(-1,-1),
+                     [colors.HexColor("#F8FAFC"), colors.white]),
+                    ("GRID",        (0,0),(-1,-1), 0.3,
+                     colors.HexColor("#E2E8F0")),
+                    ("ALIGN",       (1,0),(-1,-1), "RIGHT"),
+                    ("PADDING",     (0,0),(-1,-1), 5),
+                ]))
+                _el.append(_inm_tbl)
+
+                _el.append(Spacer(1, 16))
+                _el.append(HRFlowable(width="100%", thickness=0.5,
+                    color=_GR, spaceAfter=4))
+                _el.append(Paragraph(
+                    "Documento orientativo. Base imponible estimada. "
+                    "Verificar con software oficial AEAT antes de presentar.", _sm))
+
+                _doc.build(_el)
+                _buf.seek(0)
+                st.session_state["fh_gl_pdf"] = _buf.read()
+            except Exception as _e:
+                st.error(f"Error generando PDF: {str(_e)[:150]}")
         if "fh_gl_pdf" in st.session_state:
             st.download_button("⬇️ Descargar PDF",data=st.session_state["fh_gl_pdf"],
                 file_name=f"IRPF_{nombre.replace(' ','_')}_2025_global.pdf",
