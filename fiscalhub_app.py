@@ -804,25 +804,41 @@ def pantalla_ficha_inmueble():
     # ── LABORATORIO FISCAL — 3 CAPAS ─────────────────────────────
 
     def _simular_tabla(row_, d_):
-        renta_m   = d_.get("renta_mod", sf(row_.get("renta") or row_.get("Renta",0)))
+        """Recalcula Modelo 100 según estados de los radio buttons de la tabla."""
+        def _inc(dk, val):
+            """Incluir valor si acc_{dk} == 'incluir', excluir si 'excluir'."""
+            return val if d_.get(f"acc_{dk}", "incluir") == "incluir" else 0
+
+        renta_m   = sf(row_.get("renta") or row_.get("Renta",0))
         ing       = renta_m * 12
-        intereses = d_.get("intereses", sf(row_.get("intereses_hipoteca",0)))
-        ibi_v     = d_.get("ibi", sf(row_.get("ibi_anual",0)))
-        com       = d_.get("comunidad_mod", sf(row_.get("comunidad",0))*12)
-        seg       = d_.get("seguro_mod", sf(row_.get("seguro_anual",0)))
-        jur       = d_.get("jur_mod", sf(row_.get("gastos_juridicos_anual",0)))
-        sumi      = d_.get("suministros_mod", sf(row_.get("suministros_anual",0)))
-        rep_g     = d_.get("rep_como_gasto", sf(row_.get("reparaciones_anual",0)))
-        rep_m_v   = d_.get("rep_como_mejora", 0)
-        amort_3   = d_.get("amortizacion_3pct", sf(row_.get("amortizacion_fiscal",0)))
-        amort_mob = d_.get("amortizacion_mobiliario", 0)
-        form_yr   = d_.get("gastos_formalizacion", 0) / 10
-        inversion = d_.get("inversion_proactiva", 0)
-        tipo_inv  = d_.get("tipo_inversion", "Reparacion")
-        ded_inv   = inversion if tipo_inv=="Reparacion" else inversion*0.05
-        total_g   = (intereses + ibi_v + com + seg + jur + sumi +
-                     rep_g + rep_m_v*0.05 + amort_3 + amort_mob + form_yr + ded_inv)
-        rend_n    = ing - total_g
+        intereses = _inc("intereses", sf(row_.get("intereses_hipoteca",0)))
+        ibi_v     = _inc("ibi",       sf(row_.get("ibi_anual",0)))
+        com       = _inc("comunidad", sf(row_.get("comunidad",0))*12)
+        seg       = _inc("seguro",    sf(row_.get("seguro_anual",0)))
+        jur       = _inc("juridicos", sf(row_.get("gastos_juridicos_anual",0)))
+        sumi      = _inc("suministros",sf(row_.get("suministros_anual",0)))
+
+        # Reparaciones: gasto=100%, inversion=5%/año, excluir=0
+        rep_tot   = sf(row_.get("reparaciones_anual",0))
+        acc_rep   = d_.get("acc_rep","gasto")
+        if acc_rep == "gasto":
+            rep_ded = rep_tot
+        elif acc_rep == "inversion":
+            rep_ded = rep_tot * 0.05
+        else:
+            rep_ded = 0
+
+        # Amortización 3%: aplicar=calculado, excluir=0
+        _precio_c  = sf(row_.get("precio_compra",0))
+        _catastral = sf(row_.get("valor_catastral",0))
+        _pct_c     = sf(row_.get("porcentaje_construccion",0.7))
+        _amort_c   = max(_precio_c, _catastral) * _pct_c * 0.03
+        acc_amort  = d_.get("acc_amort","aplicar")
+        amort_3    = _amort_c if (acc_amort=="aplicar" and _precio_c>0 and _catastral>0) else 0
+
+        total_g = intereses + ibi_v + com + seg + jur + sumi + rep_ded + amort_3
+        rend_n  = ing - total_g
+
         tipo_arr_ = str(row_.get("tipo_arrendamiento") or "").lower()
         es_temp   = any(x in tipo_arr_ for x in ["temporada","habitacion","turistic"])
         red_pct   = 0 if es_temp else d_.get("reduccion_pct", 50)
@@ -863,132 +879,220 @@ def pantalla_ficha_inmueble():
     col_tabla, col_impacto = st.columns([6, 4])
 
     with col_tabla:
+        # ── TABLA DE AUDITORÍA ESTRATÉGICA ───────────────────────
+        # Cabecera
+        st.markdown("""
+        <div style="display:grid;grid-template-columns:32px 1fr 90px 1fr;
+                    gap:0;background:#F1F5F9;border-radius:8px 8px 0 0;
+                    padding:8px 12px;font-size:10px;font-weight:800;
+                    color:#64748B;text-transform:uppercase;letter-spacing:0.08em;
+                    margin-bottom:2px;">
+            <div></div><div>Concepto</div>
+            <div style="text-align:right;">Importe</div>
+            <div style="padding-left:12px;">Acción</div>
+        </div>""", unsafe_allow_html=True)
+
+        def _sem_dot(color, tooltip=""):
+            colors = {"verde":"#059669","amarillo":"#D97706","rojo":"#DC2626"}
+            c = colors.get(color, "#94A3B8")
+            return (f'<span title="{tooltip}" style="display:inline-block;' +
+                    f'width:10px;height:10px;border-radius:50%;' +
+                    f'background:{c};flex-shrink:0;"></span>')
+
+        def _fila_header(titulo, color="#534AB7"):
+            st.markdown(
+                f'<div style="font-size:10px;font-weight:800;color:{color};' +
+                f'text-transform:uppercase;letter-spacing:0.06em;' +
+                f'padding:10px 12px 4px;border-bottom:1px solid #E2E8F0;' +
+                f'margin-bottom:4px;">{titulo}</div>',
+                unsafe_allow_html=True)
+
+        # ── INGRESOS (solo informativo) ───────────────────────────
+        _fila_header("📥 Ingresos")
+        renta_mes_ = sf(row.get("renta") or row.get("Renta",0))
         st.markdown(
-            '<div style="font-size:11px;color:#94A3B8;margin-bottom:12px;">'
-            'Edita los valores para simular el impacto fiscal a fin de ejercicio.</div>',
+            f'<div style="display:grid;grid-template-columns:32px 1fr 90px 1fr;' +
+            f'gap:0;padding:8px 12px;border-bottom:1px solid #F8FAFC;' +
+            f'align-items:center;">' +
+            f'<div>{_sem_dot("verde","Ingresos registrados")}</div>' +
+            f'<div style="font-size:12px;color:#1e293b;font-weight:500;">0102 · Renta anual</div>' +
+            f'<div style="font-size:13px;font-weight:800;color:#059669;text-align:right;">' +
+            f'{fmt_eur(renta_mes_*12)}</div>' +
+            f'<div style="padding-left:12px;font-size:10px;color:#94A3B8;">' +
+            f'{fmt_eur(renta_mes_)}/mes</div></div>',
             unsafe_allow_html=True)
 
-        # INGRESOS
-        st.markdown('<div style="font-size:11px;font-weight:700;color:#534AB7;'
-            'padding:6px 0 4px;border-bottom:2px solid #EEEDFE;margin-bottom:8px;">'
-            'Ingresos</div>', unsafe_allow_html=True)
-        renta_mod = st.number_input("0102 · Renta mensual (€)",
-            min_value=0.0, value=float(dec.get("renta_mod", renta_mes)),
-            step=50.0, key=f"ni_renta_{dec_key}")
-        dec["renta_mod"] = renta_mod
-        if renta_mod != renta_mes:
-            st.caption(f"Diferencia anual: {fmt_eur((renta_mod-renta_mes)*12)}")
+        # ── GASTOS FIJOS: Incluir / Excluir ──────────────────────
+        _fila_header("📤 Gastos deducibles fijos")
 
-        # GASTOS
-        st.markdown('<div style="font-size:11px;font-weight:700;color:#534AB7;'
-            'padding:8px 0 4px;border-bottom:2px solid #EEEDFE;margin-bottom:8px;">'
-            'Gastos deducibles fijos</div>', unsafe_allow_html=True)
-        c1_, c2_ = st.columns(2)
-        with c1_:
-            v = st.number_input("0105 · Intereses hipoteca",
-                min_value=0.0, value=float(dec.get("intereses",
-                sf(row.get("intereses_hipoteca",0)))), step=100.0, key=f"ni_int_{dec_key}")
-            dec["intereses"] = v
-            v2 = st.number_input("0106 · IBI y tributos",
-                min_value=0.0, value=float(dec.get("ibi",
-                sf(row.get("ibi_anual",0)))), step=50.0, key=f"ni_ibi_{dec_key}")
-            dec["ibi"] = v2
-            v3 = st.number_input("0110 · Seguro hogar+vida",
-                min_value=0.0, value=float(dec.get("seguro_mod",
-                sf(row.get("seguro_anual",0)))), step=50.0, key=f"ni_seg_{dec_key}")
-            dec["seguro_mod"] = v3
-        with c2_:
-            v4 = st.number_input("0107 · Comunidad (anual)",
-                min_value=0.0, value=float(dec.get("comunidad_mod",
-                sf(row.get("comunidad",0))*12)), step=50.0, key=f"ni_com_{dec_key}")
-            dec["comunidad_mod"] = v4
-            v5 = st.number_input("0111 · Suministros",
-                min_value=0.0, value=float(dec.get("suministros_mod",
-                sf(row.get("suministros_anual",0)))), step=50.0, key=f"ni_sumi_{dec_key}")
-            dec["suministros_mod"] = v5
-            v6 = st.number_input("0112 · Gastos jurídicos",
-                min_value=0.0, value=float(dec.get("jur_mod",
-                sf(row.get("gastos_juridicos_anual",0)))), step=50.0, key=f"ni_jur_{dec_key}")
-            dec["jur_mod"] = v6
+        gastos_fijos = [
+            ("0105", "Intereses hipoteca",
+             sf(row.get("intereses_hipoteca",0)),
+             "intereses"),
+            ("0106", "IBI y tributos",
+             sf(row.get("ibi_anual",0)),
+             "ibi"),
+            ("0107", "Comunidad propietarios",
+             sf(row.get("comunidad",0))*12,
+             "comunidad"),
+            ("0110", "Seguro hogar + vida",
+             sf(row.get("seguro_anual",0)),
+             "seguro"),
+            ("0111", "Suministros",
+             sf(row.get("suministros_anual",0)),
+             "suministros"),
+            ("0112", "Gastos jurídicos",
+             sf(row.get("gastos_juridicos_anual",0)),
+             "juridicos"),
+        ]
 
-        # AMORTIZACIÓN 3%
-        st.markdown('<div style="font-size:11px;font-weight:700;color:#DC2626;'
-            'padding:8px 0 4px;border-bottom:2px solid #FCA5A5;margin-bottom:8px;">'
-            '⚡ Amortización inmueble (casilla 0109)</div>', unsafe_allow_html=True)
-        usar_calc = st.checkbox(
-            f"Aplicar cálculo automático: {fmt_eur(amort_calc)}/año",
-            value=dec.get("usar_amort_calc",
-                          sf(row.get("amortizacion_fiscal",0))==0),
-            key=f"ck_amort_{dec_key}")
-        if usar_calc:
-            dec["amortizacion_3pct"] = amort_calc
-            dec["usar_amort_calc"]   = True
-            st.caption(f"MAX({fmt_eur(precio_c)}, {fmt_eur(catastral)}) "
-                       f"× {pct_const*100:.0f}% × 3% = {fmt_eur(amort_calc)}")
+        for cas, label, valor, dk in gastos_fijos:
+            sem  = "verde"  if valor > 0 else "rojo"
+            tip  = "Registrado" if valor > 0 else "Sin registrar — revisar"
+            default = dec.get(f"acc_{dk}", "incluir" if valor > 0 else "excluir")
+
+            col_s, col_l, col_v, col_a = st.columns([0.4, 2.5, 1.1, 2.2])
+            with col_s:
+                st.markdown(_sem_dot(sem, tip), unsafe_allow_html=True)
+            with col_l:
+                st.markdown(
+                    f'<div style="font-size:12px;color:#1e293b;">' +
+                    f'<span style="color:#94A3B8;font-size:10px;">{cas} </span>' +
+                    f'{label}</div>',
+                    unsafe_allow_html=True)
+            with col_v:
+                color_v = "#059669" if valor > 0 else "#DC2626"
+                st.markdown(
+                    f'<div style="font-size:13px;font-weight:700;' +
+                    f'color:{color_v};text-align:right;">' +
+                    f'{fmt_eur(valor)}</div>',
+                    unsafe_allow_html=True)
+            with col_a:
+                opc = st.radio("",
+                    options=["incluir","excluir"],
+                    format_func=lambda x: "✅ Incluir" if x=="incluir" else "❌ Excluir",
+                    index=0 if default=="incluir" else 1,
+                    horizontal=True,
+                    key=f"acc_{dk}_{dec_key}",
+                    label_visibility="collapsed")
+                dec[f"acc_{dk}"] = opc
+
+            st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
+
+        # ── REPARACIONES: Gasto / Inversión / Excluir ─────────────
+        _fila_header("🔧 Mantenimiento e inversiones")
+        rep_v   = sf(row.get("reparaciones_anual",0))
+        rep_sem = "verde" if 0 < rep_v <= 2000 else ("amarillo" if rep_v > 2000 else "rojo")
+        rep_tip = ("Importe alto — revisar clasificación" if rep_v > 2000
+                   else ("Sin reparaciones registradas" if rep_v == 0
+                         else "Registrado"))
+        rep_def = dec.get("acc_rep", "gasto")
+
+        col_s, col_l, col_v, col_a = st.columns([0.4, 2.5, 1.1, 2.2])
+        with col_s:
+            st.markdown(_sem_dot(rep_sem, rep_tip), unsafe_allow_html=True)
+        with col_l:
+            st.markdown(
+                f'<div style="font-size:12px;color:#1e293b;">' +
+                f'<span style="color:#94A3B8;font-size:10px;">0104 </span>' +
+                f'Reparaciones</div>',
+                unsafe_allow_html=True)
+        with col_v:
+            color_r = "#059669" if rep_v > 0 else "#94A3B8"
+            st.markdown(
+                f'<div style="font-size:13px;font-weight:700;' +
+                f'color:{color_r};text-align:right;">' +
+                f'{fmt_eur(rep_v)}</div>',
+                unsafe_allow_html=True)
+        with col_a:
+            rep_opc = st.radio("",
+                options=["gasto","inversion","excluir"],
+                format_func=lambda x: {
+                    "gasto":"🛠️ Gasto",
+                    "inversion":"📈 Inversión",
+                    "excluir":"❌ Excluir"}[x],
+                index=["gasto","inversion","excluir"].index(rep_def),
+                horizontal=True,
+                key=f"acc_rep_{dec_key}",
+                label_visibility="collapsed")
+            dec["acc_rep"] = rep_opc
+
+        if rep_opc == "inversion" and rep_v > 0:
+            st.caption(f"→ Amortizable: {fmt_eur(rep_v*0.05)}/año × 20 años")
+
+        # ── AMORTIZACIÓN 3% (cálculo automático) ──────────────────
+        _fila_header("⚡ Amortización construcción (0109)", color="#DC2626")
+        amort_actual = sf(row.get("amortizacion_fiscal",0))
+        datos_ok     = precio_c > 0 and catastral > 0
+
+        if not datos_ok:
+            sem_a = "rojo"
+            tip_a = "Faltan precio compra o valor catastral"
+        elif amort_actual == 0:
+            sem_a = "amarillo"
+            tip_a = "No aplicada — calcular ahora"
         else:
-            am = st.number_input("Amortización manual (€/año)", min_value=0.0,
-                value=float(dec.get("amortizacion_3pct",
-                sf(row.get("amortizacion_fiscal",0)))),
-                step=100.0, key=f"ni_amort_{dec_key}")
-            dec["amortizacion_3pct"] = am
-            dec["usar_amort_calc"]   = False
+            sem_a = "verde"
+            tip_a = "Amortización registrada"
 
-        mob_v = st.number_input("Amortización mobiliario — valor total mobiliario (€)",
-            min_value=0.0, value=float(dec.get("mob_val",0)),
-            step=500.0, key=f"ni_mob_{dec_key}")
-        dec["mob_val"] = mob_v
-        dec["amortizacion_mobiliario"] = mob_v * 0.10
-        if mob_v > 0:
-            st.caption(f"→ {fmt_eur(mob_v*0.10)}/año deducible")
+        col_s, col_l, col_v, col_a = st.columns([0.4, 2.5, 1.1, 2.2])
+        with col_s:
+            st.markdown(_sem_dot(sem_a, tip_a), unsafe_allow_html=True)
+        with col_l:
+            st.markdown(
+                '<div style="font-size:12px;color:#1e293b;">' +
+                '<span style="color:#94A3B8;font-size:10px;">0109 </span>' +
+                'Amort. 3% construcción</div>',
+                unsafe_allow_html=True)
+            if datos_ok:
+                st.markdown(
+                    f'<div style="font-size:10px;color:#94A3B8;">' +
+                    f'MAX({fmt_eur(precio_c)},{fmt_eur(catastral)}) × {pct_const*100:.0f}% × 3%' +
+                    f' = {fmt_eur(amort_calc)}</div>',
+                    unsafe_allow_html=True)
+        with col_v:
+            color_am = "#059669" if amort_actual > 0 else "#D97706" if datos_ok else "#DC2626"
+            st.markdown(
+                f'<div style="font-size:13px;font-weight:700;' +
+                f'color:{color_am};text-align:right;">' +
+                f'{fmt_eur(amort_actual)}</div>',
+                unsafe_allow_html=True)
+        with col_a:
+            if not datos_ok:
+                st.markdown(
+                    '<div style="font-size:11px;color:#DC2626;padding-left:8px;">' +
+                    '🔴 Faltan datos</div>',
+                    unsafe_allow_html=True)
+                dec["acc_amort"] = "excluir"
+            else:
+                am_def = dec.get("acc_amort", "aplicar")
+                am_opc = st.radio("",
+                    options=["aplicar","excluir"],
+                    format_func=lambda x: (
+                        f"✅ Aplicar ({fmt_eur(amort_calc)})"
+                        if x=="aplicar" else "❌ Excluir"),
+                    index=0 if am_def=="aplicar" else 1,
+                    horizontal=True,
+                    key=f"acc_amort_{dec_key}",
+                    label_visibility="collapsed")
+                dec["acc_amort"] = am_opc
 
-        # MANTENIMIENTO / MEJORA
-        st.markdown('<div style="font-size:11px;font-weight:700;color:#D97706;'
-            'padding:8px 0 4px;border-bottom:2px solid #FDE68A;margin-bottom:8px;">'
-            '🔧 Mantenimiento e inversiones (casilla 0104)</div>',
+        # ── REDUCCIÓN (automática, solo informativa) ───────────────
+        _fila_header("📋 Reducción arrendamiento")
+        red_pct_v = 0 if es_temporada else 50
+        red_label = "Temporada/Habitaciones — 0%" if es_temporada else "Vivienda habitual — 50% (Art. 23.2 LIRPF)"
+        st.markdown(
+            f'<div style="display:grid;grid-template-columns:32px 1fr;' +
+            f'gap:0;padding:8px 12px;align-items:center;">' +
+            f'<div>{_sem_dot("verde" if not es_temporada else "amarillo")}</div>' +
+            f'<div style="font-size:12px;color:#475569;">{red_label}</div></div>',
             unsafe_allow_html=True)
-        rep_tot_v = sf(row.get("reparaciones_anual",0))
-        rep_pct = st.slider(
-            f"% del gasto ({fmt_eur(rep_tot_v)}) como reparación directa",
-            0, 100, dec.get("rep_pct_gasto", 100 if rep_tot_v<=600 else 70),
-            key=f"sl_rep_{dec_key}")
-        dec["rep_como_gasto"]  = rep_tot_v * rep_pct / 100
-        dec["rep_como_mejora"] = rep_tot_v * (100-rep_pct) / 100
-        dec["rep_pct_gasto"]   = rep_pct
-        if rep_tot_v > 0:
-            st.caption(
-                f"Reparación: {fmt_eur(dec['rep_como_gasto'])} hoy · "
-                f"Mejora: {fmt_eur(dec['rep_como_mejora'])} "
-                f"(→ {fmt_eur(dec['rep_como_mejora']*0.05)}/año × 20 años)")
+        dec["reduccion_pct"] = red_pct_v
 
-        # INVERSIÓN PROACTIVA
-        st.markdown('<div style="font-size:11px;font-weight:700;color:#059669;'
-            'padding:8px 0 4px;border-bottom:2px solid #A7F3D0;margin-bottom:8px;">'
-            '💡 Inversión proactiva antes del 31/12</div>', unsafe_allow_html=True)
-        inv_v = st.number_input("Importe a invertir (€)",
-            min_value=0.0, max_value=50000.0,
-            value=float(dec.get("inversion_proactiva",0)),
-            step=500.0, key=f"ni_inv_{dec_key}")
-        dec["inversion_proactiva"] = inv_v
-        if inv_v > 0:
-            tipo_inv_r = st.radio("Tipo:",
-                ["Reparacion","Mejora"],
-                format_func=lambda x: ("Reparación — 100% este año"
-                    if x=="Reparacion" else "Mejora — 5%/año × 20 años"),
-                index=0 if dec.get("tipo_inversion","Reparacion")=="Reparacion" else 1,
-                horizontal=True, key=f"rd_inv_{dec_key}")
-            dec["tipo_inversion"] = tipo_inv_r
-
-        # REDUCCIÓN automática
-        if es_temporada:
-            dec["reduccion_pct"] = 0
-            st.info("Temporada/habitaciones — reducción 0%")
-        else:
-            dec["reduccion_pct"] = 50
-            st.caption("✓ Vivienda habitual — reducción 50% (Art. 23.2 LIRPF)")
-
-        if st.button("↺ Restablecer", key=f"rst_{dec_key}"):
+        if st.button("↺ Restablecer decisiones", key=f"rst_{dec_key}"):
             st.session_state.pop(dec_key, None)
             st.rerun()
+
         st.session_state[dec_key] = dec
 
     with col_impacto:
