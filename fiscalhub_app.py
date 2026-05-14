@@ -113,7 +113,39 @@ def registrar_asesor(email, password, nombre, despacho):
 def get_asesor_info(user_id):
     r = requests.get(f"{SUPABASE_URL}/rest/v1/asesores?user_id=eq.{user_id}&select=*", headers=_h())
     if r.status_code == 200 and r.json(): return r.json()[0]
-    return {"nombre": "Asesor", "despacho": "Despacho Fiscal", "email": ""}
+    return {"nombre": "Asesor", "despacho": "Despacho Fiscal", "email": "", "logo_url": None}
+
+def guardar_logo(user_id, logo_bytes, extension="png"):
+    """Guarda logo como base64 en tabla user_profiles."""
+    import base64 as _b64
+    try:
+        b64 = _b64.b64encode(logo_bytes).decode("utf-8")
+        data = {"user_id": user_id,
+                "logo_b64": f"data:image/{extension};base64,{b64}"}
+        hdrs = {**_hd(), "Prefer": "resolution=merge-duplicates,return=minimal"}
+        r = requests.post(
+            f"{SUPABASE_URL}/rest/v1/user_profiles?on_conflict=user_id",
+            headers=hdrs, json=data, timeout=20)
+        return r.status_code in [200, 201, 204]
+    except Exception:
+        return False
+
+def leer_logo(user_id):
+    """Lee logo base64 desde user_profiles y devuelve bytes."""
+    import base64 as _b64
+    try:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/user_profiles"
+            f"?user_id=eq.{user_id}&select=logo_b64",
+            headers=_hd(), timeout=10)
+        if r.ok and r.json() and r.json()[0].get("logo_b64"):
+            b64_str = r.json()[0]["logo_b64"]
+            if "," in b64_str:
+                b64_str = b64_str.split(",", 1)[1]
+            return _b64.b64decode(b64_str)
+    except Exception:
+        pass
+    return None
 
 # ── Supabase data ─────────────────────────────────────────────────
 def get_clientes_vinculados(asesor_user_id):
@@ -306,6 +338,126 @@ def construir_cartera(clientes_vinculados):
     cartera.sort(key=lambda x:({"critico":0,"medio":1,"ok":2}[x["estado"]],-x["criticas"]))
     return cartera
 
+# ── PERFIL ASESOR ────────────────────────────────────────────────
+def pantalla_perfil():
+    asesor      = st.session_state.get("fh_asesor", {})
+    user_id     = st.session_state.get("fh_user_id", "")
+    nombre      = asesor.get("nombre","")
+    despacho    = asesor.get("despacho","")
+    logo_bytes  = st.session_state.get("fh_logo_bytes")
+
+    st.markdown("""<div style="margin-bottom:20px;">
+      <div class="nc-page-label">Configuracion del despacho</div>
+      <div class="nc-page-title">Perfil del asesor</div>
+    </div>""", unsafe_allow_html=True)
+
+    col_form, col_prev = st.columns([6, 4])
+
+    with col_form:
+        st.markdown('''<div style="font-size:13px;font-weight:700;color:#1e293b;
+            border-left:3px solid #534AB7;padding-left:10px;margin-bottom:12px;">
+            Logo del despacho</div>''', unsafe_allow_html=True)
+
+        if logo_bytes:
+            st.image(logo_bytes, width=160, caption="Logo activo")
+            st.caption("Este logo aparecera en todos los informes PDF.")
+            if st.button("Eliminar logo", key="btn_del_logo"):
+                guardar_logo(user_id, b"", "png")
+                st.session_state.pop("fh_logo_bytes", None)
+                st.success("Logo eliminado.")
+                st.rerun()
+        else:
+            st.markdown('''
+            <div style="background:#FFF5F5;border-radius:10px;padding:12px 16px;
+                        margin-bottom:12px;border:1px solid #FCA5A5;
+                        font-size:12px;color:#DC2626;">
+                Sin logo — los informes PDF mostraran el icono por defecto
+            </div>''', unsafe_allow_html=True)
+
+        uploaded = st.file_uploader(
+            "Subir logo del despacho (PNG o JPG, max 2MB)",
+            type=["png","jpg","jpeg"],
+            key="logo_uploader",
+            help="Recomendado: fondo transparente, min 200x200px")
+
+        if uploaded is not None:
+            file_bytes = uploaded.read()
+            ext = uploaded.name.split(".")[-1].lower()
+            if ext == "jpeg": ext = "jpg"
+            if len(file_bytes) > 2 * 1024 * 1024:
+                st.error("El archivo supera 2MB. Comprime la imagen antes de subir.")
+            else:
+                st.image(file_bytes, width=120, caption="Vista previa")
+                if st.button("Guardar logo", key="btn_subir_logo", type="primary"):
+                    with st.spinner("Guardando..."):
+                        ok = guardar_logo(user_id, file_bytes, ext)
+                    if ok:
+                        st.session_state["fh_logo_bytes"] = file_bytes
+                        st.success("Logo guardado. Aparecera en los proximos PDFs.")
+                        st.rerun()
+                    else:
+                        st.error("Error al guardar. Verifica que la tabla "
+                                 "user_profiles existe en Supabase con columna logo_b64.")
+
+        st.markdown('''<div style="font-size:13px;font-weight:700;color:#1e293b;
+            border-left:3px solid #534AB7;padding-left:10px;
+            margin:20px 0 12px;">Datos del despacho</div>''',
+            unsafe_allow_html=True)
+        st.text_input("Nombre del asesor", value=nombre,
+                      key="perfil_nombre", disabled=True)
+        st.text_input("Nombre del despacho", value=despacho,
+                      key="perfil_despacho", disabled=True)
+        st.caption("Para cambiar nombre o despacho contacta con soporte.")
+
+    with col_prev:
+        st.markdown('''<div style="font-size:13px;font-weight:700;color:#1e293b;
+            border-left:3px solid #534AB7;padding-left:10px;margin-bottom:12px;">
+            Vista previa cabecera PDF</div>''', unsafe_allow_html=True)
+
+        if logo_bytes:
+            import base64 as _b64p
+            _b64_str = _b64p.b64encode(logo_bytes).decode()
+            logo_display = (f'<img src="data:image/png;base64,{_b64_str}"' +
+                            ' style="height:40px;width:auto;object-fit:contain;border-radius:4px;">')
+        else:
+            logo_display = ('<div style="width:40px;height:40px;background:#534AB7;' +
+                            'border-radius:6px;display:flex;align-items:center;' +
+                            'justify-content:center;font-weight:900;color:white;' +
+                            'font-size:14px;">FH</div>')
+
+        from datetime import date as _dp
+        st.markdown(f"""
+        <div style="background:#FFF;border:1.5px solid #E2E8F0;border-radius:10px;
+                    padding:14px 16px;">
+            <div style="display:flex;align-items:center;gap:10px;
+                        padding-bottom:10px;border-bottom:2px solid #534AB7;">
+                {logo_display}
+                <div style="flex:1;">
+                    <div style="font-size:15px;font-weight:900;color:#534AB7;">
+                        FiscalHub</div>
+                    <div style="font-size:10px;color:#64748B;">
+                        Informe Fiscal de Arrendamiento</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:9px;color:#64748B;">
+                        {_dp.today().strftime('%d/%m/%Y')}</div>
+                    <div style="font-size:9px;color:#64748B;">
+                        Asesor: {nombre}</div>
+                </div>
+            </div>
+            <div style="font-size:10px;color:#94A3B8;margin-top:8px;
+                        text-align:center;">
+                Asi aparecera la cabecera en los informes PDF</div>
+        </div>""", unsafe_allow_html=True)
+
+        st.markdown("""
+        <div style="background:#F0EEFF;border-radius:8px;padding:10px 12px;
+                    margin-top:12px;font-size:11px;color:#534AB7;">
+            <b>Como funciona:</b> El logo se guarda en Supabase y se carga
+            automaticamente al iniciar sesion. Aparecera en todos los
+            informes PDF que generes desde cualquier ficha de inmueble.
+        </div>""", unsafe_allow_html=True)
+
 # ── Sidebar ───────────────────────────────────────────────────────
 def render_sidebar():
     asesor   = st.session_state.get("fh_asesor", {})
@@ -332,8 +484,32 @@ def render_sidebar():
       </div>
     </div>""", unsafe_allow_html=True)
 
+    # ── Logo del despacho en sidebar ─────────────────────────────
+    logo_bytes = st.session_state.get("fh_logo_bytes")
+    if logo_bytes:
+        st.sidebar.image(logo_bytes, use_container_width=True)
+        if st.sidebar.button("🗑️ Quitar logo", key="fh_quitar_logo",
+                             use_container_width=True):
+            st.session_state.pop("fh_logo_bytes", None)
+            guardar_logo(user_id, b"", "png")
+            st.rerun()
+    else:
+        with st.sidebar.expander("🖼️ Subir logo del despacho", expanded=False):
+            logo_file = st.file_uploader("PNG o JPG", type=["png","jpg","jpeg"],
+                key="fh_upload_logo", label_visibility="collapsed")
+            if logo_file:
+                ext = logo_file.name.split(".")[-1].lower()
+                if ext == "jpeg": ext = "jpg"
+                b = logo_file.read()
+                ok = guardar_logo(user_id, b, ext)
+                if ok:
+                    st.session_state["fh_logo_bytes"] = b
+                    st.success("Logo guardado")
+                    st.rerun()
+
     for label, key in [("🗂 Cartera","cartera"),("⚠️ Alertas","alertas"),
-                        ("📥 Exportar","exportar"),("🔗 Vincular","vincular")]:
+                        ("📥 Exportar","exportar"),("🔗 Vincular","vincular"),
+                        ("⚙️ Perfil","perfil")]:
         if st.sidebar.button(label, key=f"sb_{key}", use_container_width=True):
             for k in ["fh_cliente_sel","fh_inmueble_sel"]:
                 st.session_state.pop(k, None)
@@ -384,8 +560,17 @@ def pantalla_login():
                     with st.spinner("Verificando..."):
                         res = login_asesor(em, pw)
                     if res["ok"]:
-                        st.session_state.update({"fh_logged":True,"fh_user_id":res["user_id"],
-                            "fh_token":res["token"],"fh_asesor":get_asesor_info(res["user_id"]),"fh_menu":"cartera"})
+                        uid = res["user_id"]
+                        st.session_state.update({
+                            "fh_logged":  True,
+                            "fh_user_id": uid,
+                            "fh_token":   res["token"],
+                            "fh_asesor":  get_asesor_info(uid),
+                            "fh_menu":    "cartera"})
+                        # Cargar logo si existe
+                        logo = leer_logo(uid)
+                        if logo:
+                            st.session_state["fh_logo_bytes"] = logo
                         st.rerun()
                     else: st.error(res.get("error","Credenciales incorrectas"))
                 else: st.warning("Introduce email y contraseña")
@@ -1284,12 +1469,18 @@ def pantalla_ficha_inmueble():
             import io, os, base64, tempfile
             from datetime import date as _d
 
-            # ── Logo ──────────────────────────────────────────────
-            _logo_path = "/mnt/user-data/uploads/Gemini_Generated_Image___2_.png"
-            _logo_el   = None
-            if os.path.exists(_logo_path):
+            # ── Logo desde session_state (base64 en memoria) ──────
+            _logo_el    = None
+            _logo_bytes = st.session_state.get("fh_logo_bytes")
+            if _logo_bytes:
                 try:
-                    _logo_el = RLImage(_logo_path, width=1.2*cm, height=1.2*cm)
+                    import tempfile as _tf
+                    with _tf.NamedTemporaryFile(
+                            suffix=".png", delete=False) as _tmp:
+                        _tmp.write(_logo_bytes)
+                        _tmp_path = _tmp.name
+                    _logo_el = RLImage(_tmp_path,
+                                       width=1.2*cm, height=1.2*cm)
                 except Exception:
                     _logo_el = None
 
@@ -2297,6 +2488,7 @@ def main():
     elif menu == "alertas":        pantalla_alertas()
     elif menu == "exportar":       pantalla_exportar()
     elif menu == "vincular":       pantalla_vincular()
+    elif menu == "perfil":         pantalla_perfil()
     st.markdown("</div>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
