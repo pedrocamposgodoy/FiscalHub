@@ -484,10 +484,21 @@ def render_sidebar():
       </div>
     </div>""", unsafe_allow_html=True)
 
+    # Comprimir espaciado entre elementos del sidebar
+    st.sidebar.markdown("""<style>
+    section[data-testid="stSidebar"] .stButton {margin-bottom:-10px !important;}
+    section[data-testid="stSidebar"] .stButton button {padding:8px 12px !important;}
+    section[data-testid="stSidebar"] .element-container {margin-bottom:0 !important;}
+    </style>""", unsafe_allow_html=True)
+
     # ── Logo del despacho en sidebar ─────────────────────────────
     logo_bytes = st.session_state.get("fh_logo_bytes")
     if logo_bytes:
-        st.sidebar.image(logo_bytes, width=120)
+        col_logo, _ = st.sidebar.columns([1, 2])
+        with col_logo:
+            st.image(logo_bytes, width=80)
+        st.sidebar.markdown("<div style='margin-top:-8px'></div>",
+                            unsafe_allow_html=True)
         if st.sidebar.button("🗑️ Quitar logo", key="fh_quitar_logo",
                              use_container_width=True):
             st.session_state.pop("fh_logo_bytes", None)
