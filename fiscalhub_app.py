@@ -487,7 +487,7 @@ def render_sidebar():
     # ── Logo del despacho en sidebar ─────────────────────────────
     logo_bytes = st.session_state.get("fh_logo_bytes")
     if logo_bytes:
-        st.sidebar.image(logo_bytes, use_container_width=True)
+        st.sidebar.image(logo_bytes, width=120)
         if st.sidebar.button("🗑️ Quitar logo", key="fh_quitar_logo",
                              use_container_width=True):
             st.session_state.pop("fh_logo_bytes", None)
