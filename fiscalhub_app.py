@@ -115,37 +115,6 @@ def get_asesor_info(user_id):
     if r.status_code == 200 and r.json(): return r.json()[0]
     return {"nombre": "Asesor", "despacho": "Despacho Fiscal", "email": ""}
 
-# ── LOGO POR USUARIO ──────────────────────────────────────────────
-def guardar_logo(user_id: str, logo_bytes: bytes, extension: str = "png") -> bool:
-    import base64
-    try:
-        b64 = base64.b64encode(logo_bytes).decode("utf-8")
-        data = {"user_id": user_id, "logo_b64": f"data:image/{extension};base64,{b64}"}
-        h = {**_hd(), "Prefer": "resolution=merge-duplicates,return=minimal"}
-        r = requests.post(
-            f"{SUPABASE_URL}/rest/v1/user_profiles?on_conflict=user_id",
-            headers=h, json=data, timeout=20
-        )
-        return r.status_code in [200, 201, 204]
-    except Exception:
-        return False
-
-def leer_logo(user_id: str) -> bytes | None:
-    import base64
-    try:
-        r = requests.get(
-            f"{SUPABASE_URL}/rest/v1/user_profiles?user_id=eq.{user_id}&select=logo_b64",
-            headers=_hd(), timeout=10
-        )
-        if r.ok and r.json() and r.json()[0].get("logo_b64"):
-            b64_str = r.json()[0]["logo_b64"]
-            if "," in b64_str:
-                b64_str = b64_str.split(",", 1)[1]
-            return base64.b64decode(b64_str)
-    except Exception:
-        pass
-    return None
-
 # ── Supabase data ─────────────────────────────────────────────────
 def get_clientes_vinculados(asesor_user_id):
     r = requests.get(f"{SUPABASE_URL}/rest/v1/accesos_asesor"
@@ -346,29 +315,6 @@ def render_sidebar():
     dias     = days_to_irpf()
     pct      = max(0, min(100, int((90-dias)/90*100)))
     color    = "#DC2626" if dias<30 else "#D97706" if dias<60 else "#059669"
-    user_id  = st.session_state.get("fh_user_id","")
-
-    # ── LOGO personalizable ────────────────────────────────────
-    logo_bytes = st.session_state.get("fh_logo_bytes")
-    if logo_bytes:
-        st.sidebar.image(logo_bytes, use_container_width=True)
-        if st.sidebar.button("🗑️ Quitar logo", key="fh_quitar_logo", use_container_width=True):
-            st.session_state.pop("fh_logo_bytes", None)
-            guardar_logo(user_id, b"", "png")
-            st.rerun()
-    else:
-        with st.sidebar.expander("🖼️ Subir logo", expanded=False):
-            logo_file = st.file_uploader("PNG o JPG", type=["png","jpg","jpeg"],
-                                          key="fh_upload_logo", label_visibility="collapsed")
-            if logo_file:
-                ext = logo_file.name.split(".")[-1].lower()
-                b = logo_file.read()
-                ok = guardar_logo(user_id, b, ext)
-                if ok:
-                    st.session_state["fh_logo_bytes"] = b
-                    st.rerun()
-                else:
-                    st.sidebar.error("❌ Error al guardar. Crea la tabla user_profiles en Supabase.")
 
     st.markdown(f"""
     <div class="sb-brand">
@@ -408,8 +354,7 @@ def render_sidebar():
 
     if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
         for k in ["fh_logged","fh_user_id","fh_token","fh_asesor","fh_menu",
-                  "fh_cliente_sel","fh_inmueble_sel","fh_cartera","fh_validaciones",
-                  "fh_logo_bytes"]:
+                  "fh_cliente_sel","fh_inmueble_sel","fh_cartera","fh_validaciones"]:
             st.session_state.pop(k, None)
         st.rerun()
 
@@ -439,13 +384,8 @@ def pantalla_login():
                     with st.spinner("Verificando..."):
                         res = login_asesor(em, pw)
                     if res["ok"]:
-                        uid = res["user_id"]
-                        st.session_state.update({"fh_logged":True,"fh_user_id":uid,
-                            "fh_token":res["token"],"fh_asesor":get_asesor_info(uid),"fh_menu":"cartera"})
-                        # Cargar logo del usuario desde Supabase
-                        logo = leer_logo(uid)
-                        if logo:
-                            st.session_state["fh_logo_bytes"] = logo
+                        st.session_state.update({"fh_logged":True,"fh_user_id":res["user_id"],
+                            "fh_token":res["token"],"fh_asesor":get_asesor_info(res["user_id"]),"fh_menu":"cartera"})
                         st.rerun()
                     else: st.error(res.get("error","Credenciales incorrectas"))
                 else: st.warning("Introduce email y contraseña")
@@ -1338,54 +1278,122 @@ def pantalla_ficha_inmueble():
             from reportlab.lib import colors
             from reportlab.lib.units import cm
             from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,
-                                             Table, TableStyle, HRFlowable)
+                Table, TableStyle, HRFlowable, Image as RLImage, KeepTogether)
             from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-            from reportlab.lib.enums import TA_CENTER, TA_RIGHT
-            import io
+            from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+            import io, os, base64, tempfile
             from datetime import date as _d
 
+            # ── Logo ──────────────────────────────────────────────
+            _logo_path = "/mnt/user-data/uploads/Gemini_Generated_Image___2_.png"
+            _logo_el   = None
+            if os.path.exists(_logo_path):
+                try:
+                    _logo_el = RLImage(_logo_path, width=1.2*cm, height=1.2*cm)
+                except Exception:
+                    _logo_el = None
+
             buf = io.BytesIO()
+            W, H = A4
             doc = SimpleDocTemplate(buf, pagesize=A4,
                 leftMargin=2*cm, rightMargin=2*cm,
-                topMargin=2*cm, bottomMargin=2*cm)
+                topMargin=1.8*cm, bottomMargin=2*cm)
 
-            styles = getSampleStyleSheet()
             PURPLE = colors.HexColor("#534AB7")
             DARK   = colors.HexColor("#0F172A")
             GRAY   = colors.HexColor("#64748B")
             GREEN_ = colors.HexColor("#059669")
             RED_   = colors.HexColor("#DC2626")
+            LGRAY  = colors.HexColor("#F1F5F9")
+            LPURP  = colors.HexColor("#F0EEFF")
+            WHITE  = colors.white
 
-            h1 = ParagraphStyle("h1", parent=styles["Normal"],
-                fontSize=18, textColor=PURPLE, fontName="Helvetica-Bold",
-                spaceAfter=4)
-            h2 = ParagraphStyle("h2", parent=styles["Normal"],
-                fontSize=11, textColor=DARK, fontName="Helvetica-Bold",
-                spaceBefore=12, spaceAfter=4)
-            body = ParagraphStyle("body", parent=styles["Normal"],
-                fontSize=9, textColor=DARK, leading=14)
-            small = ParagraphStyle("small", parent=styles["Normal"],
-                fontSize=8, textColor=GRAY, leading=12)
-            right = ParagraphStyle("right", parent=styles["Normal"],
-                fontSize=9, textColor=GRAY, alignment=TA_RIGHT)
+            st_ = getSampleStyleSheet()
+            def _ps(name, size, color=DARK, bold=False, align=TA_LEFT,
+                    space_before=0, space_after=4, leading=None):
+                return ParagraphStyle(name, parent=st_["Normal"],
+                    fontSize=size,
+                    textColor=color,
+                    fontName="Helvetica-Bold" if bold else "Helvetica",
+                    alignment=align,
+                    spaceBefore=space_before,
+                    spaceAfter=space_after,
+                    leading=leading or size*1.4)
+
+            p_brand  = _ps("brand",  18, PURPLE, bold=True, space_after=2)
+            p_sub    = _ps("sub",     9, GRAY,   space_after=2)
+            p_meta   = _ps("meta",    8, GRAY,   align=TA_RIGHT, space_after=0)
+            p_h2     = _ps("h2",     11, DARK,   bold=True, space_before=14, space_after=5)
+            p_body   = _ps("body",    9, DARK,   space_after=3)
+            p_small  = _ps("small",   7, GRAY,   space_after=0)
+            p_alert  = _ps("alert",   8, DARK,   space_after=3)
+
+            # ── Función helper: tabla estilo ─────────────────────
+            def _tbl_style(header_bg=PURPLE, stripe=LGRAY):
+                return TableStyle([
+                    ("BACKGROUND",    (0,0),(-1,0),  header_bg),
+                    ("TEXTCOLOR",     (0,0),(-1,0),  WHITE),
+                    ("FONTNAME",      (0,0),(-1,0),  "Helvetica-Bold"),
+                    ("FONTSIZE",      (0,0),(-1,-1),  8),
+                    ("ROWBACKGROUNDS",(0,1),(-1,-1), [stripe, WHITE]),
+                    ("GRID",          (0,0),(-1,-1),  0.3,
+                     colors.HexColor("#E2E8F0")),
+                    ("ALIGN",         (0,0),(-1,0),  "CENTER"),
+                    ("ALIGN",         (1,1),(-1,-1), "RIGHT"),
+                    ("VALIGN",        (0,0),(-1,-1), "MIDDLE"),
+                    ("PADDING",       (0,0),(-1,-1),  5),
+                    ("ROWHEIGHT",     (0,0),(-1,-1),  14),
+                ])
 
             elems = []
 
-            # Cabecera
-            elems.append(Paragraph("FiscalHub · Informe Fiscal", h1))
-            elems.append(Paragraph(
-                f"<b>{nombre_inm}</b> &nbsp;·&nbsp; "
-                f"{row.get('tipo_arrendamiento','Larga Duración')} &nbsp;·&nbsp; "
-                f"Inquilino: {row.get('inquilino') or row.get('Inquilino','—')}",
-                body))
-            elems.append(Paragraph(
-                f"Generado el {_d.today().strftime('%d/%m/%Y')} &nbsp;·&nbsp; "
-                f"Asesor: {st.session_state.get('fh_nombre_asesor','—')}",
-                right))
-            elems.append(HRFlowable(width="100%", thickness=1,
-                color=PURPLE, spaceAfter=8))
+            # ── CABECERA con logo ─────────────────────────────────
+            hdr_data = [[
+                _logo_el or Paragraph("FH", p_brand),
+                [Paragraph("FiscalHub", p_brand),
+                 Paragraph("Informe Fiscal de Arrendamiento", p_sub)],
+                [Paragraph(f"Generado: {_d.today().strftime('%d/%m/%Y')}", p_meta),
+                 Paragraph(f"Asesor: {st.session_state.get('fh_nombre_asesor') or st.session_state.get('fh_asesor',{}).get('nombre','—')}", p_meta)]
+            ]]
+            hdr_tbl = Table(hdr_data, colWidths=[1.5*cm, 10*cm, 5*cm])
+            hdr_tbl.setStyle(TableStyle([
+                ("VALIGN",  (0,0),(-1,-1), "MIDDLE"),
+                ("PADDING", (0,0),(-1,-1), 0),
+                ("LINEBELOW",(0,0),(-1,0), 1.5, PURPLE),
+            ]))
+            elems.append(hdr_tbl)
+            elems.append(Spacer(1, 10))
 
-            # Modelo 100 — comparativa
+            # ── Datos del inmueble ────────────────────────────────
+            inq_str = str(row.get("inquilino") or row.get("Inquilino","—"))
+            tipo_str= str(row.get("tipo_arrendamiento","Larga Duracion"))
+            inm_data = [[
+                Paragraph("<b>Inmueble</b>", p_body),
+                Paragraph(nombre_inm, p_body),
+                Paragraph("<b>Tipo contrato</b>", p_body),
+                Paragraph(tipo_str, p_body),
+            ],[
+                Paragraph("<b>Inquilino</b>", p_body),
+                Paragraph(inq_str, p_body),
+                Paragraph("<b>Renta mensual</b>", p_body),
+                Paragraph(fmt_eur(renta_mes), p_body),
+            ]]
+            inm_tbl = Table(inm_data, colWidths=[3*cm,5.5*cm,3*cm,5*cm])
+            inm_tbl.setStyle(TableStyle([
+                ("BACKGROUND", (0,0),(0,-1), LGRAY),
+                ("BACKGROUND", (2,0),(2,-1), LGRAY),
+                ("FONTNAME",   (0,0),(0,-1), "Helvetica-Bold"),
+                ("FONTNAME",   (2,0),(2,-1), "Helvetica-Bold"),
+                ("FONTSIZE",   (0,0),(-1,-1), 8),
+                ("GRID",       (0,0),(-1,-1), 0.3,
+                 colors.HexColor("#E2E8F0")),
+                ("PADDING",    (0,0),(-1,-1), 5),
+                ("VALIGN",     (0,0),(-1,-1), "MIDDLE"),
+            ]))
+            elems.append(inm_tbl)
+            elems.append(Spacer(1, 10))
+
+            # ── Comparativa fiscal ────────────────────────────────
             m_opt_pdf = _simular_tabla(row, dec)
             base_o  = m_base["rend_final"]
             base_s  = m_opt_pdf["rend_final"]
@@ -1393,140 +1401,160 @@ def pantalla_ficha_inmueble():
             cuota_s = round(max(base_s * 0.30, 0), 2)
             ahorro_pdf = round(cuota_o - cuota_s, 2)
 
-            elems.append(Paragraph("Impacto Fiscal — Sin optimizar vs. Con asesor", h2))
-            tbl_data = [
-                ["Concepto", "Sin optimizar", "Con tu asesor", "Diferencia"],
-                ["Ingresos anuales",
+            elems.append(Paragraph("Impacto Fiscal: Sin optimizar vs. Con asesor", p_h2))
+
+            cmp_data = [
+                ["Concepto", "Sin optimizar", "Con asesor", "Diferencia"],
+                ["Ingresos anuales (0102)",
                  fmt_eur(m_base["ingresos"]),
                  fmt_eur(m_opt_pdf["ingresos"]), "—"],
                 ["Gastos deducibles",
                  fmt_eur(m_base["total_gastos"]),
                  fmt_eur(m_opt_pdf["total_gastos"]),
-                 fmt_eur(m_opt_pdf["total_gastos"] - m_base["total_gastos"])],
-                ["Rendimiento neto",
+                 fmt_eur(m_opt_pdf["total_gastos"]-m_base["total_gastos"])],
+                ["Rendimiento neto (0149)",
                  fmt_eur(m_base["rend_neto"]),
                  fmt_eur(m_opt_pdf["rend_neto"]), "—"],
-                ["Reducción aplicada",
-                 f"{m_base['red_pct']}%",
-                 f"{m_opt_pdf['red_pct']}%", "—"],
-                ["BASE IMPONIBLE",
+                [f"Reduccion {m_base['red_pct']}% / {m_opt_pdf['red_pct']}%",
+                 fmt_eur(m_base["reduccion"]),
+                 fmt_eur(m_opt_pdf["reduccion"]), "—"],
+                ["BASE IMPONIBLE (0156)",
                  fmt_eur(base_o),
                  fmt_eur(base_s),
-                 fmt_eur(base_s - base_o)],
+                 fmt_eur(base_s-base_o)],
                 ["Cuota est. IRPF (30%)",
                  fmt_eur(cuota_o),
                  fmt_eur(cuota_s),
-                 fmt_eur(cuota_s - cuota_o)],
-                ["AHORRO FISCAL", "", fmt_eur(ahorro_pdf), ""],
+                 fmt_eur(cuota_s-cuota_o)],
             ]
-            tbl = Table(tbl_data, colWidths=[5.5*cm, 3.5*cm, 3.5*cm, 3.5*cm])
-            tbl.setStyle(TableStyle([
-                ("BACKGROUND",  (0,0), (-1,0), PURPLE),
-                ("TEXTCOLOR",   (0,0), (-1,0), colors.white),
-                ("FONTNAME",    (0,0), (-1,0), "Helvetica-Bold"),
-                ("FONTSIZE",    (0,0), (-1,-1), 8),
-                ("ROWBACKGROUNDS", (0,1), (-1,-2),
-                 [colors.HexColor("#F8FAFC"), colors.white]),
-                ("BACKGROUND",  (0,-1), (-1,-1), colors.HexColor("#F0EEFF")),
-                ("FONTNAME",    (0,-1), (-1,-1), "Helvetica-Bold"),
-                ("TEXTCOLOR",   (0,-1), (-1,-1), PURPLE),
-                ("FONTNAME",    (0,5), (-1,5), "Helvetica-Bold"),
-                ("GRID",        (0,0), (-1,-1), 0.3, colors.HexColor("#E2E8F0")),
-                ("ALIGN",       (1,0), (-1,-1), "RIGHT"),
-                ("PADDING",     (0,0), (-1,-1), 5),
-            ]))
-            elems.append(tbl)
+            cmp_tbl = Table(cmp_data, colWidths=[6*cm,3*cm,3.5*cm,4*cm])
+            cmp_style = _tbl_style()
+            # Fila BASE IMPONIBLE en negrita
+            cmp_style.add("FONTNAME",   (0,5),(-1,5), "Helvetica-Bold")
+            cmp_style.add("BACKGROUND", (0,5),(-1,5), LPURP)
+            cmp_style.add("TEXTCOLOR",  (0,5),(-1,5), PURPLE)
+            cmp_tbl.setStyle(cmp_style)
+            elems.append(cmp_tbl)
 
-            # Decisiones aplicadas
-            elems.append(Paragraph("Decisiones del Asesor", h2))
-            _dec_rows = [["Partida", "Importe", "Acción aplicada"]]
-            for _dk, _lbl, _val in [
-                ("intereses", "Intereses hipoteca",
-                 sf(row.get("intereses_hipoteca",0))),
-                ("ibi",       "IBI y tributos",
-                 sf(row.get("ibi_anual",0))),
-                ("comunidad", "Comunidad",
-                 sf(row.get("comunidad",0))*12),
-                ("seguro",    "Seguro",
-                 sf(row.get("seguro_anual",0))),
-                ("suministros","Suministros",
-                 sf(row.get("suministros_anual",0))),
-                ("juridicos", "Gastos jurídicos",
-                 sf(row.get("gastos_juridicos_anual",0))),
+            # Caja de ahorro destacada
+            ahorro_color = GREEN_ if ahorro_pdf >= 0 else RED_
+            ahorro_data  = [[
+                Paragraph("AHORRO FISCAL CONSEGUIDO", _ps("ak",9,WHITE,bold=True)),
+                Paragraph(fmt_eur(ahorro_pdf),
+                          _ps("av",14,WHITE,bold=True,align=TA_RIGHT)),
+            ]]
+            ahorro_tbl = Table(ahorro_data, colWidths=[12*cm,4.5*cm])
+            ahorro_tbl.setStyle(TableStyle([
+                ("BACKGROUND", (0,0),(-1,0), ahorro_color),
+                ("VALIGN",     (0,0),(-1,0), "MIDDLE"),
+                ("PADDING",    (0,0),(-1,0), 8),
+                ("ROUNDEDCORNERS", [4,4,4,4]),
+            ]))
+            elems.append(Spacer(1,4))
+            elems.append(ahorro_tbl)
+            elems.append(Spacer(1,10))
+
+            # ── Decisiones del asesor ─────────────────────────────
+            elems.append(Paragraph("Decisiones aplicadas por el asesor", p_h2))
+            dec_data = [["Casilla","Concepto","Importe","Accion"]]
+            for _dk, _cas, _lbl in [
+                ("intereses","0105","Intereses hipoteca"),
+                ("ibi",      "0106","IBI y tributos"),
+                ("comunidad","0107","Comunidad propietarios"),
+                ("seguro",   "0110","Seguro hogar y vida"),
+                ("suministros","0111","Suministros"),
+                ("juridicos","0112","Gastos juridicos"),
             ]:
-                acc = dec.get(f"acc_{_dk}","incluir")
-                _dec_rows.append([
-                    _lbl, fmt_eur(_val),
-                    "✅ Incluido" if acc=="incluir" else "❌ Excluido"])
+                _val = {"intereses":sf(row.get("intereses_hipoteca",0)),
+                        "ibi":sf(row.get("ibi_anual",0)),
+                        "comunidad":sf(row.get("comunidad",0))*12,
+                        "seguro":sf(row.get("seguro_anual",0)),
+                        "suministros":sf(row.get("suministros_anual",0)),
+                        "juridicos":sf(row.get("gastos_juridicos_anual",0)),
+                       }.get(_dk,0)
+                _acc = dec.get(f"acc_{_dk}","incluir")
+                dec_data.append([_cas, _lbl, fmt_eur(_val),
+                                  "Incluido" if _acc=="incluir" else "Excluido"])
             # Reparaciones
-            _rep_acc = dec.get("acc_rep","gasto")
-            _dec_rows.append([
-                "Reparaciones",
-                fmt_eur(sf(row.get("reparaciones_anual",0))),
-                {"gasto":"🛠️ Gasto directo",
-                 "inversion":"📈 Inversión (5%/año)",
-                 "excluir":"❌ Excluido"}.get(_rep_acc,"—")])
-            # Amortización
-            _am_acc = dec.get("acc_amort","aplicar")
-            _dec_rows.append([
-                "Amortización 3%",
-                fmt_eur(amort_calc) if _am_acc=="aplicar" else "0 €",
-                "✅ Aplicada" if _am_acc=="aplicar" else "❌ No aplicada"])
+            _ra  = dec.get("acc_rep","gasto")
+            _rv  = sf(row.get("reparaciones_anual",0))
+            dec_data.append(["0104","Reparaciones y mantenimiento",fmt_eur(_rv),
+                {"gasto":"Gasto directo 100%",
+                 "inversion":"Inversion 5%/anio",
+                 "excluir":"Excluido"}.get(_ra,"—")])
+            # Amortizacion
+            _aa  = dec.get("acc_amort","aplicar")
+            dec_data.append(["0109","Amortizacion 3% construccion",
+                fmt_eur(amort_calc) if _aa=="aplicar" else "0 EUR",
+                "Aplicada (calculo auto)" if _aa=="aplicar" else "No aplicada"])
 
-            dec_tbl = Table(_dec_rows, colWidths=[6*cm, 3*cm, 7*cm])
-            dec_tbl.setStyle(TableStyle([
-                ("BACKGROUND",  (0,0), (-1,0), colors.HexColor("#F1F5F9")),
-                ("FONTNAME",    (0,0), (-1,0), "Helvetica-Bold"),
-                ("FONTSIZE",    (0,0), (-1,-1), 8),
-                ("ROWBACKGROUNDS", (0,1), (-1,-1),
-                 [colors.HexColor("#F8FAFC"), colors.white]),
-                ("GRID",        (0,0), (-1,-1), 0.3, colors.HexColor("#E2E8F0")),
-                ("PADDING",     (0,0), (-1,-1), 5),
-                ("ALIGN",       (1,0), (1,-1), "RIGHT"),
-            ]))
+            dec_tbl = Table(dec_data, colWidths=[1.8*cm,6*cm,2.5*cm,6.2*cm])
+            dec_tbl.setStyle(_tbl_style())
             elems.append(dec_tbl)
+            elems.append(Spacer(1,10))
 
-            # Alertas del semáforo
+            # ── Alertas semaforo ──────────────────────────────────
             _sem_pdf = calcular_semaforo_inmueble(row)
-            if _sem_pdf.get("problemas"):
-                elems.append(Paragraph("Alertas detectadas por semáforo", h2))
-                for p in _sem_pdf["problemas"]:
-                    color_p = RED_ if p.get("tipo")=="crit" else colors.HexColor("#D97706")
-                    elems.append(Paragraph(
-                        f"{'🔴' if p.get('tipo')=='crit' else '🟡'} "
-                        f"<b>{p.get('titulo','')}</b> — {p.get('descripcion','')}",
-                        body))
-                    elems.append(Spacer(1, 3))
+            _probs   = _sem_pdf.get("problemas",[])
+            if _probs:
+                elems.append(Paragraph("Alertas detectadas por el semaforo fiscal", p_h2))
+                al_data = [["Nivel","Concepto","Descripcion"]]
+                for p_ in _probs:
+                    nivel = "CRITICO" if p_.get("tipo")=="crit" else "REVISION"
+                    al_data.append([nivel,
+                        p_.get("titulo",""),
+                        p_.get("descripcion","") or "Verificar"])
+                al_tbl = Table(al_data, colWidths=[2*cm,5*cm,9.5*cm])
+                al_style = _tbl_style(header_bg=RED_)
+                # Colorear celdas CRITICO
+                for ri_, row_ in enumerate(al_data[1:],1):
+                    if row_[0]=="CRITICO":
+                        al_style.add("TEXTCOLOR",(0,ri_),(0,ri_),RED_)
+                        al_style.add("FONTNAME", (0,ri_),(0,ri_),"Helvetica-Bold")
+                    else:
+                        al_style.add("TEXTCOLOR",(0,ri_),(0,ri_),
+                                     colors.HexColor("#D97706"))
+                al_tbl.setStyle(al_style)
+                elems.append(al_tbl)
+                elems.append(Spacer(1,10))
 
-            # Análisis IA si existe
+            # ── Analisis IA si existe ─────────────────────────────
             ia_txt = st.session_state.get(analisis_key)
             if ia_txt:
-                elems.append(Paragraph("Análisis del Sabio IA", h2))
-                elems.append(Paragraph(ia_txt, body))
+                elems.append(Paragraph("Analisis del Sabio IA", p_h2))
+                ia_data = [[Paragraph(ia_txt, p_body)]]
+                ia_tbl  = Table(ia_data, colWidths=[16.5*cm])
+                ia_tbl.setStyle(TableStyle([
+                    ("BACKGROUND", (0,0),(-1,-1), LPURP),
+                    ("LINERIGHT",  (0,0),(0,-1),  3, PURPLE),
+                    ("PADDING",    (0,0),(-1,-1),  8),
+                ]))
+                elems.append(ia_tbl)
+                elems.append(Spacer(1,10))
 
-            # Nota legal
-            elems.append(Spacer(1, 16))
+            # ── Pie de pagina ─────────────────────────────────────
             elems.append(HRFlowable(width="100%", thickness=0.5,
                 color=GRAY, spaceAfter=4))
             elems.append(Paragraph(
                 "Documento orientativo generado por FiscalHub. "
-                "Las cuotas IRPF son estimaciones al tipo marginal del 30%. "
-                "Verificar con el software oficial de la AEAT antes de presentar.",
-                small))
+                "Cuotas IRPF estimadas al tipo marginal del 30%. "
+                "Verificar con software oficial AEAT antes de presentar.",
+                p_small))
 
             doc.build(elems)
             buf.seek(0)
             st.download_button(
-                "⬇️ Descargar PDF",
+                "Descargar PDF",
                 data=buf,
-                file_name=f"FiscalHub_{nombre_inm.replace(' ','_')}.pdf",
+                file_name=f"FiscalHub_{nombre_inm.replace(' ','_').replace('/','_')}.pdf",
                 mime="application/pdf",
                 key="fic_pdf_dl")
 
         except ImportError:
-            st.error("ReportLab no está instalado. Añade `reportlab` a requirements.txt")
+            st.error("ReportLab no instalado. Añade reportlab a requirements.txt")
         except Exception as e_pdf:
-            st.error(f"Error generando PDF: {str(e_pdf)[:120]}")
+            st.error(f"Error PDF: {str(e_pdf)[:200]}")
+
 
 def pantalla_resumen_global():
     cliente_id = st.session_state.get("fh_cliente_sel")
