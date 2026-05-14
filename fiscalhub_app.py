@@ -115,6 +115,37 @@ def get_asesor_info(user_id):
     if r.status_code == 200 and r.json(): return r.json()[0]
     return {"nombre": "Asesor", "despacho": "Despacho Fiscal", "email": ""}
 
+# ── LOGO POR USUARIO ──────────────────────────────────────────────
+def guardar_logo(user_id: str, logo_bytes: bytes, extension: str = "png") -> bool:
+    import base64
+    try:
+        b64 = base64.b64encode(logo_bytes).decode("utf-8")
+        data = {"user_id": user_id, "logo_b64": f"data:image/{extension};base64,{b64}"}
+        h = {**_hd(), "Prefer": "resolution=merge-duplicates,return=minimal"}
+        r = requests.post(
+            f"{SUPABASE_URL}/rest/v1/user_profiles?on_conflict=user_id",
+            headers=h, json=data, timeout=20
+        )
+        return r.status_code in [200, 201, 204]
+    except Exception:
+        return False
+
+def leer_logo(user_id: str) -> bytes | None:
+    import base64
+    try:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/user_profiles?user_id=eq.{user_id}&select=logo_b64",
+            headers=_hd(), timeout=10
+        )
+        if r.ok and r.json() and r.json()[0].get("logo_b64"):
+            b64_str = r.json()[0]["logo_b64"]
+            if "," in b64_str:
+                b64_str = b64_str.split(",", 1)[1]
+            return base64.b64decode(b64_str)
+    except Exception:
+        pass
+    return None
+
 # ── Supabase data ─────────────────────────────────────────────────
 def get_clientes_vinculados(asesor_user_id):
     r = requests.get(f"{SUPABASE_URL}/rest/v1/accesos_asesor"
@@ -315,6 +346,29 @@ def render_sidebar():
     dias     = days_to_irpf()
     pct      = max(0, min(100, int((90-dias)/90*100)))
     color    = "#DC2626" if dias<30 else "#D97706" if dias<60 else "#059669"
+    user_id  = st.session_state.get("fh_user_id","")
+
+    # ── LOGO personalizable ────────────────────────────────────
+    logo_bytes = st.session_state.get("fh_logo_bytes")
+    if logo_bytes:
+        st.sidebar.image(logo_bytes, use_container_width=True)
+        if st.sidebar.button("🗑️ Quitar logo", key="fh_quitar_logo", use_container_width=True):
+            st.session_state.pop("fh_logo_bytes", None)
+            guardar_logo(user_id, b"", "png")
+            st.rerun()
+    else:
+        with st.sidebar.expander("🖼️ Subir logo", expanded=False):
+            logo_file = st.file_uploader("PNG o JPG", type=["png","jpg","jpeg"],
+                                          key="fh_upload_logo", label_visibility="collapsed")
+            if logo_file:
+                ext = logo_file.name.split(".")[-1].lower()
+                b = logo_file.read()
+                ok = guardar_logo(user_id, b, ext)
+                if ok:
+                    st.session_state["fh_logo_bytes"] = b
+                    st.rerun()
+                else:
+                    st.sidebar.error("❌ Error al guardar. Crea la tabla user_profiles en Supabase.")
 
     st.markdown(f"""
     <div class="sb-brand">
@@ -354,7 +408,8 @@ def render_sidebar():
 
     if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
         for k in ["fh_logged","fh_user_id","fh_token","fh_asesor","fh_menu",
-                  "fh_cliente_sel","fh_inmueble_sel","fh_cartera","fh_validaciones"]:
+                  "fh_cliente_sel","fh_inmueble_sel","fh_cartera","fh_validaciones",
+                  "fh_logo_bytes"]:
             st.session_state.pop(k, None)
         st.rerun()
 
@@ -384,8 +439,13 @@ def pantalla_login():
                     with st.spinner("Verificando..."):
                         res = login_asesor(em, pw)
                     if res["ok"]:
-                        st.session_state.update({"fh_logged":True,"fh_user_id":res["user_id"],
-                            "fh_token":res["token"],"fh_asesor":get_asesor_info(res["user_id"]),"fh_menu":"cartera"})
+                        uid = res["user_id"]
+                        st.session_state.update({"fh_logged":True,"fh_user_id":uid,
+                            "fh_token":res["token"],"fh_asesor":get_asesor_info(uid),"fh_menu":"cartera"})
+                        # Cargar logo del usuario desde Supabase
+                        logo = leer_logo(uid)
+                        if logo:
+                            st.session_state["fh_logo_bytes"] = logo
                         st.rerun()
                     else: st.error(res.get("error","Credenciales incorrectas"))
                 else: st.warning("Introduce email y contraseña")
