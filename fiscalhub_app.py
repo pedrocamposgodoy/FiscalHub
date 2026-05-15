@@ -463,18 +463,42 @@ def render_sidebar():
     asesor   = st.session_state.get("fh_asesor", {})
     nombre   = asesor.get("nombre","Asesor")
     despacho = asesor.get("despacho","Despacho Fiscal")
+    email    = asesor.get("email","")
     iniciales= "".join(p[0].upper() for p in nombre.split()[:2])
     dias     = days_to_irpf()
     pct      = max(0, min(100, int((90-dias)/90*100)))
     color    = "#DC2626" if dias<30 else "#D97706" if dias<60 else "#059669"
+    user_id  = st.session_state.get("fh_user_id","")
+    logo_bytes = st.session_state.get("fh_logo_bytes")
 
-    st.markdown(f"""
-    <div class="sb-brand">
-      <div style="display:flex;align-items:center;gap:10px;">
+    # Comprimir espaciado Streamlit en sidebar
+    st.sidebar.markdown("""<style>
+    section[data-testid="stSidebar"] .stButton {margin-bottom:-8px !important;}
+    section[data-testid="stSidebar"] .stButton button {padding:7px 12px !important;}
+    section[data-testid="stSidebar"] .element-container {margin-bottom:0 !important;}
+    section[data-testid="stSidebar"] .stFileUploader {margin-bottom:0 !important;}
+    section[data-testid="stSidebar"] .stExpander {margin-bottom:0 !important;}
+    </style>""", unsafe_allow_html=True)
+
+    # ── Cabecera: logo cliente (si existe) + FiscalHub + email ────
+    if logo_bytes:
+        import base64 as _b64s
+        _logo_b64 = _b64s.b64encode(logo_bytes).decode()
+        logo_html = (f'<img src="data:image/png;base64,{_logo_b64}" '
+                     f'style="height:48px;width:auto;object-fit:contain;'
+                     f'border-radius:6px;margin-bottom:8px;display:block;">')
+    else:
+        logo_html = ""
+
+    st.sidebar.markdown(f"""
+    <div class="sb-brand" style="padding-bottom:8px;">
+      {logo_html}
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
         <div class="sb-logo">NC</div>
         <div class="sb-wordmark">FiscalHub</div>
       </div>
-      <div class="sb-tag">Portal asesoría fiscal</div>
+      <div class="sb-tag" style="padding-left:0;">Portal asesoría fiscal</div>
+      {f'<div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:3px;">{email}</div>' if email else ''}
     </div>
     <div class="sb-advisor">
       <div class="sb-avatar">{iniciales}</div>
@@ -484,28 +508,15 @@ def render_sidebar():
       </div>
     </div>""", unsafe_allow_html=True)
 
-    # Comprimir espaciado entre elementos del sidebar
-    st.sidebar.markdown("""<style>
-    section[data-testid="stSidebar"] .stButton {margin-bottom:-10px !important;}
-    section[data-testid="stSidebar"] .stButton button {padding:8px 12px !important;}
-    section[data-testid="stSidebar"] .element-container {margin-bottom:0 !important;}
-    </style>""", unsafe_allow_html=True)
-
-    # ── Logo del despacho en sidebar ─────────────────────────────
-    logo_bytes = st.session_state.get("fh_logo_bytes")
+    # ── Logo: quitar / subir ──────────────────────────────────────
     if logo_bytes:
-        col_logo, _ = st.sidebar.columns([1, 2])
-        with col_logo:
-            st.image(logo_bytes, width=80)
-        st.sidebar.markdown("<div style='margin-top:-8px'></div>",
-                            unsafe_allow_html=True)
         if st.sidebar.button("🗑️ Quitar logo", key="fh_quitar_logo",
                              use_container_width=True):
             st.session_state.pop("fh_logo_bytes", None)
             guardar_logo(user_id, b"", "png")
             st.rerun()
     else:
-        with st.sidebar.expander("🖼️ Subir logo del despacho", expanded=False):
+        with st.sidebar.expander("🖼️ Logo del despacho", expanded=False):
             logo_file = st.file_uploader("PNG o JPG", type=["png","jpg","jpeg"],
                 key="fh_upload_logo", label_visibility="collapsed")
             if logo_file:
@@ -989,11 +1000,24 @@ def pantalla_ficha_inmueble():
 
     if sem["problemas"]:
         for p in sem["problemas"]:
-            cls = "cr" if p["tipo"]=="crit" else "wn"
-            st.markdown(f"""<div class="callout {cls}" style="margin-bottom:6px;">
-              <strong>{"🔴" if p["tipo"]=="crit" else "🟡"} {p["titulo"]}</strong><br>
-              <span style="font-size:12px;">{p["desc"]}</span><br>
-              <span style="font-size:11px;opacity:0.8;">→ {p["accion"]}</span>
+            is_crit = p["tipo"] == "crit"
+            dot_c   = "#DC2626" if is_crit else "#D97706"
+            bg_c    = "#FFF5F5" if is_crit else "#FFFBEB"
+            bd_c    = "#FCA5A5" if is_crit else "#FDE68A"
+            st.markdown(f"""
+            <div style="background:{bg_c};border:1px solid {bd_c};border-left:4px solid {dot_c};
+                        border-radius:8px;padding:10px 14px;margin-bottom:6px;
+                        display:flex;align-items:flex-start;gap:10px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:{dot_c};
+                          flex-shrink:0;margin-top:3px;"></div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14px;font-weight:700;color:#1e293b;
+                            margin-bottom:3px;">{p["titulo"]}</div>
+                <div style="font-size:12px;color:#475569;
+                            margin-bottom:3px;">{p["desc"]}</div>
+                <div style="font-size:11px;color:{dot_c};font-weight:600;">
+                    → {p["accion"]}</div>
+              </div>
             </div>""", unsafe_allow_html=True)
 
 
@@ -1142,18 +1166,25 @@ def pantalla_ficha_inmueble():
              "juridicos"),
         ]
 
+        # Default: verde=incluir, rojo/amarillo=excluir (asesor valida activamente)
+        def _default_acc(dk, valor, sem_color):
+            if f"acc_{dk}" in dec:
+                return dec[f"acc_{dk}"]
+            return "incluir" if (valor > 0 and sem_color == "verde") else "excluir"
+
         for cas, label, valor, dk in gastos_fijos:
-            sem  = "verde"  if valor > 0 else "rojo"
-            tip  = "Registrado" if valor > 0 else "Sin registrar — revisar"
-            default = dec.get(f"acc_{dk}", "incluir" if valor > 0 else "excluir")
+            sem_v   = "verde" if valor > 0 else "rojo"
+            tip     = "Registrado — incluido por defecto" if valor > 0 else "Sin registrar — excluido por defecto"
+            default = _default_acc(dk, valor, sem_v)
+            dec[f"acc_{dk}"] = default  # guardar siempre el estado actual
 
             col_s, col_l, col_v, col_a = st.columns([0.4, 2.5, 1.1, 2.2])
             with col_s:
-                st.markdown(_sem_dot(sem, tip), unsafe_allow_html=True)
+                st.markdown(_sem_dot(sem_v, tip), unsafe_allow_html=True)
             with col_l:
                 st.markdown(
                     f'<div style="font-size:16px;color:#1e293b;">' +
-                    f'<span style="color:#94A3B8;font-size:17px;">{cas} </span>' +
+                    f'<span style="color:#94A3B8;font-size:13px;">{cas} </span>' +
                     f'{label}</div>',
                     unsafe_allow_html=True)
             with col_v:
@@ -1164,16 +1195,29 @@ def pantalla_ficha_inmueble():
                     f'{fmt_eur(valor)}</div>',
                     unsafe_allow_html=True)
             with col_a:
-                opc = st.radio("",
-                    options=["incluir","excluir"],
-                    format_func=lambda x: "✅ Incluir" if x=="incluir" else "❌ Excluir",
-                    index=0 if default=="incluir" else 1,
-                    horizontal=True,
-                    key=f"acc_{dk}_{dec_key}",
-                    label_visibility="collapsed")
-                dec[f"acc_{dk}"] = opc
+                btn_c1, btn_c2 = st.columns(2)
+                with btn_c1:
+                    inc_active = default == "incluir"
+                    if st.button(
+                        "✅ Incluir",
+                        key=f"btn_inc_{dk}_{dec_key}",
+                        use_container_width=True,
+                        type="primary" if inc_active else "secondary"):
+                        dec[f"acc_{dk}"] = "incluir"
+                        st.session_state[dec_key] = dec
+                        st.rerun()
+                with btn_c2:
+                    exc_active = default == "excluir"
+                    if st.button(
+                        "❌ Excluir",
+                        key=f"btn_exc_{dk}_{dec_key}",
+                        use_container_width=True,
+                        type="primary" if exc_active else "secondary"):
+                        dec[f"acc_{dk}"] = "excluir"
+                        st.session_state[dec_key] = dec
+                        st.rerun()
 
-            st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
         # ── REPARACIONES: Gasto / Inversión / Excluir ─────────────
         _fila_header("🔧 Mantenimiento e inversiones")
