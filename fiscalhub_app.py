@@ -1928,10 +1928,10 @@ def pantalla_resumen_global():
                 from reportlab.lib.pagesizes import A4
                 from reportlab.lib import colors
                 from reportlab.lib.units import cm
-                from reportlab.platypus import (SimpleDocTemplate, Paragraph,
-                    Spacer, Table, TableStyle, HRFlowable, Image as _RLImg)
+                from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,
+                    Table, TableStyle, HRFlowable, Image as _RLImg2)
                 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-                from reportlab.lib.enums import TA_RIGHT
+                from reportlab.lib.enums import TA_RIGHT, TA_CENTER
                 import io, tempfile as _tf2
                 from datetime import date as _d2
 
@@ -1939,74 +1939,70 @@ def pantalla_resumen_global():
                 _doc = SimpleDocTemplate(_buf, pagesize=A4,
                     leftMargin=2*cm, rightMargin=2*cm,
                     topMargin=1.8*cm, bottomMargin=2*cm)
-                _st  = getSampleStyleSheet()
+                _s   = getSampleStyleSheet()
                 _PU  = colors.HexColor("#534AB7")
                 _DK  = colors.HexColor("#0F172A")
                 _GR  = colors.HexColor("#64748B")
                 _LG  = colors.HexColor("#F1F5F9")
-                _WH  = colors.white
-                _h1  = ParagraphStyle("gh1", parent=_st["Normal"],
-                    fontSize=18, textColor=_PU, fontName="Helvetica-Bold", spaceAfter=2)
-                _h2  = ParagraphStyle("gh2", parent=_st["Normal"],
-                    fontSize=11, textColor=_DK, fontName="Helvetica-Bold",
-                    spaceBefore=12, spaceAfter=4)
-                _bd  = ParagraphStyle("gbd", parent=_st["Normal"],
-                    fontSize=9, textColor=_DK, leading=14)
-                _sm  = ParagraphStyle("gsm", parent=_st["Normal"],
-                    fontSize=8, textColor=_GR, leading=12)
-                _rt  = ParagraphStyle("grt", parent=_st["Normal"],
-                    fontSize=9, textColor=_GR, alignment=TA_RIGHT)
-                _sub = ParagraphStyle("gsub", parent=_st["Normal"],
-                    fontSize=9, textColor=_GR, leading=12)
+                _LP  = colors.HexColor("#F0EEFF")
 
-                # ── Logo desde session_state ──────────────────────
-                _gl_logo_el   = None
-                _gl_logo_bytes = st.session_state.get("fh_logo_bytes")
-                if _gl_logo_bytes:
+                def _ps(name, size, color=_DK, bold=False, align=0, sa=4):
+                    from reportlab.lib.enums import TA_LEFT
+                    return ParagraphStyle(name, parent=_s["Normal"],
+                        fontSize=size, textColor=color,
+                        fontName="Helvetica-Bold" if bold else "Helvetica",
+                        alignment=align, spaceAfter=sa, leading=size*1.4)
+
+                p_h1   = _ps("g_h1", 18, _PU, bold=True, sa=2)
+                p_sub  = _ps("g_sub", 9, _GR, sa=0)
+                p_rt   = _ps("g_rt",  9, _GR, align=2)
+                p_h2   = _ps("g_h2", 11, _DK, bold=True, sa=4)
+                p_bd   = _ps("g_bd",  9, _DK)
+                p_sm   = _ps("g_sm",  7, _GR, sa=0)
+
+                # ── Logo ──────────────────────────────────────────
+                _g_logo = None
+                _g_logo_bytes = st.session_state.get("fh_logo_bytes")
+                if _g_logo_bytes:
                     try:
-                        with _tf2.NamedTemporaryFile(
-                                suffix=".png", delete=False) as _tmp2:
-                            _tmp2.write(_gl_logo_bytes)
-                            _tmp2_path = _tmp2.name
-                        _gl_logo_el = _RLImg(_tmp2_path,
-                                             width=1.2*cm, height=1.2*cm)
+                        with _tf2.NamedTemporaryFile(suffix=".png", delete=False) as _t2:
+                            _t2.write(_g_logo_bytes)
+                            _tp = _t2.name
+                        _g_logo = _RLImg2(_tp, width=1.4*cm, height=1.4*cm)
                     except Exception:
-                        _gl_logo_el = None
+                        _g_logo = None
 
                 _el = []
 
-                # ── Cabecera con logo ─────────────────────────────
-                _hdr_data = [[
-                    _gl_logo_el or Paragraph("FH", _h1),
-                    [Paragraph("FiscalHub", _h1),
-                     Paragraph("Resumen Global IRPF", _sub)],
-                    [Paragraph(
-                        f"Generado: {_d2.today().strftime('%d/%m/%Y')}", _rt),
-                     Paragraph(f"Asesor: {nombre_asesor or '—'}", _rt)]
-                ]]
-                _hdr_tbl = Table(_hdr_data, colWidths=[1.5*cm, 10*cm, 5*cm])
-                _hdr_tbl.setStyle(TableStyle([
-                    ("VALIGN",   (0,0),(-1,-1), "MIDDLE"),
-                    ("PADDING",  (0,0),(-1,-1), 0),
-                    ("LINEBELOW",(0,0),(-1,0),  1.5, _PU),
+                # ── Cabecera ──────────────────────────────────────
+                # Columna central: dos párrafos como lista
+                _mid = [Paragraph("FiscalHub", p_h1),
+                        Paragraph("Resumen Global IRPF", p_sub)]
+                _right = [Paragraph(f"Generado: {_d2.today().strftime('%d/%m/%Y')}", p_rt),
+                          Paragraph(f"Asesor: {nombre_asesor or '—'}", p_rt)]
+
+                _hdr = Table(
+                    [[_g_logo or Paragraph("FH", p_h1), _mid, _right]],
+                    colWidths=[1.6*cm, 10*cm, 4.9*cm])
+                _hdr.setStyle(TableStyle([
+                    ("VALIGN",    (0,0),(-1,-1), "MIDDLE"),
+                    ("PADDING",   (0,0),(-1,-1), 0),
+                    ("TOPPADDING",(0,0),(-1,-1), 0),
+                    ("BOTTOMPADDING",(0,0),(-1,-1), 6),
+                    ("LINEBELOW", (0,0),(-1,0), 1.5, _PU),
                 ]))
-                _el.append(_hdr_tbl)
+                _el.append(_hdr)
                 _el.append(Spacer(1, 8))
 
-                # Datos del cliente
-                _cl_data = [[
-                    Paragraph("<b>Cliente</b>", _bd),
-                    Paragraph(nombre, _bd),
-                    Paragraph("<b>Inmuebles</b>", _bd),
-                    Paragraph(str(len(nombres)), _bd),
-                ],[
-                    Paragraph("<b>Ejercicio</b>", _bd),
-                    Paragraph("2025", _bd),
-                    Paragraph("<b>Asesoria</b>", _bd),
-                    Paragraph(nombre_asesor or "—", _bd),
-                ]]
-                _cl_tbl = Table(_cl_data, colWidths=[3*cm,5.5*cm,3*cm,5*cm])
-                _cl_tbl.setStyle(TableStyle([
+                # ── Datos cliente ─────────────────────────────────
+                _cld = [
+                    [Paragraph("<b>Cliente</b>",  p_bd), Paragraph(nombre, p_bd),
+                     Paragraph("<b>Inmuebles</b>",p_bd), Paragraph(str(len(nombres)), p_bd)],
+                    [Paragraph("<b>Ejercicio</b>",p_bd), Paragraph("2025", p_bd),
+                     Paragraph("<b>Asesor</b>",  p_bd), Paragraph(nombre_asesor or "—", p_bd)],
+                ]
+                _clt = Table(_cld, colWidths=[3*cm, 5.5*cm, 3*cm, 5*cm])
+                _clt.setStyle(TableStyle([
                     ("BACKGROUND",(0,0),(0,-1),_LG),
                     ("BACKGROUND",(2,0),(2,-1),_LG),
                     ("FONTNAME",  (0,0),(0,-1),"Helvetica-Bold"),
@@ -2016,82 +2012,83 @@ def pantalla_resumen_global():
                     ("PADDING",   (0,0),(-1,-1),5),
                     ("VALIGN",    (0,0),(-1,-1),"MIDDLE"),
                 ]))
-                _el.append(_cl_tbl)
-                _el.append(Spacer(1, 8))
+                _el.append(_clt)
+                _el.append(Spacer(1, 10))
 
-                # KPIs globales
-                _el.append(Paragraph("Modelo 100 consolidado", _h2))
-                _gl_rows = [
+                # ── Modelo 100 consolidado ────────────────────────
+                _el.append(Paragraph("Modelo 100 consolidado", p_h2))
+                _gr = [
                     ["Casilla", "Concepto", "Importe"],
-                    ["0102", "Ingresos totales",
+                    ["0102",    "Ingresos totales",
                      fmt_eur(modelo.get("ingresos",0))],
-                    ["0105-0112", "Gastos deducibles totales",
+                    ["0105-0112","Gastos deducibles",
                      f"−{fmt_eur(modelo.get('total_gastos',0))}"],
-                    ["0149", "Rendimiento neto",
+                    ["0149",    "Rendimiento neto",
                      fmt_eur(modelo.get("rend_neto",0))],
-                    ["0150", "Reducción aplicada",
+                    ["0150",    "Reduccion aplicada",
                      f"−{fmt_eur(modelo.get('reduccion',0))}"],
-                    ["0156", "BASE IMPONIBLE ESTIMADA",
+                    ["0156",    "BASE IMPONIBLE ESTIMADA",
                      fmt_eur(modelo.get("rend_final",0))],
                 ]
-                _gl_tbl = Table(_gl_rows, colWidths=[3*cm, 9*cm, 4*cm])
-                _gl_tbl.setStyle(TableStyle([
-                    ("BACKGROUND",  (0,0), (-1,0), _PU),
-                    ("TEXTCOLOR",   (0,0), (-1,0), colors.white),
-                    ("FONTNAME",    (0,0), (-1,0), "Helvetica-Bold"),
-                    ("FONTSIZE",    (0,0), (-1,-1), 8),
-                    ("ROWBACKGROUNDS",(0,1),(-1,-2),
-                     [colors.HexColor("#F8FAFC"), colors.white]),
-                    ("BACKGROUND",  (0,-1),(-1,-1), colors.HexColor("#F0EEFF")),
-                    ("FONTNAME",    (0,-1),(-1,-1), "Helvetica-Bold"),
-                    ("TEXTCOLOR",   (0,-1),(-1,-1), _PU),
-                    ("GRID",        (0,0), (-1,-1), 0.3,
-                     colors.HexColor("#E2E8F0")),
-                    ("ALIGN",       (2,0), (2,-1), "RIGHT"),
-                    ("PADDING",     (0,0), (-1,-1), 5),
+                _gt = Table(_gr, colWidths=[3*cm, 9.5*cm, 4*cm])
+                _gt.setStyle(TableStyle([
+                    ("BACKGROUND",     (0,0),(-1,0),  _PU),
+                    ("TEXTCOLOR",      (0,0),(-1,0),  colors.white),
+                    ("FONTNAME",       (0,0),(-1,0),  "Helvetica-Bold"),
+                    ("FONTSIZE",       (0,0),(-1,-1), 8),
+                    ("ROWBACKGROUNDS", (0,1),(-1,-2), [_LG, colors.white]),
+                    ("BACKGROUND",     (0,-1),(-1,-1),_LP),
+                    ("FONTNAME",       (0,-1),(-1,-1),"Helvetica-Bold"),
+                    ("TEXTCOLOR",      (0,-1),(-1,-1),_PU),
+                    ("GRID",           (0,0),(-1,-1), 0.3,colors.HexColor("#E2E8F0")),
+                    ("ALIGN",          (2,0),(2,-1),  "RIGHT"),
+                    ("PADDING",        (0,0),(-1,-1), 5),
                 ]))
-                _el.append(_gl_tbl)
+                _el.append(_gt)
+                _el.append(Spacer(1, 10))
 
-                # Desglose por inmueble
-                _el.append(Paragraph("Desglose por inmueble", _h2))
-                _inm_rows = [["Inmueble","Ingresos","Gastos","Rend. neto","Base imp."]]
-                for _, _r in df_inm.iterrows():
-                    _nm = str(_r.get(col_n,""))
-                    _mi = calcular_modelo100_inmueble(_r, df_mov)
-                    _inm_rows.append([
-                        _nm[:28],
-                        fmt_eur(_mi.get("ingresos",0)),
-                        fmt_eur(_mi.get("total_gastos",0)),
-                        fmt_eur(_mi.get("rend_neto",0)),
-                        fmt_eur(_mi.get("rend_final",0)),
+                # ── Desglose por inmueble ─────────────────────────
+                _el.append(Paragraph("Desglose por inmueble", p_h2))
+                _ir = [["Inmueble", "Ingresos", "Gastos", "Rend. neto", "Base imp."]]
+                for _, _row in df_inm.iterrows():
+                    _nm2 = str(_row.get(col_n,""))
+                    _mi2 = calcular_modelo100_inmueble(_row, df_mov)
+                    _sem2 = calcular_semaforo_inmueble(_row)
+                    _n_al = len(_sem2.get("problemas",[]))
+                    _nm2_disp = _nm2[:26] + (f" ({_n_al} alertas)" if _n_al else "")
+                    _ir.append([
+                        _nm2_disp,
+                        fmt_eur(_mi2.get("ingresos",0)),
+                        fmt_eur(_mi2.get("total_gastos",0)),
+                        fmt_eur(_mi2.get("rend_neto",0)),
+                        fmt_eur(_mi2.get("rend_final",0)),
                     ])
-                _inm_tbl = Table(_inm_rows,
-                    colWidths=[5.5*cm,3*cm,3*cm,3*cm,3*cm])
-                _inm_tbl.setStyle(TableStyle([
-                    ("BACKGROUND",  (0,0),(-1,0), colors.HexColor("#F1F5F9")),
-                    ("FONTNAME",    (0,0),(-1,0), "Helvetica-Bold"),
-                    ("FONTSIZE",    (0,0),(-1,-1), 8),
-                    ("ROWBACKGROUNDS",(0,1),(-1,-1),
-                     [colors.HexColor("#F8FAFC"), colors.white]),
-                    ("GRID",        (0,0),(-1,-1), 0.3,
-                     colors.HexColor("#E2E8F0")),
-                    ("ALIGN",       (1,0),(-1,-1), "RIGHT"),
-                    ("PADDING",     (0,0),(-1,-1), 5),
+                _it = Table(_ir, colWidths=[5.5*cm,3*cm,2.5*cm,3*cm,2.5*cm])
+                _it.setStyle(TableStyle([
+                    ("BACKGROUND",     (0,0),(-1,0),  _LG),
+                    ("FONTNAME",       (0,0),(-1,0),  "Helvetica-Bold"),
+                    ("FONTSIZE",       (0,0),(-1,-1), 8),
+                    ("ROWBACKGROUNDS", (0,1),(-1,-1), [colors.HexColor("#F8FAFC"), colors.white]),
+                    ("GRID",           (0,0),(-1,-1), 0.3,colors.HexColor("#E2E8F0")),
+                    ("ALIGN",          (1,0),(-1,-1), "RIGHT"),
+                    ("PADDING",        (0,0),(-1,-1), 5),
                 ]))
-                _el.append(_inm_tbl)
+                _el.append(_it)
 
                 _el.append(Spacer(1, 16))
                 _el.append(HRFlowable(width="100%", thickness=0.5,
                     color=_GR, spaceAfter=4))
                 _el.append(Paragraph(
-                    "Documento orientativo. Base imponible estimada. "
-                    "Verificar con software oficial AEAT antes de presentar.", _sm))
+                    "Documento orientativo generado por FiscalHub. "
+                    "Base imponible estimada al tipo marginal del 30%. "
+                    "Verificar con software oficial AEAT antes de presentar.", p_sm))
 
                 _doc.build(_el)
                 _buf.seek(0)
                 st.session_state["fh_gl_pdf"] = _buf.read()
             except Exception as _e:
-                st.error(f"Error generando PDF: {str(_e)[:150]}")
+                st.error(f"Error generando PDF: {str(_e)[:200]}")
+
         if "fh_gl_pdf" in st.session_state:
             st.download_button("⬇️ Descargar PDF",data=st.session_state["fh_gl_pdf"],
                 file_name=f"IRPF_{nombre.replace(' ','_')}_2025_global.pdf",
