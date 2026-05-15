@@ -52,8 +52,8 @@ def render_kpi_row(kpis_data: list):
             f'<p style="font-family:{_FONT};font-size:13px;font-weight:800;'
             f'color:#94A3B8;margin:0 0 8px;text-transform:uppercase;'
             f'letter-spacing:0.10em;">{label}</p>'
-            f'<p style="font-family:{_FONT};font-size:2.6rem;font-weight:900;'
-            f'color:{color};margin:0;line-height:1;'
+            f'<p style="font-family:{_FONT};font-size:1.9rem;font-weight:900;'
+            f'color:{color};margin:0;line-height:1;white-space:nowrap;'
             f'letter-spacing:-0.02em;">{value}</p>'
             f'{sub}'
             f'</div>'
@@ -89,7 +89,7 @@ def render_kpi_large(label: str, value: str,
         f'<p style="font-family:{_FONT};font-size:13px;font-weight:800;'
         f'color:#94A3B8;margin:0 0 8px;text-transform:uppercase;'
         f'letter-spacing:0.10em;">{label}</p>'
-        f'<p style="font-family:{_FONT};font-size:3.1rem;font-weight:900;'
+        f'<p style="font-family:{_FONT};font-size:2.4rem;font-weight:900;white-space:nowrap;'
         f'color:{color};margin:0;line-height:1;'
         f'letter-spacing:-0.02em;">{value}</p>'
         f'{sub_html}{delta_html}'
@@ -135,7 +135,7 @@ def render_kpi_grid(kpis_data: list):
             f'<p style="font-family:{_FONT};font-size:13px;font-weight:800;' +
             f'color:#94A3B8;margin:0 0 8px;text-transform:uppercase;' +
             f'letter-spacing:0.10em;">{label}</p>' +
-            f'<p style="font-family:{_FONT};font-size:2.6rem;font-weight:900;' +
+            f'<p style="font-family:{_FONT};font-size:1.9rem;font-weight:900;' +
             f'color:{color};margin:0;line-height:1;' +
             f'letter-spacing:-0.02em;">{value}</p>' +
             f'{sub}' +
