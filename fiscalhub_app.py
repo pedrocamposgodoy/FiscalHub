@@ -517,12 +517,11 @@ def render_sidebar():
             "<span style='font-size:10px;color:rgba(255,255,255,0.35);'>"
             "Logo del despacho</span></div>",
             unsafe_allow_html=True)
-        col_q, _ = st.sidebar.columns([1, 2])
-        with col_q:
-            if st.button("✕ Quitar", key="fh_quitar_logo"):
-                st.session_state.pop("fh_logo_bytes", None)
-                guardar_logo(user_id, b"", "png")
-                st.rerun()
+        if st.sidebar.button("✕ Quitar logo", key="fh_quitar_logo",
+                             use_container_width=True):
+            st.session_state.pop("fh_logo_bytes", None)
+            guardar_logo(user_id, b"", "png")
+            st.rerun()
     else:
         with st.sidebar.expander("🖼️ Logo del despacho", expanded=False):
             logo_file = st.file_uploader("PNG o JPG", type=["png","jpg","jpeg"],
@@ -1929,22 +1928,24 @@ def pantalla_resumen_global():
                 from reportlab.lib import colors
                 from reportlab.lib.units import cm
                 from reportlab.platypus import (SimpleDocTemplate, Paragraph,
-                    Spacer, Table, TableStyle, HRFlowable)
+                    Spacer, Table, TableStyle, HRFlowable, Image as _RLImg)
                 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
                 from reportlab.lib.enums import TA_RIGHT
-                import io
+                import io, tempfile as _tf2
                 from datetime import date as _d2
 
                 _buf = io.BytesIO()
                 _doc = SimpleDocTemplate(_buf, pagesize=A4,
                     leftMargin=2*cm, rightMargin=2*cm,
-                    topMargin=2*cm, bottomMargin=2*cm)
+                    topMargin=1.8*cm, bottomMargin=2*cm)
                 _st  = getSampleStyleSheet()
                 _PU  = colors.HexColor("#534AB7")
                 _DK  = colors.HexColor("#0F172A")
                 _GR  = colors.HexColor("#64748B")
+                _LG  = colors.HexColor("#F1F5F9")
+                _WH  = colors.white
                 _h1  = ParagraphStyle("gh1", parent=_st["Normal"],
-                    fontSize=18, textColor=_PU, fontName="Helvetica-Bold", spaceAfter=4)
+                    fontSize=18, textColor=_PU, fontName="Helvetica-Bold", spaceAfter=2)
                 _h2  = ParagraphStyle("gh2", parent=_st["Normal"],
                     fontSize=11, textColor=_DK, fontName="Helvetica-Bold",
                     spaceBefore=12, spaceAfter=4)
@@ -1954,18 +1955,68 @@ def pantalla_resumen_global():
                     fontSize=8, textColor=_GR, leading=12)
                 _rt  = ParagraphStyle("grt", parent=_st["Normal"],
                     fontSize=9, textColor=_GR, alignment=TA_RIGHT)
+                _sub = ParagraphStyle("gsub", parent=_st["Normal"],
+                    fontSize=9, textColor=_GR, leading=12)
+
+                # ── Logo desde session_state ──────────────────────
+                _gl_logo_el   = None
+                _gl_logo_bytes = st.session_state.get("fh_logo_bytes")
+                if _gl_logo_bytes:
+                    try:
+                        with _tf2.NamedTemporaryFile(
+                                suffix=".png", delete=False) as _tmp2:
+                            _tmp2.write(_gl_logo_bytes)
+                            _tmp2_path = _tmp2.name
+                        _gl_logo_el = _RLImg(_tmp2_path,
+                                             width=1.2*cm, height=1.2*cm)
+                    except Exception:
+                        _gl_logo_el = None
 
                 _el = []
-                _el.append(Paragraph("FiscalHub · Resumen Global IRPF", _h1))
-                _el.append(Paragraph(
-                    f"<b>{nombre}</b> &nbsp;·&nbsp; "
-                    f"{len(nombres)} inmuebles &nbsp;·&nbsp; "
-                    f"Ejercicio 2025", _bd))
-                _el.append(Paragraph(
-                    f"Generado el {_d2.today().strftime('%d/%m/%Y')} &nbsp;·&nbsp; "
-                    f"Asesor: {nombre_asesor or '—'}", _rt))
-                _el.append(HRFlowable(width="100%", thickness=1,
-                    color=_PU, spaceAfter=8))
+
+                # ── Cabecera con logo ─────────────────────────────
+                _hdr_data = [[
+                    _gl_logo_el or Paragraph("FH", _h1),
+                    [Paragraph("FiscalHub", _h1),
+                     Paragraph("Resumen Global IRPF", _sub)],
+                    [Paragraph(
+                        f"Generado: {_d2.today().strftime('%d/%m/%Y')}", _rt),
+                     Paragraph(f"Asesor: {nombre_asesor or '—'}", _rt)]
+                ]]
+                _hdr_tbl = Table(_hdr_data, colWidths=[1.5*cm, 10*cm, 5*cm])
+                _hdr_tbl.setStyle(TableStyle([
+                    ("VALIGN",   (0,0),(-1,-1), "MIDDLE"),
+                    ("PADDING",  (0,0),(-1,-1), 0),
+                    ("LINEBELOW",(0,0),(-1,0),  1.5, _PU),
+                ]))
+                _el.append(_hdr_tbl)
+                _el.append(Spacer(1, 8))
+
+                # Datos del cliente
+                _cl_data = [[
+                    Paragraph("<b>Cliente</b>", _bd),
+                    Paragraph(nombre, _bd),
+                    Paragraph("<b>Inmuebles</b>", _bd),
+                    Paragraph(str(len(nombres)), _bd),
+                ],[
+                    Paragraph("<b>Ejercicio</b>", _bd),
+                    Paragraph("2025", _bd),
+                    Paragraph("<b>Asesoria</b>", _bd),
+                    Paragraph(nombre_asesor or "—", _bd),
+                ]]
+                _cl_tbl = Table(_cl_data, colWidths=[3*cm,5.5*cm,3*cm,5*cm])
+                _cl_tbl.setStyle(TableStyle([
+                    ("BACKGROUND",(0,0),(0,-1),_LG),
+                    ("BACKGROUND",(2,0),(2,-1),_LG),
+                    ("FONTNAME",  (0,0),(0,-1),"Helvetica-Bold"),
+                    ("FONTNAME",  (2,0),(2,-1),"Helvetica-Bold"),
+                    ("FONTSIZE",  (0,0),(-1,-1),8),
+                    ("GRID",      (0,0),(-1,-1),0.3,colors.HexColor("#E2E8F0")),
+                    ("PADDING",   (0,0),(-1,-1),5),
+                    ("VALIGN",    (0,0),(-1,-1),"MIDDLE"),
+                ]))
+                _el.append(_cl_tbl)
+                _el.append(Spacer(1, 8))
 
                 # KPIs globales
                 _el.append(Paragraph("Modelo 100 consolidado", _h2))
