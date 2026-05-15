@@ -97,15 +97,29 @@ def render_kpi_large(label: str, value: str,
     )
     st.markdown(html, unsafe_allow_html=True)
 
-def render_kpi_grid(kpis_data: list):
+def render_kpi_grid(kpis_data: list, logo_b64: str = None,
+                    despacho: str = "", asesor: str = ""):
     """
     Renderiza KPIs en CSS Grid nativo — sin st.columns().
-    Esto garantiza que padding-top:38% crea altura proporcional real.
-    Ideal para 4 KPIs de revisión de cliente.
-
-    kpis_data: lista de dicts: label, value, color, subtitle (opcional)
+    Si se pasa logo_b64, muestra el logo del despacho en la esquina superior derecha.
     """
     n = len(kpis_data)
+
+    # Cabecera con logo si se proporciona
+    if logo_b64:
+        logo_block = (
+            f'<div style="display:flex;align-items:center;justify-content:flex-end;'
+            f'gap:10px;margin-bottom:8px;">'
+            f'<div style="text-align:right;">'
+            f'<div style="font-size:12px;font-weight:700;color:#1e293b;">{despacho}</div>'
+            f'<div style="font-size:10px;color:#64748B;">{asesor}</div>'
+            f'</div>'
+            f'<img src="data:image/png;base64,{logo_b64}" '
+            f'style="height:44px;width:auto;object-fit:contain;border-radius:6px;">'
+            f'</div>'
+        )
+        st.markdown(logo_block, unsafe_allow_html=True)
+
     cards_html = (
         f'<div style="display:grid;grid-template-columns:repeat({n},1fr);' +
         f'gap:12px;margin-bottom:16px;">'
