@@ -480,21 +480,9 @@ def render_sidebar():
     section[data-testid="stSidebar"] .stExpander {margin-bottom:0 !important;}
     </style>""", unsafe_allow_html=True)
 
-    # ── Cabecera: logo cliente (si existe) + FiscalHub + email ────
-    if logo_bytes:
-        import base64 as _b64s
-        _logo_b64 = _b64s.b64encode(logo_bytes).decode()
-        logo_html = (f'<img src="data:image/png;base64,{_logo_b64}" '
-                     f'style="height:48px;width:auto;object-fit:contain;'
-                     f'border-radius:6px;margin-bottom:8px;display:block;">')
-        quitar_html = ""  # se añade botón discreto tras el markdown
-    else:
-        logo_html   = ""
-        quitar_html = ""
-
+    # ── Cabecera: FiscalHub + email ───────────────────────────────
     st.sidebar.markdown(f"""
     <div class="sb-brand" style="padding-bottom:8px;">
-      {logo_html}
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
         <div class="sb-logo">NC</div>
         <div class="sb-wordmark">FiscalHub</div>
@@ -510,12 +498,15 @@ def render_sidebar():
       </div>
     </div>""", unsafe_allow_html=True)
 
-    # ── Logo: quitar / subir ──────────────────────────────────────
+    # ── Logo del despacho — imagen + botón quitar debajo ─────────
     if logo_bytes:
+        import base64 as _b64sb
+        _sb_b64 = _b64sb.b64encode(logo_bytes).decode()
         st.sidebar.markdown(
-            "<div style='padding:0 14px 4px;'>"
-            "<span style='font-size:10px;color:rgba(255,255,255,0.35);'>"
-            "Logo del despacho</span></div>",
+            f'<div style="padding:8px 12px 0;">'
+            f'<img src="data:image/png;base64,{_sb_b64}" '
+            f'style="width:100%;max-height:80px;object-fit:contain;'
+            f'border-radius:8px;display:block;"></div>',
             unsafe_allow_html=True)
         if st.sidebar.button("✕ Quitar logo", key="fh_quitar_logo",
                              use_container_width=True):
@@ -1828,6 +1819,13 @@ def pantalla_resumen_global():
         </div>""", unsafe_allow_html=True)
 
     _cc_gl = _color_cli(cliente_id)
+    _logo_gl = st.session_state.get("fh_logo_bytes")
+    _asesor_gl = st.session_state.get("fh_asesor", {})
+    if _logo_gl:
+        import base64 as _b64gl2
+        _b64gl_kpi = _b64gl2.b64encode(_logo_gl).decode()
+    else:
+        _b64gl_kpi = None
     render_kpi_grid([
         {"label":"📥 0102 Ingresos",
          "value":fmt_eur(modelo.get("ingresos",0)),
@@ -1841,7 +1839,10 @@ def pantalla_resumen_global():
         {"label":"🧾 0156 Base imp.",
          "value":fmt_eur(modelo.get("rend_final",0)),
          "color":AMBER,    "border_color":_cc_gl, "subtitle":"⚠️ Orientativa"},
-    ])
+    ],
+    logo_b64=_b64gl_kpi,
+    despacho=_asesor_gl.get("despacho",""),
+    asesor=_asesor_gl.get("nombre",""))
 
     st.markdown('<div class="nc-section">Desglose por inmueble</div>', unsafe_allow_html=True)
     if not df_inm.empty:
