@@ -481,6 +481,17 @@ def render_sidebar():
     </style>""", unsafe_allow_html=True)
 
     # ── Cabecera: FiscalHub + email ───────────────────────────────
+    import base64 as _b64sb
+    if logo_bytes:
+        _sb_b64 = _b64sb.b64encode(logo_bytes).decode()
+        logo_html = (
+            f'<img src="data:image/png;base64,{_sb_b64}" '
+            f'style="height:44px;width:auto;max-width:90px;object-fit:contain;'
+            f'border-radius:6px;display:block;">'
+        )
+    else:
+        logo_html = ""
+
     st.sidebar.markdown(f"""
     <div class="sb-brand" style="padding-bottom:8px;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
@@ -490,24 +501,19 @@ def render_sidebar():
       <div class="sb-tag" style="padding-left:0;">Portal asesoría fiscal</div>
       {f'<div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:3px;">{email}</div>' if email else ''}
     </div>
-    <div class="sb-advisor">
-      <div class="sb-avatar">{iniciales}</div>
-      <div>
-        <div class="sb-advisor-name">{nombre}</div>
-        <div class="sb-advisor-desc">{despacho}</div>
+    <div class="sb-advisor" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+        <div class="sb-avatar">{iniciales}</div>
+        <div style="min-width:0;">
+          <div class="sb-advisor-name">{nombre}</div>
+          <div class="sb-advisor-desc">{despacho}</div>
+        </div>
       </div>
+      {f'<div style="flex-shrink:0;">{logo_html}</div>' if logo_html else ''}
     </div>""", unsafe_allow_html=True)
 
-    # ── Logo del despacho — imagen + botón quitar debajo ─────────
+    # ── Logo del despacho — botón quitar o subir ─────────────────
     if logo_bytes:
-        import base64 as _b64sb
-        _sb_b64 = _b64sb.b64encode(logo_bytes).decode()
-        st.sidebar.markdown(
-            f'<div style="padding:8px 12px 0;">'
-            f'<img src="data:image/png;base64,{_sb_b64}" '
-            f'style="width:100%;max-height:80px;object-fit:contain;'
-            f'border-radius:8px;display:block;"></div>',
-            unsafe_allow_html=True)
         if st.sidebar.button("✕ Quitar logo", key="fh_quitar_logo",
                              use_container_width=True):
             st.session_state.pop("fh_logo_bytes", None)
