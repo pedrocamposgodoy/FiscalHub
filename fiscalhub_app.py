@@ -1071,7 +1071,20 @@ def pantalla_ficha_inmueble():
     dec = st.session_state[dec_key]
 
     m         = modelo
-    TIPO_MARG = 0.30
+
+    def _tipo_marginal(base: float) -> float:
+        """Tipo marginal IRPF 2025 (estatal + autonómica Andalucía)
+        calculado exclusivamente sobre la base inmobiliaria disponible.
+        No incluye otras rentas del contribuyente."""
+        if base <= 0:       return 0.19
+        if base <= 12450:   return 0.19
+        if base <= 20200:   return 0.24
+        if base <= 35200:   return 0.30
+        if base <= 60000:   return 0.37
+        if base <= 300000:  return 0.45
+        return 0.47
+
+    TIPO_MARG = 0.30  # placeholder; se recalcula tras conocer base_orig
     from datetime import date as _date_
     hoy        = _date_.today()
     mes_actual = hoy.month
@@ -1101,6 +1114,7 @@ def pantalla_ficha_inmueble():
     }
     m_base     = _simular_tabla(row, _worst)
     base_orig  = m_base["rend_final"]
+    TIPO_MARG  = _tipo_marginal(base_orig)
     cuota_orig = max(base_orig * TIPO_MARG, 0)
 
     st.markdown(
@@ -1336,6 +1350,7 @@ def pantalla_ficha_inmueble():
     with col_impacto:
         m_opt      = _simular_tabla(row, st.session_state.get(dec_key,{}))
         base_opt   = m_opt["rend_final"]
+        TIPO_MARG  = _tipo_marginal(base_opt)
         cuota_opt  = max(base_opt * TIPO_MARG, 0)
         ahorro_c   = cuota_orig - cuota_opt
         ahorro_b   = base_orig  - base_opt
@@ -1388,6 +1403,18 @@ def pantalla_ficha_inmueble():
                   {fmt_eur(ahorro_b)}</div>
               <div style="font-size:9px;color:#94A3B8;margin-top:2px;">
                   ⚠️ Estimación · Año en curso</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;padding:8px 10px;background:#F8F9FA;
+                      border-radius:8px;border:1px solid #E2E8F0;">
+            <div style="font-size:9px;font-weight:700;color:#534AB7;
+                        text-transform:uppercase;margin-bottom:4px;">
+                📊 Tipo marginal aplicado: {int(TIPO_MARG*100)}%</div>
+            <div style="font-size:9px;color:#64748B;line-height:1.5;text-align:justify;">
+                Calculado por tramos IRPF 2025 (escala estatal + Andalucía)
+                sobre los rendimientos inmobiliarios disponibles.
+                No incluye otras rentas del contribuyente (trabajo, capital, etc.).
+                El tipo real puede ser superior si existen rentas adicionales.
             </div>
           </div>
         </div>
