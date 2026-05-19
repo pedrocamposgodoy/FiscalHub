@@ -1086,7 +1086,20 @@ def pantalla_ficha_inmueble():
     tipo_arr_str = str(row.get("tipo_arrendamiento") or "").lower()
     es_temporada = any(x in tipo_arr_str for x in ["temporada","habitacion","turistic"])
 
-    m_base     = _simular_tabla(row, {})
+    # Sin optimizar = sin ningún gasto deducido (peor caso posible)
+    # Así el asesor solo puede mejorar la situación, nunca empeorarla
+    _worst = {
+        "acc_intereses":   "excluir",
+        "acc_ibi":         "excluir",
+        "acc_comunidad":   "excluir",
+        "acc_seguro":      "excluir",
+        "acc_suministros": "excluir",
+        "acc_juridicos":   "excluir",
+        "acc_rep":         "excluir",
+        "acc_amort":       "excluir",
+        "reduccion_pct":   50,
+    }
+    m_base     = _simular_tabla(row, _worst)
     base_orig  = m_base["rend_final"]
     cuota_orig = max(base_orig * TIPO_MARG, 0)
 
