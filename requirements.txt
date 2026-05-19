@@ -1,7 +1,8 @@
-streamlit
+streamlit>=1.28.0
 requests
 pandas
 anthropic
 reportlab
 openpyxl
 Pillow
+python-dotenv
