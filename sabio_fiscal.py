@@ -1927,15 +1927,18 @@ LABELS = {
 
 # ── API ─────────────────────────────────────────────────────────
 def _get_api_key() -> str:
-    # Intentar todas las variantes posibles del nombre
+    # Primero variables de entorno (Railway, Docker, etc.)
+    for nombre in ["ANTHROPIC_API_KEY", "ANTHROPIC_KEY"]:
+        key = os.getenv(nombre, "")
+        if key: return key
+    # Fallback: secrets de Streamlit Cloud
     for nombre in ["ANTHROPIC_API_KEY", "anthropic_api_key", "ANTHROPIC_KEY"]:
         try:
             key = st.secrets[nombre]
             if key: return str(key)
         except Exception:
             pass
-    # Fallback variable de entorno
-    return os.getenv("ANTHROPIC_API_KEY", os.getenv("ANTHROPIC_KEY", ""))
+    return ""
 
 
 def _llamar_claude(system: str, pregunta: str, max_tokens: int = 350) -> str:
