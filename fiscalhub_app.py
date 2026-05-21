@@ -403,32 +403,11 @@ def pantalla_perfil():
             border-left:3px solid #534AB7;padding-left:10px;
             margin:20px 0 12px;">Datos del despacho</div>''',
             unsafe_allow_html=True)
-        nuevo_nombre   = st.text_input("Nombre del asesor", value=nombre,
-                                      key="perfil_nombre")
-        nuevo_despacho = st.text_input("Nombre del despacho", value=despacho,
-                                       key="perfil_despacho")
-        nuevo_telefono = st.text_input("Teléfono", value=asesor.get("telefono",""),
-                                       key="perfil_telefono")
-        nuevo_nif      = st.text_input("NIF / CIF", value=asesor.get("nif",""),
-                                       key="perfil_nif")
-        if st.button("💾 Guardar cambios", key="btn_guardar_perfil", type="primary"):
-            payload = {
-                "nombre":   nuevo_nombre,
-                "despacho": nuevo_despacho,
-                "telefono": nuevo_telefono,
-                "nif":      nuevo_nif,
-            }
-            r = requests.patch(
-                f"{SUPABASE_URL}/rest/v1/asesores?user_id=eq.{user_id}",
-                headers={**_h(), "Prefer": "return=representation"},
-                json=payload
-            )
-            if r.status_code in [200, 201]:
-                st.session_state["fh_asesor"] = {**asesor, **payload}
-                st.success("✅ Perfil actualizado correctamente.")
-                st.rerun()
-            else:
-                st.error(f"Error al guardar: {r.text}")
+        st.text_input("Nombre del asesor", value=nombre,
+                      key="perfil_nombre", disabled=True)
+        st.text_input("Nombre del despacho", value=despacho,
+                      key="perfil_despacho", disabled=True)
+        st.caption("Para cambiar nombre o despacho contacta con soporte.")
 
     with col_prev:
         st.markdown('''<div style="font-size:13px;font-weight:700;color:#1e293b;
@@ -1668,17 +1647,95 @@ def pantalla_ficha_inmueble():
             # ── Datos del inmueble ────────────────────────────────
             inq_str = str(row.get("inquilino") or row.get("Inquilino","—"))
             tipo_str= str(row.get("tipo_arrendamiento","Larga Duracion"))
+            # Datos adicionales del inmueble
+            titular_str   = str(row.get("titular") or row.get("Titular","—"))
+            nif_prop_str  = str(row.get("nif_propietario") or row.get("NIF_Propietario","—"))
+            nif_inq_str   = str(row.get("nif_inquilino") or row.get("NIF_Inquilino","—"))
+            ref_cat_str   = str(row.get("ref_catastral") or row.get("Ref_Catastral","—"))
+            dir_str       = str(row.get("direccion") or row.get("Direccion","—"))
+            f_inicio_str  = str(row.get("fecha_inicio_contrato","—") or "—")
+            f_fin_str     = str(row.get("fecha_vencimiento_contrato","—") or "—")
+            val_cat_str   = fmt_eur(float(row.get("valor_catastral") or 0))
+            amort_str     = fmt_eur(float(row.get("amortizacion_fiscal") or 0))
+            ibi_str       = fmt_eur(float(row.get("ibi_anual") or 0))
+            seguro_str    = fmt_eur(float(row.get("seguro_anual") or 0))
+            comunidad_str = fmt_eur(float(row.get("comunidad") or 0))
+
+            # Datos del asesor
+            _as = st.session_state.get("fh_asesor", {})
+            asesor_nombre   = _as.get("nombre","—")
+            asesor_despacho = _as.get("despacho","—")
+            asesor_nif      = _as.get("nif","—")
+            asesor_tel      = _as.get("telefono","—")
+
             inm_data = [[
+                Paragraph("<b>Propietario / Titular</b>", p_body),
+                Paragraph(titular_str, p_body),
+                Paragraph("<b>NIF propietario</b>", p_body),
+                Paragraph(nif_prop_str, p_body),
+            ],[
                 Paragraph("<b>Inmueble</b>", p_body),
                 Paragraph(nombre_inm, p_body),
-                Paragraph("<b>Tipo contrato</b>", p_body),
-                Paragraph(tipo_str, p_body),
+                Paragraph("<b>Dirección</b>", p_body),
+                Paragraph(dir_str, p_body),
+            ],[
+                Paragraph("<b>Ref. Catastral</b>", p_body),
+                Paragraph(ref_cat_str, p_body),
+                Paragraph("<b>Valor catastral</b>", p_body),
+                Paragraph(val_cat_str, p_body),
             ],[
                 Paragraph("<b>Inquilino</b>", p_body),
                 Paragraph(inq_str, p_body),
+                Paragraph("<b>NIF inquilino</b>", p_body),
+                Paragraph(nif_inq_str, p_body),
+            ],[
+                Paragraph("<b>Tipo contrato</b>", p_body),
+                Paragraph(tipo_str, p_body),
                 Paragraph("<b>Renta mensual</b>", p_body),
                 Paragraph(fmt_eur(renta_mes), p_body),
+            ],[
+                Paragraph("<b>Inicio contrato</b>", p_body),
+                Paragraph(f_inicio_str, p_body),
+                Paragraph("<b>Vencimiento</b>", p_body),
+                Paragraph(f_fin_str, p_body),
+            ],[
+                Paragraph("<b>IBI anual</b>", p_body),
+                Paragraph(ibi_str, p_body),
+                Paragraph("<b>Seguro anual</b>", p_body),
+                Paragraph(seguro_str, p_body),
+            ],[
+                Paragraph("<b>Comunidad</b>", p_body),
+                Paragraph(comunidad_str, p_body),
+                Paragraph("<b>Amortización fiscal</b>", p_body),
+                Paragraph(amort_str, p_body),
             ]]
+            # Bloque asesor
+            elems.append(Spacer(1, 6))
+            asesor_data = [[
+                Paragraph("<b>Asesor</b>", p_body),
+                Paragraph(asesor_nombre, p_body),
+                Paragraph("<b>Despacho</b>", p_body),
+                Paragraph(asesor_despacho, p_body),
+            ],[
+                Paragraph("<b>NIF asesor</b>", p_body),
+                Paragraph(asesor_nif, p_body),
+                Paragraph("<b>Teléfono</b>", p_body),
+                Paragraph(asesor_tel, p_body),
+            ]]
+            as_tbl = Table(asesor_data, colWidths=[3*cm,5.5*cm,3*cm,5*cm])
+            as_tbl.setStyle(TableStyle([
+                ("BACKGROUND", (0,0),(0,-1), colors.HexColor("#EEF2FF")),
+                ("BACKGROUND", (2,0),(2,-1), colors.HexColor("#EEF2FF")),
+                ("FONTNAME",   (0,0),(0,-1), "Helvetica-Bold"),
+                ("FONTNAME",   (2,0),(2,-1), "Helvetica-Bold"),
+                ("FONTSIZE",   (0,0),(-1,-1), 8),
+                ("GRID",       (0,0),(-1,-1), 0.3, colors.HexColor("#E2E8F0")),
+                ("PADDING",    (0,0),(-1,-1), 5),
+                ("VALIGN",     (0,0),(-1,-1), "MIDDLE"),
+            ]))
+            elems.append(as_tbl)
+            elems.append(Spacer(1, 8))
+
             inm_tbl = Table(inm_data, colWidths=[3*cm,5.5*cm,3*cm,5*cm])
             inm_tbl.setStyle(TableStyle([
                 ("BACKGROUND", (0,0),(0,-1), LGRAY),
