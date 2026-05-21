@@ -403,11 +403,32 @@ def pantalla_perfil():
             border-left:3px solid #534AB7;padding-left:10px;
             margin:20px 0 12px;">Datos del despacho</div>''',
             unsafe_allow_html=True)
-        st.text_input("Nombre del asesor", value=nombre,
-                      key="perfil_nombre", disabled=True)
-        st.text_input("Nombre del despacho", value=despacho,
-                      key="perfil_despacho", disabled=True)
-        st.caption("Para cambiar nombre o despacho contacta con soporte.")
+        nuevo_nombre   = st.text_input("Nombre del asesor", value=nombre,
+                                      key="perfil_nombre")
+        nuevo_despacho = st.text_input("Nombre del despacho", value=despacho,
+                                       key="perfil_despacho")
+        nuevo_telefono = st.text_input("Teléfono", value=asesor.get("telefono",""),
+                                       key="perfil_telefono")
+        nuevo_nif      = st.text_input("NIF / CIF", value=asesor.get("nif",""),
+                                       key="perfil_nif")
+        if st.button("💾 Guardar cambios", key="btn_guardar_perfil", type="primary"):
+            payload = {
+                "nombre":   nuevo_nombre,
+                "despacho": nuevo_despacho,
+                "telefono": nuevo_telefono,
+                "nif":      nuevo_nif,
+            }
+            r = requests.patch(
+                f"{SUPABASE_URL}/rest/v1/asesores?user_id=eq.{user_id}",
+                headers={**_h(), "Prefer": "return=representation"},
+                json=payload
+            )
+            if r.status_code in [200, 201]:
+                st.session_state["fh_asesor"] = {**asesor, **payload}
+                st.success("✅ Perfil actualizado correctamente.")
+                st.rerun()
+            else:
+                st.error(f"Error al guardar: {r.text}")
 
     with col_prev:
         st.markdown('''<div style="font-size:13px;font-weight:700;color:#1e293b;
