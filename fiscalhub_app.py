@@ -11,7 +11,7 @@ from datetime import datetime, date
 import io
 import html as _html
 from nolasco_styles import inject_global_css
-from kpi_renderer import render_kpi_row, render_kpi_grid, ACCENT_F, RED, AMBER, GREEN
+from kpi_renderer import render_kpi_row, render_kpi_grid, ACCENT_F, RED, AMBER, GREEN, GREY
 
 # Paleta determinista por cliente — 8 colores profesionales
 # Siempre el mismo color para el mismo cliente_id
