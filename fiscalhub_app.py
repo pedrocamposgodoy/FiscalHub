@@ -161,6 +161,21 @@ def get_movimientos_propietario(pid):
     r = requests.get(f"{SUPABASE_URL}/rest/v1/movimientos?user_id=eq.{pid}&select=*", headers=_hd())
     return pd.DataFrame(r.json()) if r.status_code == 200 and r.json() else pd.DataFrame()
 
+def get_perfil_propietario(pid):
+    """Lee tipo_cuenta y datos fiscales del propietario desde user_profiles."""
+    try:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/user_profiles?user_id=eq.{pid}"
+            f"&select=tipo_cuenta,nombre_sociedad,cif_sociedad,nombre_fiscal,nif",
+            headers=_hd()
+        )
+        if r.status_code == 200 and r.json():
+            return r.json()[0]
+    except Exception:
+        pass
+    return {"tipo_cuenta": "particular"}
+
+
 def vincular_propietario(asesor_user_id, codigo):
     r = requests.get(f"{SUPABASE_URL}/rest/v1/accesos_asesor"
         f"?codigo=eq.{codigo.upper()}&activo=eq.true&select=*", headers=_h())
@@ -308,6 +323,43 @@ def calcular_alertas_cliente(df_inm, df_mov):
             alertas.append({**p, "inmueble": nombre, "categoria": "Fiscal"})
     return alertas
 
+def calcular_modelo200_global(df_inm, df_mov):
+    """Calcula IS para todos los inmuebles de un cliente sociedad patrimonial."""
+    if df_inm.empty:
+        return {"ingresos": 0, "total_gastos": 0, "amortizacion": 0,
+                "resultado": 0, "cuota_is": 0, "retenciones": 0}
+    total_ingresos = 0
+    total_gastos   = 0
+    total_amort    = 0
+    total_retenc   = 0
+
+    for _, row in df_inm.iterrows():
+        modelo = calcular_modelo100_inmueble(row, df_mov)
+        ingresos  = sf(modelo.get("0102", modelo.get("ingresos", 0)))
+        gastos    = sf(modelo.get("0107", modelo.get("total_gastos", 0)))
+        amort     = sf(modelo.get("0113", modelo.get("amortizacion", 0)))
+        retenc    = sf(modelo.get("0153", modelo.get("retenciones", 0)))
+        total_ingresos += ingresos
+        total_gastos   += gastos
+        total_amort    += amort
+        total_retenc   += retenc
+
+    # En IS no aplica reducción del 60%
+    resultado  = round(total_ingresos - total_gastos, 2)
+    cuota_is   = round(max(resultado * 0.25, 0), 2)
+    diferencial = round(cuota_is - total_retenc, 2)
+
+    return {
+        "ingresos":     total_ingresos,
+        "total_gastos": total_gastos,
+        "amortizacion": total_amort,
+        "resultado":    resultado,       # [399] Base imponible
+        "cuota_is":     cuota_is,        # [562] Cuota IS 25%
+        "retenciones":  total_retenc,    # [582]
+        "diferencial":  diferencial,     # [599] A ingresar
+    }
+
+
 def construir_cartera(clientes_vinculados):
     cartera = []
     for acc in clientes_vinculados:
@@ -321,10 +373,13 @@ def construir_cartera(clientes_vinculados):
         else:
             nombre = nombre_raw or "Propietario"
         if not pid: continue
-        df_inm = get_inmuebles_propietario(pid)
-        df_mov = get_movimientos_propietario(pid)
-        alertas = calcular_alertas_cliente(df_inm, df_mov)
-        modelo  = calcular_modelo100_global(df_inm, df_mov)
+        df_inm   = get_inmuebles_propietario(pid)
+        df_mov   = get_movimientos_propietario(pid)
+        perfil   = get_perfil_propietario(pid)
+        tipo     = perfil.get("tipo_cuenta", "particular")
+        alertas  = calcular_alertas_cliente(df_inm, df_mov)
+        modelo   = calcular_modelo100_global(df_inm, df_mov)
+        modelo_is = calcular_modelo200_global(df_inm, df_mov) if tipo == "sociedad" else {}
         criticas = len([a for a in alertas if a["tipo"]=="crit"])
         medias   = len([a for a in alertas if a["tipo"]=="warn"])
         impacto  = sum(a.get("impacto",0) for a in alertas)
@@ -333,7 +388,11 @@ def construir_cartera(clientes_vinculados):
             "id": pid, "nombre": nombre,
             "inmuebles": len(df_inm), "criticas": criticas, "medias": medias,
             "impacto": impacto, "estado": estado,
-            "alertas": alertas, "df_inm": df_inm, "df_mov": df_mov, "modelo100": modelo,
+            "alertas": alertas, "df_inm": df_inm, "df_mov": df_mov,
+            "modelo100": modelo, "modelo_is": modelo_is,
+            "tipo_cuenta": tipo,
+            "nombre_sociedad": perfil.get("nombre_sociedad", nombre),
+            "cif_sociedad":    perfil.get("cif_sociedad", ""),
         })
     cartera.sort(key=lambda x:({"critico":0,"medio":1,"ok":2}[x["estado"]],-x["criticas"]))
     return cartera
@@ -403,11 +462,32 @@ def pantalla_perfil():
             border-left:3px solid #534AB7;padding-left:10px;
             margin:20px 0 12px;">Datos del despacho</div>''',
             unsafe_allow_html=True)
-        st.text_input("Nombre del asesor", value=nombre,
-                      key="perfil_nombre", disabled=True)
-        st.text_input("Nombre del despacho", value=despacho,
-                      key="perfil_despacho", disabled=True)
-        st.caption("Para cambiar nombre o despacho contacta con soporte.")
+        nuevo_nombre   = st.text_input("Nombre del asesor", value=nombre,
+                                      key="perfil_nombre")
+        nuevo_despacho = st.text_input("Nombre del despacho", value=despacho,
+                                       key="perfil_despacho")
+        nuevo_telefono = st.text_input("Teléfono", value=asesor.get("telefono",""),
+                                       key="perfil_telefono")
+        nuevo_nif      = st.text_input("NIF / CIF", value=asesor.get("nif",""),
+                                       key="perfil_nif")
+        if st.button("💾 Guardar cambios", key="btn_guardar_perfil", type="primary"):
+            payload = {
+                "nombre":   nuevo_nombre,
+                "despacho": nuevo_despacho,
+                "telefono": nuevo_telefono,
+                "nif":      nuevo_nif,
+            }
+            r = requests.patch(
+                f"{SUPABASE_URL}/rest/v1/asesores?user_id=eq.{user_id}",
+                headers={**_h(), "Prefer": "return=representation"},
+                json=payload
+            )
+            if r.status_code in [200, 201]:
+                st.session_state["fh_asesor"] = {**asesor, **payload}
+                st.success("✅ Perfil actualizado correctamente.")
+                st.rerun()
+            else:
+                st.error(f"Error al guardar: {r.text}")
 
     with col_prev:
         st.markdown('''<div style="font-size:13px;font-weight:700;color:#1e293b;
@@ -749,11 +829,16 @@ def pantalla_cliente():
     cliente    = next((c for c in cartera if c["id"]==cliente_id), None)
     if not cliente: st.warning("Selecciona un cliente."); return
 
-    df_inm  = cliente["df_inm"]
-    df_mov  = cliente["df_mov"]
-    modelo  = cliente["modelo100"]
-    nombre  = cliente["nombre"]
-    vlds    = st.session_state.get("fh_validaciones", {}).get(cliente_id, {})
+    df_inm     = cliente["df_inm"]
+    df_mov     = cliente["df_mov"]
+    modelo     = cliente["modelo100"]
+    modelo_is  = cliente.get("modelo_is", {})
+    nombre     = cliente["nombre"]
+    tipo       = cliente.get("tipo_cuenta", "particular")
+    es_sociedad = tipo == "sociedad"
+    nom_soc    = cliente.get("nombre_sociedad", nombre)
+    cif_soc    = cliente.get("cif_sociedad", "")
+    vlds       = st.session_state.get("fh_validaciones", {}).get(cliente_id, {})
 
     if st.button("← Volver a cartera", key="cli_back"):
         st.session_state.fh_menu = "cartera"
@@ -761,28 +846,77 @@ def pantalla_cliente():
         st.session_state.pop("fh_inmueble_sel", None)
         st.rerun()
 
-    st.markdown(f"""<div style="margin-bottom:14px;">
-      <div class="nc-page-label">Revisión IRPF 2025</div>
-      <div class="nc-page-title">{nombre}</div>
-      <div class="nc-page-sub">{cliente["inmuebles"]} inmuebles · Campaña IRPF 2025</div>
-    </div>""", unsafe_allow_html=True)
+    if es_sociedad:
+        st.markdown(f"""<div style="margin-bottom:14px;">
+          <div class="nc-page-label">Impuesto de Sociedades · Modelo 200</div>
+          <div class="nc-page-title">{nom_soc}</div>
+          <div class="nc-page-sub">CIF {cif_soc} · {cliente["inmuebles"]} inmuebles · IS 25% · Ejercicio 2025</div>
+        </div>""", unsafe_allow_html=True)
+        # Badge sociedad
+        st.markdown(
+            '<div style="display:inline-block;background:#0d1a0d;border:1px solid #059669;'
+            'border-radius:6px;padding:5px 12px;font-size:12px;color:#059669;'
+            'margin-bottom:12px;">🏢 Sociedad Patrimonial · IS 25% · Sin reducción arrendamiento</div>',
+            unsafe_allow_html=True)
+    else:
+        st.markdown(f"""<div style="margin-bottom:14px;">
+          <div class="nc-page-label">Revisión IRPF 2025</div>
+          <div class="nc-page-title">{nombre}</div>
+          <div class="nc-page-sub">{cliente["inmuebles"]} inmuebles · Campaña IRPF 2025</div>
+        </div>""", unsafe_allow_html=True)
 
-    _cc = _color_cli(cliente_id)  # color único del cliente — se usa en border-top
-    # Número semántico + border-top con color del cliente
-    render_kpi_grid([
-        {"label":"📥 0102 Ingresos",
-         "value":fmt_eur(modelo.get("ingresos",0)),
-         "color":GREEN,   "border_color":_cc, "subtitle":"Rendimiento íntegro"},
-        {"label":"📤 Gastos deducibles",
-         "value":f"−{fmt_eur(modelo.get('total_gastos',0))}",
-         "color":RED,     "border_color":_cc, "subtitle":"Total deducible"},
-        {"label":"⚖️ 0149 Rend. neto",
-         "value":fmt_eur(modelo.get("rend_neto",0)),
-         "color":ACCENT_F,"border_color":_cc, "subtitle":"Antes de reducción"},
-        {"label":"🧾 0156 Base imp. est.",
-         "value":fmt_eur(modelo.get("rend_final",0)),
-         "color":AMBER,   "border_color":_cc, "subtitle":"⚠️ Orientativa"},
-    ])
+    _cc = _color_cli(cliente_id)
+
+    if es_sociedad:
+        resultado  = modelo_is.get("resultado", 0)
+        cuota_is   = modelo_is.get("cuota_is", 0)
+        diferencial = modelo_is.get("diferencial", 0)
+        color_dif  = "#DC2626" if diferencial > 0 else "#059669"
+        render_kpi_grid([
+            {"label":"📥 [318] Ingresos arrend.",
+             "value": fmt_eur(modelo_is.get("ingresos", 0)),
+             "color": GREEN, "border_color": _cc, "subtitle": "Íntegros ejercicio"},
+            {"label":"📤 [319] Gastos deducibles",
+             "value": f"−{fmt_eur(modelo_is.get('total_gastos', 0))}",
+             "color": RED,   "border_color": _cc, "subtitle": "IS — sin reducción 60%"},
+            {"label":"⚖️ [399] Base imponible",
+             "value": fmt_eur(resultado),
+             "color": ACCENT_F, "border_color": _cc, "subtitle": "Resultado neto IS"},
+            {"label":"🏛️ [562] Cuota IS 25%",
+             "value": fmt_eur(cuota_is),
+             "color": AMBER, "border_color": _cc, "subtitle": "Tipo general Art. 29 LIS"},
+        ])
+        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+        render_kpi_grid([
+            {"label":"💳 [582] Retenciones",
+             "value": fmt_eur(modelo_is.get("retenciones", 0)),
+             "color": GREY, "border_color": _cc, "subtitle": "Ingresos a cuenta"},
+            {"label":"📋 [599] A ingresar",
+             "value": fmt_eur(diferencial),
+             "color": color_dif, "border_color": _cc,
+             "subtitle": "⚠️ A pagar" if diferencial > 0 else "✅ A devolver"},
+            {"label":"🏗️ [320] Amortización",
+             "value": fmt_eur(modelo_is.get("amortizacion", 0)),
+             "color": GREY, "border_color": _cc, "subtitle": "3% s/ valor construcción"},
+            {"label":"📊 Tipo efectivo IS",
+             "value": f"{round(cuota_is/resultado*100,1) if resultado>0 else 0:.1f}%",
+             "color": ACCENT_F, "border_color": _cc, "subtitle": "Sobre base imponible"},
+        ])
+    else:
+        render_kpi_grid([
+            {"label":"📥 0102 Ingresos",
+             "value": fmt_eur(modelo.get("ingresos", 0)),
+             "color": GREEN, "border_color": _cc, "subtitle": "Rendimiento íntegro"},
+            {"label":"📤 Gastos deducibles",
+             "value": f"−{fmt_eur(modelo.get('total_gastos', 0))}",
+             "color": RED,   "border_color": _cc, "subtitle": "Total deducible"},
+            {"label":"⚖️ 0149 Rend. neto",
+             "value": fmt_eur(modelo.get("rend_neto", 0)),
+             "color": ACCENT_F, "border_color": _cc, "subtitle": "Antes de reducción"},
+            {"label":"🧾 0156 Base imp. est.",
+             "value": fmt_eur(modelo.get("rend_final", 0)),
+             "color": AMBER, "border_color": _cc, "subtitle": "⚠️ Orientativa"},
+        ])
 
 
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
@@ -2481,6 +2615,31 @@ def pantalla_exportar():
             chk = "✅" if criticas == 0 else "⚠️"
 
             with cols[col_idx]:
+                _es_soc = c.get("tipo_cuenta") == "sociedad"
+                _mis    = c.get("modelo_is", {})
+                if _es_soc:
+                    _label_ing  = "📥 [318] Ingresos"
+                    _label_gas  = "📤 [319] Gastos"
+                    _label_rend = "⚖️ [399] Base imp."
+                    _label_base = "🏛️ [562] Cuota IS 25%"
+                    ingresos = fmt_eur(_mis.get("ingresos", 0))
+                    gastos   = fmt_eur(_mis.get("total_gastos", 0))
+                    rend     = fmt_eur(_mis.get("resultado", 0))
+                    base     = fmt_eur(_mis.get("cuota_is", 0))
+                    _subtitulo = "IS · Modelo 200"
+                else:
+                    _label_ing  = "📥 0102 Ingresos"
+                    _label_gas  = "📤 Gastos deducibles"
+                    _label_rend = "⚖️ 0149 Rend. neto"
+                    _label_base = "🧾 Base imp. est."
+                    _subtitulo  = "IRPF · Modelo 100"
+
+                _badge_soc = (
+                    '<span style="background:rgba(5,150,105,0.15);color:#059669;' +
+                    'font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;' +
+                    'margin-left:6px;">🏢 IS</span>'
+                ) if _es_soc else ""
+
                 st.markdown(
                     f'<div style="background:{hdr};border-radius:12px 12px 0 0;' +
                     f'padding:14px 16px 12px;display:flex;align-items:center;' +
@@ -2489,35 +2648,31 @@ def pantalla_exportar():
                     f'<div style="flex:1;min-width:0;">' +
                     f'<div style="font-size:16px;font-weight:800;color:#FFF;' +
                     f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
-                    f'{c["nombre"]}</div>' +
+                    f'{c["nombre"]}{_badge_soc}</div>' +
                     f'<div style="font-size:12px;color:rgba(255,255,255,0.65);margin-top:2px;">' +
-                    f'{c["inmuebles"]} inmuebles · campaña 2025</div></div>' +
+                    f'{c["inmuebles"]} inmuebles · {_subtitulo}</div></div>' +
                     f'<span style="background:rgba(255,255,255,0.15);color:#FFF;' +
                     f'font-size:11px;font-weight:700;padding:3px 8px;' +
                     f'border-radius:6px;">{lbl}</span></div>' +
                     f'<div style="background:#FFF;border:2px solid #E2E8F0;' +
                     f'border-top:none;border-radius:0 0 12px 12px;' +
                     f'padding:14px 16px 12px;">' +
-                    f'<div style="display:flex;justify-content:space-between;' +
-                    f'margin-bottom:6px;">' +
-                    f'<span style="font-size:13px;color:#94A3B8;">📥 0102 Ingresos</span>' +
+                    f'<div style="display:flex;justify-content:space-between;margin-bottom:6px;">' +
+                    f'<span style="font-size:13px;color:#94A3B8;">{_label_ing}</span>' +
                     f'<span style="font-size:14px;font-weight:800;color:#059669;">{ingresos}</span></div>' +
-                    f'<div style="display:flex;justify-content:space-between;' +
-                    f'margin-bottom:6px;">' +
-                    f'<span style="font-size:13px;color:#94A3B8;">📤 Gastos deducibles</span>' +
+                    f'<div style="display:flex;justify-content:space-between;margin-bottom:6px;">' +
+                    f'<span style="font-size:13px;color:#94A3B8;">{_label_gas}</span>' +
                     f'<span style="font-size:14px;font-weight:800;color:#DC2626;">-{gastos}</span></div>' +
-                    f'<div style="display:flex;justify-content:space-between;' +
-                    f'margin-bottom:6px;">' +
-                    f'<span style="font-size:13px;color:#94A3B8;">⚖️ 0149 Rend. neto</span>' +
+                    f'<div style="display:flex;justify-content:space-between;margin-bottom:6px;">' +
+                    f'<span style="font-size:13px;color:#94A3B8;">{_label_rend}</span>' +
                     f'<span style="font-size:14px;font-weight:800;color:#534AB7;">{rend}</span></div>' +
-                    f'<div style="display:flex;justify-content:space-between;' +
-                    f'margin-bottom:10px;">' +
+                    f'<div style="display:flex;justify-content:space-between;margin-bottom:10px;">' +
                     f'<span style="font-size:13px;color:#94A3B8;">{chk} Alertas</span>' +
                     f'<span style="font-size:14px;font-weight:800;color:{txt};">{criticas}</span></div>' +
                     f'<div style="background:{badge_bg};border-radius:6px;' +
                     f'padding:6px 10px;text-align:center;' +
                     f'font-size:13px;font-weight:700;color:{txt};">' +
-                    f'🧾 Base imp. est.: {base}</div></div>',
+                    f'{_label_base}: {base}</div></div>',
                     unsafe_allow_html=True)
 
                 if st.button("📄 Ir a revisión completa",
