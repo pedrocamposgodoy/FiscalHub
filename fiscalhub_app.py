@@ -1084,10 +1084,9 @@ def pantalla_ficha_inmueble():
     if rows.empty: st.warning(f"No se encontró: {nombre_inm}"); return
     row = rows.iloc[0]
 
-    sem       = calcular_semaforo_inmueble(row)
-    modelo    = calcular_modelo100_inmueble(row, df_mov)
-    vlds      = st.session_state.get("fh_validaciones",{}).get(cliente_id,{})
-    es_sociedad = cliente.get("tipo_cuenta","particular") == "sociedad"
+    sem    = calcular_semaforo_inmueble(row)
+    modelo = calcular_modelo100_inmueble(row, df_mov)
+    vlds   = st.session_state.get("fh_validaciones",{}).get(cliente_id,{})
 
     c_back, c_vld = st.columns([3,1])
     with c_back:
@@ -1200,13 +1199,8 @@ def pantalla_ficha_inmueble():
 
         tipo_arr_ = str(row_.get("tipo_arrendamiento") or "").lower()
         es_temp   = any(x in tipo_arr_ for x in ["temporada","habitacion","turistic"])
-        if es_sociedad:
-            # IS: sin reducción por arrendamiento (Art. 23.2 LIRPF no aplica a personas jurídicas)
-            red_pct   = 0
-            reduccion = 0
-        else:
-            red_pct   = 0 if es_temp else d_.get("reduccion_pct", 50)
-            reduccion = max(rend_n, 0) * red_pct / 100
+        red_pct   = 0 if es_temp else d_.get("reduccion_pct", 50)
+        reduccion = max(rend_n, 0) * red_pct / 100
         return dict(ingresos=round(ing,2), total_gastos=round(total_g,2),
                     rend_neto=round(rend_n,2), red_pct=red_pct,
                     reduccion=round(reduccion,2), rend_final=round(rend_n-reduccion,2))
@@ -1301,13 +1295,12 @@ def pantalla_ficha_inmueble():
         # ── INGRESOS (solo informativo) ───────────────────────────
         _fila_header("📥 Ingresos")
         renta_mes_ = sf(row.get("renta") or row.get("Renta",0))
-        _cas_ing = "[318]" if es_sociedad else "0102"
         st.markdown(
             f'<div style="display:grid;grid-template-columns:32px 1fr 90px 1fr;' +
             f'gap:0;padding:8px 12px;border-bottom:1px solid #F8FAFC;' +
             f'align-items:center;">' +
             f'<div>{_sem_dot("verde","Ingresos registrados")}</div>' +
-            f'<div style="font-size:16px;color:#1e293b;font-weight:500;">{_cas_ing} · Renta anual</div>' +
+            f'<div style="font-size:16px;color:#1e293b;font-weight:500;">0102 · Renta anual</div>' +
             f'<div style="font-size:17px;font-weight:800;color:#059669;text-align:right;">' +
             f'{fmt_eur(renta_mes_*12)}</div>' +
             f'<div style="padding-left:12px;font-size:17px;color:#94A3B8;">' +
@@ -1317,48 +1310,26 @@ def pantalla_ficha_inmueble():
         # ── GASTOS FIJOS: Incluir / Excluir ──────────────────────
         _fila_header("📤 Gastos deducibles fijos")
 
-        if es_sociedad:
-            gastos_fijos = [
-                ("[662]", "Intereses hipoteca (cuenta 662)",
-                 sf(row.get("intereses_hipoteca",0)),
-                 "intereses"),
-                ("[631]", "IBI y tributos (cuenta 631)",
-                 sf(row.get("ibi_anual",0)),
-                 "ibi"),
-                ("[629]", "Comunidad propietarios (cuenta 629)",
-                 sf(row.get("comunidad",0))*12,
-                 "comunidad"),
-                ("[625]", "Seguro hogar + vida (cuenta 625)",
-                 sf(row.get("seguro_anual",0)),
-                 "seguro"),
-                ("[628]", "Suministros (cuenta 628)",
-                 sf(row.get("suministros_anual",0)),
-                 "suministros"),
-                ("[623]", "Gastos jurídicos (cuenta 623)",
-                 sf(row.get("gastos_juridicos_anual",0)),
-                 "juridicos"),
-            ]
-        else:
-            gastos_fijos = [
-                ("0105", "Intereses hipoteca",
-                 sf(row.get("intereses_hipoteca",0)),
-                 "intereses"),
-                ("0106", "IBI y tributos",
-                 sf(row.get("ibi_anual",0)),
-                 "ibi"),
-                ("0107", "Comunidad propietarios",
-                 sf(row.get("comunidad",0))*12,
-                 "comunidad"),
-                ("0110", "Seguro hogar + vida",
-                 sf(row.get("seguro_anual",0)),
-                 "seguro"),
-                ("0111", "Suministros",
-                 sf(row.get("suministros_anual",0)),
-                 "suministros"),
-                ("0112", "Gastos jurídicos",
-                 sf(row.get("gastos_juridicos_anual",0)),
-                 "juridicos"),
-            ]
+        gastos_fijos = [
+            ("0105", "Intereses hipoteca",
+             sf(row.get("intereses_hipoteca",0)),
+             "intereses"),
+            ("0106", "IBI y tributos",
+             sf(row.get("ibi_anual",0)),
+             "ibi"),
+            ("0107", "Comunidad propietarios",
+             sf(row.get("comunidad",0))*12,
+             "comunidad"),
+            ("0110", "Seguro hogar + vida",
+             sf(row.get("seguro_anual",0)),
+             "seguro"),
+            ("0111", "Suministros",
+             sf(row.get("suministros_anual",0)),
+             "suministros"),
+            ("0112", "Gastos jurídicos",
+             sf(row.get("gastos_juridicos_anual",0)),
+             "juridicos"),
+        ]
 
         # Default: excluir siempre hasta que el asesor lo valide activamente
         def _default_acc(dk, valor):
@@ -1442,8 +1413,7 @@ def pantalla_ficha_inmueble():
             st.caption(f"→ Amortizable: {fmt_eur(rep_v*0.05)}/año × 20 años")
 
         # ── AMORTIZACIÓN 3% (cálculo automático) ──────────────────
-        _cas_amort = "[681] Amortización construcción" if es_sociedad else "Amortización construcción (0109)"
-        _fila_header(f"⚡ {_cas_amort}", color="#DC2626")
+        _fila_header("⚡ Amortización construcción (0109)", color="#DC2626")
         amort_actual = sf(row.get("amortizacion_fiscal",0))
         datos_ok     = precio_c > 0 and catastral > 0
 
@@ -1461,10 +1431,9 @@ def pantalla_ficha_inmueble():
         with col_s:
             st.markdown(_sem_dot(sem_a, tip_a), unsafe_allow_html=True)
         with col_l:
-            _cas_amort_label = "[681]" if es_sociedad else "0109"
             st.markdown(
-                f'<div style="font-size:16px;color:#1e293b;">' +
-                f'<span style="color:#94A3B8;font-size:17px;">{_cas_amort_label} </span>' +
+                '<div style="font-size:16px;color:#1e293b;">' +
+                '<span style="color:#94A3B8;font-size:17px;">0109 </span>' +
                 'Amort. 3% construcción</div>',
                 unsafe_allow_html=True)
             if datos_ok:
@@ -1500,27 +1469,17 @@ def pantalla_ficha_inmueble():
                     label_visibility="collapsed")
                 dec["acc_amort"] = am_opc
 
-        # ── REDUCCIÓN: solo para persona física ───────────────────
-        if not es_sociedad:
-            _fila_header("📋 Reducción arrendamiento")
-            red_pct_v = 0 if es_temporada else 50
-            red_label = "Temporada/Habitaciones — 0%" if es_temporada else "Vivienda habitual — 50% (Art. 23.2 LIRPF)"
-            st.markdown(
-                f'<div style="display:grid;grid-template-columns:32px 1fr;' +
-                f'gap:0;padding:8px 12px;align-items:center;">' +
-                f'<div>{_sem_dot("verde" if not es_temporada else "amarillo")}</div>' +
-                f'<div style="font-size:16px;color:#475569;">{red_label}</div></div>',
-                unsafe_allow_html=True)
-            dec["reduccion_pct"] = red_pct_v
-        else:
-            dec["reduccion_pct"] = 0
-            st.markdown(
-                '<div style="background:#0d1a0d;border:1px solid #059669;border-radius:8px;' +
-                'padding:8px 14px;font-size:13px;color:#059669;margin:8px 0;">' +
-                '🏢 IS: La reducción del 60% por arrendamiento de vivienda habitual no aplica' +
-                ' a personas jurídicas (Art. 23.2 LIRPF es exclusivo de IRPF).' +
-                '</div>',
-                unsafe_allow_html=True)
+        # ── REDUCCIÓN (automática, solo informativa) ───────────────
+        _fila_header("📋 Reducción arrendamiento")
+        red_pct_v = 0 if es_temporada else 50
+        red_label = "Temporada/Habitaciones — 0%" if es_temporada else "Vivienda habitual — 50% (Art. 23.2 LIRPF)"
+        st.markdown(
+            f'<div style="display:grid;grid-template-columns:32px 1fr;' +
+            f'gap:0;padding:8px 12px;align-items:center;">' +
+            f'<div>{_sem_dot("verde" if not es_temporada else "amarillo")}</div>' +
+            f'<div style="font-size:16px;color:#475569;">{red_label}</div></div>',
+            unsafe_allow_html=True)
+        dec["reduccion_pct"] = red_pct_v
 
         if st.button("↺ Restablecer decisiones", key=f"rst_{dec_key}"):
             st.session_state.pop(dec_key, None)
@@ -1538,32 +1497,18 @@ def pantalla_ficha_inmueble():
         color_ok   = "#059669" if ahorro_c >= 0 else "#DC2626"
         color_ko   = "#DC2626"
 
-        _lbl_imp  = "🏛️ Impacto IS — Modelo 200" if es_sociedad else "⚖️ Impacto fiscal comparado"
-        _lbl_sin  = "Sin gastos deducidos" if es_sociedad else "Sin optimizar"
-        _lbl_con  = "Con gastos deducidos" if es_sociedad else "Con tu asesor"
-        _lbl_base_s = "[399] Resultado neto" if es_sociedad else "Base imponible"
-        _lbl_base_c = "[399] Resultado neto" if es_sociedad else "Base fin ejercicio"
-        _lbl_aho  = "Ahorro IS (25%)" if es_sociedad else "Ahorro fiscal"
-        _lbl_tipo = "Tipo fijo IS: 25% (Art. 29 LIS)" if es_sociedad else f"Tipo marginal aplicado: {int(TIPO_MARG*100)}%"
-        _desc_tip = ("IS tipo general 25% (Art. 29 LIS). Sin reducción por arrendamiento "
-                     "de vivienda habitual. Cuota = [399] × 25%. Estimación orientativa."
-                    ) if es_sociedad else (
-                     "Calculado por tramos IRPF 2025 (escala estatal + Andalucía) "
-                     "sobre rendimientos inmobiliarios. No incluye otras rentas. "
-                     "El tipo real puede ser superior si existen rentas adicionales.")
-
         st.markdown(f"""
         <div style="background:#FFF;border-radius:12px;border:2px solid #94A3B8;
                     padding:16px;margin-bottom:12px;
                     box-shadow:0 4px 12px rgba(0,0,0,0.08);">
           <div style="font-size:10px;font-weight:800;color:#94A3B8;
                       text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;">
-              {_lbl_imp}</div>
+              ⚖️ Impacto fiscal comparado</div>
           <div style="display:grid;grid-template-columns:1fr 20px 1fr;align-items:center;">
             <div style="background:#FFF5F5;border-radius:8px;padding:10px;">
               <div style="font-size:9px;font-weight:700;color:{color_ko};
-                          text-transform:uppercase;margin-bottom:4px;">{_lbl_sin}</div>
-              <div style="font-size:11px;color:#475569;">{_lbl_base_s}</div>
+                          text-transform:uppercase;margin-bottom:4px;">Sin optimizar</div>
+              <div style="font-size:11px;color:#475569;">Base imponible</div>
               <div style="font-size:1.3rem;font-weight:900;color:{color_ko};">
                   {fmt_eur(base_orig)}</div>
               <div style="font-size:11px;color:#475569;margin-top:6px;">Cuota est.</div>
@@ -1574,8 +1519,8 @@ def pantalla_ficha_inmueble():
             <div style="background:#F0FDF4;border-radius:8px;padding:10px;
                         border:1.5px solid {color_ok};">
               <div style="font-size:9px;font-weight:700;color:{color_ok};
-                          text-transform:uppercase;margin-bottom:4px;">{_lbl_con}</div>
-              <div style="font-size:11px;color:#475569;">{_lbl_base_c}</div>
+                          text-transform:uppercase;margin-bottom:4px;">Con tu asesor</div>
+              <div style="font-size:11px;color:#475569;">Base fin ejercicio</div>
               <div style="font-size:1.3rem;font-weight:900;color:{color_ok};">
                   {fmt_eur(base_opt)}</div>
               <div style="font-size:11px;color:#475569;margin-top:6px;">Cuota est.</div>
@@ -1588,7 +1533,7 @@ def pantalla_ficha_inmueble():
                       display:flex;justify-content:space-between;align-items:center;">
             <div>
               <div style="font-size:9px;font-weight:700;color:#475569;
-                          text-transform:uppercase;">💶 {_lbl_aho}</div>
+                          text-transform:uppercase;">💶 Ahorro fiscal</div>
               <div style="font-size:1.4rem;font-weight:900;color:{color_ok};">
                   {fmt_eur(ahorro_c)}</div>
             </div>
@@ -1604,9 +1549,12 @@ def pantalla_ficha_inmueble():
                       border-radius:8px;border:1px solid #E2E8F0;">
             <div style="font-size:9px;font-weight:700;color:#534AB7;
                         text-transform:uppercase;margin-bottom:4px;">
-                📊 {_lbl_tipo}</div>
+                📊 Tipo marginal aplicado: {int(TIPO_MARG*100)}%</div>
             <div style="font-size:9px;color:#64748B;line-height:1.5;text-align:justify;">
-                {_desc_tip}
+                Calculado por tramos IRPF 2025 (escala estatal + Andalucía)
+                sobre los rendimientos inmobiliarios disponibles.
+                No incluye otras rentas del contribuyente (trabajo, capital, etc.).
+                El tipo real puede ser superior si existen rentas adicionales.
             </div>
           </div>
         </div>
@@ -1614,7 +1562,7 @@ def pantalla_ficha_inmueble():
                     border:1px solid #E2E8F0;margin-bottom:12px;">
           <div style="font-size:9px;font-weight:800;color:#94A3B8;
                       text-transform:uppercase;margin-bottom:8px;">
-              {"📅 Proyección IS a 31 dic" if es_sociedad else "📅 Proyección a 31 dic"} {hoy.year}</div>
+              📅 Proyección a 31 dic {hoy.year}</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
             <div><div style="font-size:10px;color:#94A3B8;">Acumulado a hoy</div>
                  <div style="font-size:1rem;font-weight:800;color:#059669;">
@@ -1625,7 +1573,7 @@ def pantalla_ficha_inmueble():
             <div><div style="font-size:10px;color:#94A3B8;">Meses restantes</div>
                  <div style="font-size:1rem;font-weight:800;color:#534AB7;">
                      {meses_rest}</div></div>
-            <div><div style="font-size:10px;color:#94A3B8;">{"IS 25%" if es_sociedad else "Reducción aplicada"}</div>
+            <div><div style="font-size:10px;color:#94A3B8;">Reducción aplicada</div>
                  <div style="font-size:1rem;font-weight:800;color:#534AB7;">
                      {m_opt["red_pct"]}%</div></div>
           </div>
@@ -1814,10 +1762,15 @@ def pantalla_ficha_inmueble():
             elems = []
 
             # ── CABECERA con logo ─────────────────────────────────
+            _es_soc_pdf = cliente.get("tipo_cuenta","particular") == "sociedad"
+            _nom_soc_pdf = cliente.get("nombre_sociedad", nombre_inm)
+            _cif_soc_pdf = cliente.get("cif_sociedad", "")
+            _titulo_pdf  = ("Informe IS — Modelo 200 · Sociedad Patrimonial"
+                            if _es_soc_pdf else "Informe Fiscal de Arrendamiento")
             hdr_data = [[
                 _logo_el or Paragraph("FH", p_brand),
                 [Paragraph("FiscalHub", p_brand),
-                 Paragraph("Informe Fiscal de Arrendamiento", p_sub)],
+                 Paragraph(_titulo_pdf, p_sub)],
                 [Paragraph(f"Generado: {_d.today().strftime('%d/%m/%Y')}", p_meta),
                  Paragraph(f"Asesor: {st.session_state.get('fh_nombre_asesor') or st.session_state.get('fh_asesor',{}).get('nombre','—')}", p_meta)]
             ]]
@@ -1922,6 +1875,28 @@ def pantalla_ficha_inmueble():
             elems.append(as_tbl)
             elems.append(Spacer(1, 8))
 
+            # Banner sociedad patrimonial
+            if _es_soc_pdf:
+                GREEN_IS = colors.HexColor("#059669")
+                soc_data = [[
+                    Paragraph(f"<b>🏢 Sociedad Patrimonial: {_nom_soc_pdf}</b>", p_body),
+                    Paragraph(f"CIF: {_cif_soc_pdf}", p_body),
+                    Paragraph("Impuesto de Sociedades · Tipo 25%", p_body),
+                    Paragraph("Modelo 200 · Sin reducción Art.23.2", p_body),
+                ]]
+                soc_tbl = Table(soc_data, colWidths=[5.5*cm, 3*cm, 4*cm, 4*cm])
+                soc_tbl.setStyle(TableStyle([
+                    ("BACKGROUND", (0,0),(-1,0), colors.HexColor("#0d1a0d")),
+                    ("TEXTCOLOR",  (0,0),(-1,0), colors.HexColor("#059669")),
+                    ("FONTNAME",   (0,0),(-1,0), "Helvetica-Bold"),
+                    ("FONTSIZE",   (0,0),(-1,0), 8),
+                    ("GRID",       (0,0),(-1,-1), 0.3, colors.HexColor("#059669")),
+                    ("PADDING",    (0,0),(-1,-1), 6),
+                    ("VALIGN",     (0,0),(-1,-1), "MIDDLE"),
+                ]))
+                elems.append(soc_tbl)
+                elems.append(Spacer(1, 6))
+
             inm_tbl = Table(inm_data, colWidths=[3*cm,5.5*cm,3*cm,5*cm])
             inm_tbl.setStyle(TableStyle([
                 ("BACKGROUND", (0,0),(0,-1), LGRAY),
@@ -1938,45 +1913,76 @@ def pantalla_ficha_inmueble():
             elems.append(Spacer(1, 10))
 
             # ── Comparativa fiscal ────────────────────────────────
-            m_opt_pdf = _simular_tabla(row, dec)
-            base_o  = m_base["rend_final"]
-            base_s  = m_opt_pdf["rend_final"]
-            cuota_o = round(max(base_o * 0.30, 0), 2)
-            cuota_s = round(max(base_s * 0.30, 0), 2)
+            m_opt_pdf  = _simular_tabla(row, dec)
+            base_o     = m_base["rend_final"]
+            base_s     = m_opt_pdf["rend_final"]
+            if _es_soc_pdf:
+                cuota_o    = round(max(base_o * 0.25, 0), 2)
+                cuota_s    = round(max(base_s * 0.25, 0), 2)
+            else:
+                cuota_o    = round(max(base_o * 0.30, 0), 2)
+                cuota_s    = round(max(base_s * 0.30, 0), 2)
             ahorro_pdf = round(cuota_o - cuota_s, 2)
 
-            elems.append(Paragraph("Impacto Fiscal: Sin optimizar vs. Con asesor", p_h2))
-
-            cmp_data = [
-                ["Concepto", "Sin optimizar", "Con asesor", "Diferencia"],
-                ["Ingresos anuales (0102)",
-                 fmt_eur(m_base["ingresos"]),
-                 fmt_eur(m_opt_pdf["ingresos"]), "—"],
-                ["Gastos deducibles",
-                 fmt_eur(m_base["total_gastos"]),
-                 fmt_eur(m_opt_pdf["total_gastos"]),
-                 fmt_eur(m_opt_pdf["total_gastos"]-m_base["total_gastos"])],
-                ["Rendimiento neto (0149)",
-                 fmt_eur(m_base["rend_neto"]),
-                 fmt_eur(m_opt_pdf["rend_neto"]), "—"],
-                [f"Reduccion {m_base['red_pct']}% / {m_opt_pdf['red_pct']}%",
-                 fmt_eur(m_base["reduccion"]),
-                 fmt_eur(m_opt_pdf["reduccion"]), "—"],
-                ["BASE IMPONIBLE (0156)",
-                 fmt_eur(base_o),
-                 fmt_eur(base_s),
-                 fmt_eur(base_s-base_o)],
-                ["Cuota est. IRPF (30%)",
-                 fmt_eur(cuota_o),
-                 fmt_eur(cuota_s),
-                 fmt_eur(cuota_s-cuota_o)],
-            ]
-            cmp_tbl = Table(cmp_data, colWidths=[6*cm,3*cm,3.5*cm,4*cm])
-            cmp_style = _tbl_style()
-            # Fila BASE IMPONIBLE en negrita
-            cmp_style.add("FONTNAME",   (0,5),(-1,5), "Helvetica-Bold")
-            cmp_style.add("BACKGROUND", (0,5),(-1,5), LPURP)
-            cmp_style.add("TEXTCOLOR",  (0,5),(-1,5), PURPLE)
+            if _es_soc_pdf:
+                elems.append(Paragraph("Impacto IS — Modelo 200: Sin gastos vs. Con gastos deducidos", p_h2))
+                cmp_data = [
+                    ["Concepto", "Sin gastos", "Con gastos", "Diferencia"],
+                    ["[318] Ingresos arrendamiento",
+                     fmt_eur(m_base["ingresos"]),
+                     fmt_eur(m_opt_pdf["ingresos"]), "—"],
+                    ["[319] Gastos deducibles IS",
+                     fmt_eur(m_base["total_gastos"]),
+                     fmt_eur(m_opt_pdf["total_gastos"]),
+                     fmt_eur(m_opt_pdf["total_gastos"]-m_base["total_gastos"])],
+                    ["[320] Amortización (3% construcción)",
+                     fmt_eur(m_base.get("amortizacion",0)),
+                     fmt_eur(m_opt_pdf.get("amortizacion",0)), "—"],
+                    ["[399] RESULTADO NETO (Base imponible)",
+                     fmt_eur(base_o),
+                     fmt_eur(base_s),
+                     fmt_eur(base_s-base_o)],
+                    ["[562] Cuota IS — tipo general 25%",
+                     fmt_eur(cuota_o),
+                     fmt_eur(cuota_s),
+                     fmt_eur(cuota_s-cuota_o)],
+                ]
+                cmp_tbl = Table(cmp_data, colWidths=[6.5*cm,2.8*cm,3.2*cm,4*cm])
+                cmp_style = _tbl_style(header_bg=colors.HexColor("#059669"))
+                cmp_style.add("FONTNAME",   (0,4),(-1,4), "Helvetica-Bold")
+                cmp_style.add("BACKGROUND", (0,4),(-1,4), colors.HexColor("#E6F9F1"))
+                cmp_style.add("TEXTCOLOR",  (0,4),(-1,4), colors.HexColor("#059669"))
+            else:
+                elems.append(Paragraph("Impacto Fiscal: Sin optimizar vs. Con asesor", p_h2))
+                cmp_data = [
+                    ["Concepto", "Sin optimizar", "Con asesor", "Diferencia"],
+                    ["Ingresos anuales (0102)",
+                     fmt_eur(m_base["ingresos"]),
+                     fmt_eur(m_opt_pdf["ingresos"]), "—"],
+                    ["Gastos deducibles",
+                     fmt_eur(m_base["total_gastos"]),
+                     fmt_eur(m_opt_pdf["total_gastos"]),
+                     fmt_eur(m_opt_pdf["total_gastos"]-m_base["total_gastos"])],
+                    ["Rendimiento neto (0149)",
+                     fmt_eur(m_base["rend_neto"]),
+                     fmt_eur(m_opt_pdf["rend_neto"]), "—"],
+                    [f"Reduccion {m_base['red_pct']}% / {m_opt_pdf['red_pct']}%",
+                     fmt_eur(m_base["reduccion"]),
+                     fmt_eur(m_opt_pdf["reduccion"]), "—"],
+                    ["BASE IMPONIBLE (0156)",
+                     fmt_eur(base_o),
+                     fmt_eur(base_s),
+                     fmt_eur(base_s-base_o)],
+                    ["Cuota est. IRPF (30%)",
+                     fmt_eur(cuota_o),
+                     fmt_eur(cuota_s),
+                     fmt_eur(cuota_s-cuota_o)],
+                ]
+                cmp_tbl = Table(cmp_data, colWidths=[6*cm,3*cm,3.5*cm,4*cm])
+                cmp_style = _tbl_style()
+                cmp_style.add("FONTNAME",   (0,5),(-1,5), "Helvetica-Bold")
+                cmp_style.add("BACKGROUND", (0,5),(-1,5), LPURP)
+                cmp_style.add("TEXTCOLOR",  (0,5),(-1,5), PURPLE)
             cmp_tbl.setStyle(cmp_style)
             elems.append(cmp_tbl)
 
@@ -2001,14 +2007,25 @@ def pantalla_ficha_inmueble():
             # ── Decisiones del asesor ─────────────────────────────
             elems.append(Paragraph("Decisiones aplicadas por el asesor", p_h2))
             dec_data = [["Casilla","Concepto","Importe","Accion"]]
-            for _dk, _cas, _lbl in [
-                ("intereses","0105","Intereses hipoteca"),
-                ("ibi",      "0106","IBI y tributos"),
-                ("comunidad","0107","Comunidad propietarios"),
-                ("seguro",   "0110","Seguro hogar y vida"),
-                ("suministros","0111","Suministros"),
-                ("juridicos","0112","Gastos juridicos"),
-            ]:
+            if _es_soc_pdf:
+                _gastos_pdf = [
+                    ("intereses","[662]","Intereses hipoteca (cta. 662)"),
+                    ("ibi",      "[631]","IBI y tributos (cta. 631)"),
+                    ("comunidad","[629]","Comunidad propietarios (cta. 629)"),
+                    ("seguro",   "[625]","Seguro hogar y vida (cta. 625)"),
+                    ("suministros","[628]","Suministros (cta. 628)"),
+                    ("juridicos","[623]","Gastos jurídicos (cta. 623)"),
+                ]
+            else:
+                _gastos_pdf = [
+                    ("intereses","0105","Intereses hipoteca"),
+                    ("ibi",      "0106","IBI y tributos"),
+                    ("comunidad","0107","Comunidad propietarios"),
+                    ("seguro",   "0110","Seguro hogar y vida"),
+                    ("suministros","0111","Suministros"),
+                    ("juridicos","0112","Gastos juridicos"),
+                ]
+            for _dk, _cas, _lbl in _gastos_pdf:
                 _val = {"intereses":sf(row.get("intereses_hipoteca",0)),
                         "ibi":sf(row.get("ibi_anual",0)),
                         "comunidad":sf(row.get("comunidad",0))*12,
@@ -2022,13 +2039,16 @@ def pantalla_ficha_inmueble():
             # Reparaciones
             _ra  = dec.get("acc_rep","gasto")
             _rv  = sf(row.get("reparaciones_anual",0))
-            dec_data.append(["0104","Reparaciones y mantenimiento",fmt_eur(_rv),
+            _cas_rep_pdf  = "[621]" if _es_soc_pdf else "0104"
+            _lbl_rep_pdf  = "Reparaciones (cta. 621 PGC)" if _es_soc_pdf else "Reparaciones y mantenimiento"
+            _cas_amort_p  = "[681]" if _es_soc_pdf else "0109"
+            _lbl_amort_p  = "Amortizacion 3% (cta. 681 PGC)" if _es_soc_pdf else "Amortizacion 3% construccion"
+            dec_data.append([_cas_rep_pdf, _lbl_rep_pdf, fmt_eur(_rv),
                 {"gasto":"Gasto directo 100%",
                  "inversion":"Inversion 5%/anio",
                  "excluir":"Excluido"}.get(_ra,"—")])
-            # Amortizacion
             _aa  = dec.get("acc_amort","aplicar")
-            dec_data.append(["0109","Amortizacion 3% construccion",
+            dec_data.append([_cas_amort_p, _lbl_amort_p,
                 fmt_eur(amort_calc) if _aa=="aplicar" else "0 EUR",
                 "Aplicada (calculo auto)" if _aa=="aplicar" else "No aplicada"])
 
@@ -2079,11 +2099,17 @@ def pantalla_ficha_inmueble():
             # ── Pie de pagina ─────────────────────────────────────
             elems.append(HRFlowable(width="100%", thickness=0.5,
                 color=GRAY, spaceAfter=4))
-            elems.append(Paragraph(
+            _nota_pie = (
+                "Documento orientativo generado por FiscalHub. "
+                "Sociedad Patrimonial | IS tipo general 25% (Art. 29 LIS). "
+                "Sin reduccion por arrendamiento de vivienda habitual. "
+                "Verificar con software oficial AEAT antes de presentar el Modelo 200."
+            ) if _es_soc_pdf else (
                 "Documento orientativo generado por FiscalHub. "
                 "Cuotas IRPF estimadas al tipo marginal del 30%. "
-                "Verificar con software oficial AEAT antes de presentar.",
-                p_small))
+                "Verificar con software oficial AEAT antes de presentar."
+            )
+            elems.append(Paragraph(_nota_pie, p_small))
 
             doc.build(elems)
             buf.seek(0)
