@@ -2004,6 +2004,127 @@ def pantalla_ficha_inmueble():
             elems.append(ahorro_tbl)
             elems.append(Spacer(1,10))
 
+            # ── Ratios IS (solo si es sociedad) ───────────────────
+            if _es_soc_pdf:
+                elems.append(Paragraph("Análisis Fiscal IS — Ratios Societarios", p_h2))
+                elems.append(Spacer(1,4))
+
+                # Calcular valores IS del inmueble
+                _r_anual  = sf(row.get("renta_mensual", row.get("Renta", 0))) * 12
+                _ibi_r    = sf(row.get("ibi_anual", row.get("IBI_Anual", 0)))
+                _seg_r    = sf(row.get("seguro_anual", row.get("Seguro_Anual", 0)))
+                _com_r    = sf(row.get("comunidad", row.get("Comunidad", 0))) * 12
+                _int_r    = sf(row.get("intereses_hipoteca", row.get("Intereses_Hipoteca", 0)))
+                _amort_r  = amort_calc if dec.get("acc_amort","aplicar")=="aplicar" else 0
+                _rep_r    = sf(row.get("reparaciones_anual", 0))
+                _gas_op   = _ibi_r + _seg_r + _com_r + _rep_r
+                _gas_tot  = _gas_op + _int_r + _amort_r
+                _rto_sin  = _r_anual
+                _rto_con  = _r_anual - _gas_tot
+                _is_sin   = round(max(_rto_sin * 0.25, 0), 2)
+                _is_con   = round(max(_rto_con * 0.25, 0), 2)
+                _neto_sin = round(_rto_sin - _is_sin, 2)
+                _neto_con = round(_rto_con - _is_con, 2)
+                _div_sin  = round(max(_neto_sin * 0.19, 0), 2)
+                _div_con  = round(max(_neto_con * 0.19, 0), 2)
+                _ahorro_r = round(_is_sin - _is_con, 2)
+                _final_sin = round(_neto_sin - _div_sin, 2)
+                _final_con = round(_neto_con - _div_con, 2)
+                _precio_r  = sf(row.get("precio_compra", row.get("Precio_Compra", 0)))
+                _roi_r     = round(_rto_con / _precio_r * 100, 1) if _precio_r > 0 else 0
+                _ebitda_r  = _r_anual - _gas_op
+
+                GREEN_IS = colors.HexColor("#059669")
+                RED_IS   = colors.HexColor("#DC2626")
+                AMBER_IS = colors.HexColor("#D97706")
+
+                # Tabla doble imposición
+                _di_data = [
+                    ["Concepto", "Sin gastos deducidos", "Con gastos deducidos"],
+                    ["[399] Resultado neto",
+                     fmt_eur(_rto_sin), fmt_eur(_rto_con)],
+                    ["[562] IS 25%",
+                     f"−{fmt_eur(_is_sin)}", f"−{fmt_eur(_is_con)}"],
+                    ["Neto tras IS",
+                     fmt_eur(_neto_sin), fmt_eur(_neto_con)],
+                    ["Retención dividendos (19%)",
+                     f"−{fmt_eur(_div_sin)}", f"−{fmt_eur(_div_con)}"],
+                    ["NETO FINAL AL SOCIO",
+                     fmt_eur(_final_sin), fmt_eur(_final_con)],
+                ]
+                _di_tbl = Table(_di_data, colWidths=[6*cm, 4.5*cm, 4.5*cm])
+                _di_style = TableStyle([
+                    ("BACKGROUND",     (0,0),(-1,0),  GREEN_IS),
+                    ("TEXTCOLOR",      (0,0),(-1,0),  colors.white),
+                    ("FONTNAME",       (0,0),(-1,0),  "Helvetica-Bold"),
+                    ("FONTSIZE",       (0,0),(-1,-1),  8),
+                    ("ROWBACKGROUNDS", (0,1),(-1,-2), [colors.HexColor("#F0FDF4"), colors.white]),
+                    ("BACKGROUND",     (0,-1),(-1,-1), colors.HexColor("#0d1a0d")),
+                    ("TEXTCOLOR",      (0,-1),(-1,-1), GREEN_IS),
+                    ("FONTNAME",       (0,-1),(-1,-1), "Helvetica-Bold"),
+                    ("GRID",           (0,0),(-1,-1),  0.3, colors.HexColor("#E2E8F0")),
+                    ("ALIGN",          (1,0),(-1,-1),  "RIGHT"),
+                    ("PADDING",        (0,0),(-1,-1),  5),
+                ])
+                _di_tbl.setStyle(_di_style)
+                elems.append(_di_tbl)
+                elems.append(Spacer(1, 8))
+
+                # KPIs IS del activo en fila
+                _kpi_data = [
+                    ["KPI", "Valor", "Referencia"],
+                    ["EBITDA del activo",
+                     fmt_eur(_ebitda_r),
+                     "Renta − gastos operativos (excl. intereses y amort.)"],
+                    ["IS estimado 25%",
+                     f"−{fmt_eur(_is_con)}",
+                     "Cuota IS orientativa con gastos deducidos"],
+                    ["ROI del activo",
+                     f"{_roi_r:.1f}%" if _precio_r > 0 else "Sin precio compra",
+                     "Resultado neto / inversión total"],
+                    ["Tipo efectivo total (IS + dividendo)",
+                     "38.75%",
+                     "25% IS + 19% dividendo — doble imposición"],
+                    ["Ahorro fiscal por deducir gastos",
+                     fmt_eur(_ahorro_r),
+                     "Diferencia IS sin vs con gastos"],
+                ]
+                _kpi_tbl = Table(_kpi_data, colWidths=[5*cm, 3*cm, 7*cm])
+                _kpi_style = TableStyle([
+                    ("BACKGROUND",     (0,0),(-1,0),  colors.HexColor("#0F172A")),
+                    ("TEXTCOLOR",      (0,0),(-1,0),  colors.white),
+                    ("FONTNAME",       (0,0),(-1,0),  "Helvetica-Bold"),
+                    ("FONTSIZE",       (0,0),(-1,-1),  8),
+                    ("ROWBACKGROUNDS", (0,1),(-1,-1), [colors.HexColor("#F8FAFC"), colors.white]),
+                    ("FONTNAME",       (0,1),(0,-1),  "Helvetica-Bold"),
+                    ("TEXTCOLOR",      (1,1),(1,-1),  GREEN_IS),
+                    ("FONTNAME",       (1,1),(1,-1),  "Helvetica-Bold"),
+                    ("GRID",           (0,0),(-1,-1),  0.3, colors.HexColor("#E2E8F0")),
+                    ("ALIGN",          (1,0),(1,-1),  "RIGHT"),
+                    ("PADDING",        (0,0),(-1,-1),  5),
+                ])
+                _kpi_tbl.setStyle(_kpi_style)
+                elems.append(_kpi_tbl)
+                elems.append(Spacer(1, 6))
+
+                # Nota doble imposición
+                _nota_di = Paragraph(
+                    "⚠️ Doble imposición: El beneficio tributa al 25% en IS y si se distribuye como dividendo "
+                    "tributa de nuevo al 19% (tipo general ahorro IRPF). Tipo efectivo total: 38.75%. "
+                    "Valorar si compensa reinvertir en la sociedad vs distribuir dividendos. "
+                    "Datos orientativos — consultar con asesor fiscal.",
+                    _ps("nota_di", 7, colors.HexColor("#854F0B"))
+                )
+                _nota_box = Table([[_nota_di]], colWidths=[15*cm])
+                _nota_box.setStyle(TableStyle([
+                    ("BACKGROUND", (0,0),(-1,-1), colors.HexColor("#FFF9E6")),
+                    ("BOX",        (0,0),(-1,-1), 0.5, colors.HexColor("#D97706")),
+                    ("PADDING",    (0,0),(-1,-1), 6),
+                    ("ROUNDEDCORNERS", [4,4,4,4]),
+                ]))
+                elems.append(_nota_box)
+                elems.append(Spacer(1, 10))
+
             # ── Decisiones del asesor ─────────────────────────────
             elems.append(Paragraph("Decisiones aplicadas por el asesor", p_h2))
             dec_data = [["Casilla","Concepto","Importe","Accion"]]
