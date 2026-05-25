@@ -2135,6 +2135,10 @@ def pantalla_resumen_global():
     df_inm = cliente["df_inm"]; df_mov = cliente["df_mov"]; nombre = cliente["nombre"]
     vlds   = st.session_state.get("fh_validaciones",{}).get(cliente_id,{})
     modelo = calcular_modelo100_global(df_inm, df_mov)
+    modelo_is_gl = cliente.get("modelo_is", {})
+    es_soc_gl  = cliente.get("tipo_cuenta","particular") == "sociedad"
+    nom_soc_gl = cliente.get("nombre_sociedad", nombre)
+    cif_soc_gl = cliente.get("cif_sociedad", "")
     col_n  = "nombre" if "nombre" in df_inm.columns else "Nombre"
     nombres= [str(r.get(col_n,"")) for _,r in df_inm.iterrows()] if not df_inm.empty else []
     n_manual = sum(1 for nm in nombres if vlds.get(nm,{}).get("manual",False))
@@ -2142,11 +2146,18 @@ def pantalla_resumen_global():
     if st.button("← Volver al cliente", key="gl_back"):
         st.session_state.fh_menu = "cliente"; st.rerun()
 
-    st.markdown(f"""<div style="margin-bottom:14px;">
-      <div class="nc-page-label">Resumen global IRPF 2025</div>
-      <div class="nc-page-title">{nombre}</div>
-      <div class="nc-page-sub">{len(nombres)} inmuebles · Modelo 100 consolidado</div>
-    </div>""", unsafe_allow_html=True)
+    if es_soc_gl:
+        st.markdown(f"""<div style="margin-bottom:14px;">
+          <div class="nc-page-label">Resumen global IS · Modelo 200 · 2025</div>
+          <div class="nc-page-title">{nom_soc_gl}</div>
+          <div class="nc-page-sub">CIF {cif_soc_gl} · {len(nombres)} inmuebles · IS 25% · Modelo 200</div>
+        </div>""", unsafe_allow_html=True)
+    else:
+        st.markdown(f"""<div style="margin-bottom:14px;">
+          <div class="nc-page-label">Resumen global IRPF 2025</div>
+          <div class="nc-page-title">{nombre}</div>
+          <div class="nc-page-sub">{len(nombres)} inmuebles · Modelo 100 consolidado</div>
+        </div>""", unsafe_allow_html=True)
 
     if n_manual > 0:
         st.markdown(f"""<div class="nc-callout warn">
@@ -2162,20 +2173,41 @@ def pantalla_resumen_global():
         _b64gl_kpi = _b64gl2.b64encode(_logo_gl).decode()
     else:
         _b64gl_kpi = None
-    render_kpi_grid([
-        {"label":"📥 0102 Ingresos",
-         "value":fmt_eur(modelo.get("ingresos",0)),
-         "color":GREEN,    "border_color":_cc_gl, "subtitle":f"{len(nombres)} inmuebles"},
-        {"label":"📤 Gastos deducibles",
-         "value":f"−{fmt_eur(modelo.get('total_gastos',0))}",
-         "color":RED,      "border_color":_cc_gl, "subtitle":"Total deducible"},
-        {"label":"⚖️ 0149 Rend. neto",
-         "value":fmt_eur(modelo.get("rend_neto",0)),
-         "color":ACCENT_F, "border_color":_cc_gl, "subtitle":"Antes de reducción"},
-        {"label":"🧾 0156 Base imp.",
-         "value":fmt_eur(modelo.get("rend_final",0)),
-         "color":AMBER,    "border_color":_cc_gl, "subtitle":"⚠️ Orientativa"},
-    ],
+    if es_soc_gl:
+        _res_gl  = modelo_is_gl.get("resultado", 0)
+        _cuota_gl = modelo_is_gl.get("cuota_is", 0)
+        _dif_gl   = modelo_is_gl.get("diferencial", 0)
+        render_kpi_grid([
+            {"label":"📥 [318] Ingresos",
+             "value":fmt_eur(modelo_is_gl.get("ingresos",0)),
+             "color":GREEN,    "border_color":_cc_gl, "subtitle":f"{len(nombres)} inmuebles"},
+            {"label":"📤 [319] Gastos IS",
+             "value":f"−{fmt_eur(modelo_is_gl.get('total_gastos',0))}",
+             "color":RED,      "border_color":_cc_gl, "subtitle":"Sin reducción 60%"},
+            {"label":"⚖️ [399] Base imponible",
+             "value":fmt_eur(_res_gl),
+             "color":ACCENT_F, "border_color":_cc_gl, "subtitle":"Resultado neto IS"},
+            {"label":"🏛️ [562] Cuota IS 25%",
+             "value":fmt_eur(_cuota_gl),
+             "color":AMBER,    "border_color":_cc_gl, "subtitle":"⚠️ Orientativa"},
+        ],
+        logo_b64=_b64gl_kpi, despacho=_asesor_gl.get("despacho",""),
+        asesor=_asesor_gl.get("nombre",""))
+    else:
+        render_kpi_grid([
+            {"label":"📥 0102 Ingresos",
+             "value":fmt_eur(modelo.get("ingresos",0)),
+             "color":GREEN,    "border_color":_cc_gl, "subtitle":f"{len(nombres)} inmuebles"},
+            {"label":"📤 Gastos deducibles",
+             "value":f"−{fmt_eur(modelo.get('total_gastos',0))}",
+             "color":RED,      "border_color":_cc_gl, "subtitle":"Total deducible"},
+            {"label":"⚖️ 0149 Rend. neto",
+             "value":fmt_eur(modelo.get("rend_neto",0)),
+             "color":ACCENT_F, "border_color":_cc_gl, "subtitle":"Antes de reducción"},
+            {"label":"🧾 0156 Base imp.",
+             "value":fmt_eur(modelo.get("rend_final",0)),
+             "color":AMBER,    "border_color":_cc_gl, "subtitle":"⚠️ Orientativa"},
+        ],
     logo_b64=_b64gl_kpi,
     despacho=_asesor_gl.get("despacho",""),
     asesor=_asesor_gl.get("nombre",""))
@@ -2312,8 +2344,9 @@ def pantalla_resumen_global():
 
                 # ── Cabecera ──────────────────────────────────────
                 # Columna central: dos párrafos como lista
+                _titulo_gl = "Resumen Global IS — Modelo 200" if es_soc_gl else "Resumen Global IRPF"
                 _mid = [Paragraph("FiscalHub", p_h1),
-                        Paragraph("Resumen Global IRPF", p_sub)]
+                        Paragraph(_titulo_gl, p_sub)]
                 _right = [Paragraph(f"Generado: {_d2.today().strftime('%d/%m/%Y')}", p_rt),
                           Paragraph(f"Asesor: {nombre_asesor or '—'}", p_rt)]
 
@@ -2351,31 +2384,65 @@ def pantalla_resumen_global():
                 _el.append(_clt)
                 _el.append(Spacer(1, 10))
 
-                # ── Modelo 100 consolidado ────────────────────────
-                _el.append(Paragraph("Modelo 100 consolidado", p_h2))
-                _gr = [
-                    ["Casilla", "Concepto", "Importe"],
-                    ["0102",    "Ingresos totales",
-                     fmt_eur(modelo.get("ingresos",0))],
-                    ["0105-0112","Gastos deducibles",
-                     f"−{fmt_eur(modelo.get('total_gastos',0))}"],
-                    ["0149",    "Rendimiento neto",
-                     fmt_eur(modelo.get("rend_neto",0))],
-                    ["0150",    "Reduccion aplicada",
-                     f"−{fmt_eur(modelo.get('reduccion',0))}"],
-                    ["0156",    "BASE IMPONIBLE ESTIMADA",
-                     fmt_eur(modelo.get("rend_final",0))],
-                ]
+                # ── Tabla consolidada IS o IRPF ──────────────────
+                if es_soc_gl:
+                    _el.append(Paragraph("Modelo 200 consolidado — IS Sociedad Patrimonial", p_h2))
+                    _mis_pdf = cliente.get("modelo_is", {})
+                    _res_pdf = _mis_pdf.get("resultado", 0)
+                    _cuota_pdf = _mis_pdf.get("cuota_is", 0)
+                    _retenc_pdf = _mis_pdf.get("retenciones", 0)
+                    _dif_pdf = _mis_pdf.get("diferencial", 0)
+                    _gr = [
+                        ["Casilla", "Concepto", "Importe"],
+                        ["[318]",    "Ingresos arrendamiento",
+                         fmt_eur(_mis_pdf.get("ingresos",0))],
+                        ["[319]",    "Gastos deducibles IS",
+                         f"−{fmt_eur(_mis_pdf.get('total_gastos',0))}"],
+                        ["[320]",    "Amortizacion 3% construccion",
+                         fmt_eur(_mis_pdf.get("amortizacion",0))],
+                        ["[399]",    "RESULTADO NETO (Base imponible)",
+                         fmt_eur(_res_pdf)],
+                        ["[562]",    "Cuota IS — tipo general 25%",
+                         fmt_eur(_cuota_pdf)],
+                        ["[582]",    "Retenciones soportadas",
+                         f"−{fmt_eur(_retenc_pdf)}"],
+                        ["[599]",    "CUOTA DIFERENCIAL (a ingresar)",
+                         fmt_eur(_dif_pdf)],
+                    ]
+                    _hdr_color = colors.HexColor("#059669")
+                    _bas_color = colors.HexColor("#E6F9F1")
+                    _bas_txt   = colors.HexColor("#059669")
+                    _bas_row   = -4  # [399]
+                else:
+                    _el.append(Paragraph("Modelo 100 consolidado", p_h2))
+                    _gr = [
+                        ["Casilla", "Concepto", "Importe"],
+                        ["0102",    "Ingresos totales",
+                         fmt_eur(modelo.get("ingresos",0))],
+                        ["0105-0112","Gastos deducibles",
+                         f"−{fmt_eur(modelo.get('total_gastos',0))}"],
+                        ["0149",    "Rendimiento neto",
+                         fmt_eur(modelo.get("rend_neto",0))],
+                        ["0150",    "Reduccion aplicada",
+                         f"−{fmt_eur(modelo.get('reduccion',0))}"],
+                        ["0156",    "BASE IMPONIBLE ESTIMADA",
+                         fmt_eur(modelo.get("rend_final",0))],
+                    ]
+                    _hdr_color = _PU
+                    _bas_color = _LP
+                    _bas_txt   = _PU
+                    _bas_row   = -1
+
                 _gt = Table(_gr, colWidths=[3*cm, 9.5*cm, 4*cm])
                 _gt.setStyle(TableStyle([
-                    ("BACKGROUND",     (0,0),(-1,0),  _PU),
+                    ("BACKGROUND",     (0,0),(-1,0),  _hdr_color),
                     ("TEXTCOLOR",      (0,0),(-1,0),  colors.white),
                     ("FONTNAME",       (0,0),(-1,0),  "Helvetica-Bold"),
                     ("FONTSIZE",       (0,0),(-1,-1), 8),
                     ("ROWBACKGROUNDS", (0,1),(-1,-2), [_LG, colors.white]),
-                    ("BACKGROUND",     (0,-1),(-1,-1),_LP),
-                    ("FONTNAME",       (0,-1),(-1,-1),"Helvetica-Bold"),
-                    ("TEXTCOLOR",      (0,-1),(-1,-1),_PU),
+                    ("BACKGROUND",     (0,_bas_row),(-1,_bas_row), _bas_color),
+                    ("FONTNAME",       (0,_bas_row),(-1,_bas_row), "Helvetica-Bold"),
+                    ("TEXTCOLOR",      (0,_bas_row),(-1,_bas_row), _bas_txt),
                     ("GRID",           (0,0),(-1,-1), 0.3,colors.HexColor("#E2E8F0")),
                     ("ALIGN",          (2,0),(2,-1),  "RIGHT"),
                     ("PADDING",        (0,0),(-1,-1), 5),
@@ -2385,23 +2452,35 @@ def pantalla_resumen_global():
 
                 # ── Desglose por inmueble ─────────────────────────
                 _el.append(Paragraph("Desglose por inmueble", p_h2))
-                _ir = [["Inmueble", "Ingresos", "Gastos", "Rend. neto", "Base imp."]]
+                if es_soc_gl:
+                    _ir = [["Inmueble", "[318] Ingresos", "[319] Gastos", "[399] Resultado", "[562] IS 25%"]]
+                else:
+                    _ir = [["Inmueble", "Ingresos", "Gastos", "Rend. neto", "Base imp."]]
                 for _, _row in df_inm.iterrows():
                     _nm2 = str(_row.get(col_n,""))
                     _mi2 = calcular_modelo100_inmueble(_row, df_mov)
                     _sem2 = calcular_semaforo_inmueble(_row)
                     _n_al = len(_sem2.get("problemas",[]))
                     _nm2_disp = _nm2[:26] + (f" ({_n_al} alertas)" if _n_al else "")
-                    _ir.append([
-                        _nm2_disp,
-                        fmt_eur(_mi2.get("ingresos",0)),
-                        fmt_eur(_mi2.get("total_gastos",0)),
-                        fmt_eur(_mi2.get("rend_neto",0)),
-                        fmt_eur(_mi2.get("rend_final",0)),
-                    ])
+                    if es_soc_gl:
+                        _ing2 = _mi2.get("0102", _mi2.get("ingresos", 0))
+                        _gas2 = _mi2.get("0107", _mi2.get("total_gastos", 0))
+                        _res2 = _ing2 - _gas2
+                        _is2  = round(max(_res2 * 0.25, 0), 2)
+                        _ir.append([_nm2_disp, fmt_eur(_ing2), fmt_eur(_gas2),
+                                    fmt_eur(_res2), fmt_eur(_is2)])
+                    else:
+                        _ir.append([
+                            _nm2_disp,
+                            fmt_eur(_mi2.get("ingresos",0)),
+                            fmt_eur(_mi2.get("total_gastos",0)),
+                            fmt_eur(_mi2.get("rend_neto",0)),
+                            fmt_eur(_mi2.get("rend_final",0)),
+                        ])
                 _it = Table(_ir, colWidths=[5.5*cm,3*cm,2.5*cm,3*cm,2.5*cm])
                 _it.setStyle(TableStyle([
-                    ("BACKGROUND",     (0,0),(-1,0),  _LG),
+                    ("BACKGROUND",     (0,0),(-1,0),  colors.HexColor("#059669") if es_soc_gl else _LG),
+                    ("TEXTCOLOR",      (0,0),(-1,0),  colors.white if es_soc_gl else _DK),
                     ("FONTNAME",       (0,0),(-1,0),  "Helvetica-Bold"),
                     ("FONTSIZE",       (0,0),(-1,-1), 8),
                     ("ROWBACKGROUNDS", (0,1),(-1,-1), [colors.HexColor("#F8FAFC"), colors.white]),
@@ -2414,10 +2493,17 @@ def pantalla_resumen_global():
                 _el.append(Spacer(1, 16))
                 _el.append(HRFlowable(width="100%", thickness=0.5,
                     color=_GR, spaceAfter=4))
-                _el.append(Paragraph(
+                _nota_gl = (
+                    "Documento orientativo generado por FiscalHub. "
+                    "Sociedad Patrimonial | IS tipo general 25% (Art. 29 LIS). "
+                    "Sin reduccion por arrendamiento de vivienda habitual. "
+                    "Verificar con software oficial AEAT antes de presentar el Modelo 200."
+                ) if es_soc_gl else (
                     "Documento orientativo generado por FiscalHub. "
                     "Base imponible estimada al tipo marginal del 30%. "
-                    "Verificar con software oficial AEAT antes de presentar.", p_sm))
+                    "Verificar con software oficial AEAT antes de presentar."
+                )
+                _el.append(Paragraph(_nota_gl, p_sm))
 
                 _doc.build(_el)
                 _buf.seek(0)
@@ -2427,7 +2513,7 @@ def pantalla_resumen_global():
 
         if "fh_gl_pdf" in st.session_state:
             st.download_button("⬇️ Descargar PDF",data=st.session_state["fh_gl_pdf"],
-                file_name=f"IRPF_{nombre.replace(' ','_')}_2025_global.pdf",
+                file_name=f"{'IS_Modelo200' if es_soc_gl else 'IRPF'}_{nombre.replace(' ','_')}_2025_global.pdf",
                 mime="application/pdf",use_container_width=True,key="gl_pdf_dl")
     with e2:
         if st.button("📊 Exportar Excel", use_container_width=True, key="gl_xlsx"):
