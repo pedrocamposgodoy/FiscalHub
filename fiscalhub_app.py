@@ -232,6 +232,12 @@ def calcular_semaforo_inmueble(row):
             "accion":"Revisar si hay gastos duplicados o importes incorrectos"})
 
     es_larga = "larga" in tipo or "habitual" in tipo or tipo == ""
+    # Alerta reducción 60% solo para personas físicas — no aplica a sociedades
+    _tipo_ct_sem = ""
+    try:
+        import streamlit as _st_sem
+        _tipo_ct_sem = _st_sem.session_state.get("fh_cartera",[])
+    except: pass
     if es_larga:
         try:
             anyo = int(fecha_str[:4]) if fecha_str and len(fecha_str) >= 4 else 0
@@ -775,9 +781,21 @@ def pantalla_cartera():
             imp_v    = fmt_eur(abs(c["impacto"])) if c["impacto"] else "—"
             cr_col   = "#DC2626" if c["criticas"]>0 else "#64748B"
             med_col  = "#D97706" if c["medias"]>0   else "#64748B"
-            modelo   = c.get("modelo100",{})
-            ingresos = fmt_eur(modelo.get("ingresos",0))
-            base_imp = fmt_eur(modelo.get("rend_final",0))
+            _c_es_soc  = c.get("tipo_cuenta","particular") == "sociedad"
+            modelo     = c.get("modelo100",{})
+            modelo_is_ = c.get("modelo_is",{})
+            if _c_es_soc:
+                ingresos = fmt_eur(modelo_is_.get("ingresos", modelo.get("ingresos",0)))
+                cuota_is_ = fmt_eur(modelo_is_.get("cuota_is", 0))
+                _lbl_ing  = "📥 [318] Ingresos"
+                _lbl_base = f"[562] Cuota IS 25%: {cuota_is_}"
+                _badge_soc = ' <span style="background:rgba(5,150,105,0.2);color:#059669;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;">🏢 IS</span>'
+            else:
+                ingresos   = fmt_eur(modelo.get("ingresos",0))
+                base_imp_  = fmt_eur(modelo.get("rend_final",0))
+                _lbl_ing   = "📥 0102 Ingresos"
+                _lbl_base  = f"Base imp. est.: {base_imp_}"
+                _badge_soc = ""
             with cols[col_idx]:
                 hdr_html = (
                     f'<div style="background:{hdr};border-radius:12px 12px 0 0;' +
@@ -785,7 +803,7 @@ def pantalla_cartera():
                     f'<span style="font-size:22px;">{icon}</span>' +
                     f'<div style="flex:1;min-width:0;">' +
                     f'<div style="font-size:18px;font-weight:800;color:#FFF;line-height:1.2;' +
-                    f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{c["nombre"]}</div>' +
+                    f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{c["nombre"]}{_badge_soc}</div>' +
                     f'<div style="font-size:10px;color:rgba(255,255,255,0.65);margin-top:2px;">' +
                     f'<span style="font-size:13px;opacity:0.75;">{tipo} · {c["inmuebles"]} inmuebles</span></div></div>' +
                     f'<span style="background:rgba(255,255,255,0.15);color:#FFF;font-size:9px;' +
@@ -799,7 +817,7 @@ def pantalla_cartera():
                     f'<span style="font-size:14px;color:#94A3B8;font-weight:600;">Tipo</span>' +
                     f'<span style="font-size:14px;color:#1e293b;font-weight:700;">{tipo}</span></div>' +
                     f'<div style="display:flex;justify-content:space-between;margin-bottom:5px;">' +
-                    f'<span style="font-size:14px;color:#94A3B8;">📥 0102 Ingresos</span>' +
+                    f'<span style="font-size:14px;color:#94A3B8;">{_lbl_ing}</span>' +
                     f'<span style="font-size:16px;font-weight:800;color:#059669;">{ingresos}</span></div>' +
                     f'<div style="display:flex;justify-content:space-between;margin-bottom:5px;">' +
                     f'<span style="font-size:14px;color:#94A3B8;">🚨 Alertas críticas</span>' +
@@ -809,7 +827,7 @@ def pantalla_cartera():
                     f'<span style="font-size:16px;font-weight:800;color:{med_col};">{c["medias"]}</span></div>' +
                     f'<div style="background:{badge_bg};border-radius:6px;padding:5px 10px;' +
                     f'text-align:center;font-size:14px;font-weight:700;color:{txt};">' +
-                    f'Base imp. est.: {base_imp}</div></div>'
+                    f'{_lbl_base}</div></div>'
                 )
                 st.markdown(hdr_html + body_html, unsafe_allow_html=True)
                 if st.button("→ Ver expediente completo",
@@ -976,6 +994,13 @@ def pantalla_cliente():
                 est_bg  = "rgba(5,150,105,0.10)"
                 est_col = "#059669"
             elif sem["estado"] in ("cr","critico"):
+                # Filtrar alerta reducción 60% para sociedades en semáforo
+                _probs_sem = sem["problemas"]
+                if es_sociedad:
+                    _probs_sem = [p for p in _probs_sem
+                                  if "60" not in p.get("titulo","") and
+                                  "reduccion" not in p.get("titulo","").lower()]
+                    sem = {**sem, "problemas": _probs_sem}
                 n_cr    = len([p for p in sem["problemas"] if p["tipo"]=="crit"])
                 est_lbl = f"⚠ {n_cr} crítico{'s' if n_cr>1 else ''}"
                 est_bg  = "rgba(220,38,38,0.10)"
@@ -2181,6 +2206,10 @@ def pantalla_ficha_inmueble():
             # ── Alertas semaforo ──────────────────────────────────
             _sem_pdf = calcular_semaforo_inmueble(row)
             _probs   = _sem_pdf.get("problemas",[])
+            # Filtrar alerta reducción 60% si es sociedad — no aplica a personas jurídicas
+            if _es_soc_pdf:
+                _probs = [p for p in _probs if "reducción 60%" not in p.get("titulo","").lower()
+                          and "reduccion 60" not in p.get("titulo","").lower()]
             if _probs:
                 elems.append(Paragraph("Alertas detectadas por el semaforo fiscal", p_h2))
                 al_data = [["Nivel","Concepto","Descripcion"]]
