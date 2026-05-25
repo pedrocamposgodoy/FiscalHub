@@ -724,7 +724,7 @@ def pantalla_cartera():
     st.markdown(f"""<div style="margin-bottom:20px;">
       <div class="nc-page-label">Granada · Despacho fiscal</div>
       <div class="nc-page-title">Cartera de clientes</div>
-      <div class="nc-page-sub">{len(cartera)} propietarios · {total_inm} inmuebles · campaña IRPF 2025</div>
+      <div class="nc-page-sub">{len(cartera)} propietarios · {total_inm} inmuebles · {"IS 25% + IRPF 2025" if any(c.get("tipo_cuenta")=="sociedad" for c in cartera) else "campaña IRPF 2025"}</div>
     </div>""", unsafe_allow_html=True)
 
     render_kpi_row([
@@ -778,6 +778,11 @@ def pantalla_cartera():
             lbl      = _ELBL[estado]
             badge_bg = _BADGE[estado]
             icon, tipo = _cli_icon(c["nombre"])
+            # Sobreescribir tipo con dato real de Supabase
+            if c.get("tipo_cuenta") == "sociedad":
+                icon, tipo = "🏢", "Sociedad Patrimonial"
+            elif c.get("tipo_cuenta") == "particular":
+                icon, tipo = "👤", "Particular"
             imp_v    = fmt_eur(abs(c["impacto"])) if c["impacto"] else "—"
             cr_col   = "#DC2626" if c["criticas"]>0 else "#64748B"
             med_col  = "#D97706" if c["medias"]>0   else "#64748B"
@@ -805,7 +810,7 @@ def pantalla_cartera():
                     f'<div style="font-size:18px;font-weight:800;color:#FFF;line-height:1.2;' +
                     f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{c["nombre"]}{_badge_soc}</div>' +
                     f'<div style="font-size:10px;color:rgba(255,255,255,0.65);margin-top:2px;">' +
-                    f'<span style="font-size:13px;opacity:0.75;">{tipo} · {c["inmuebles"]} inmuebles</span></div></div>' +
+                    f'<span style="font-size:13px;opacity:0.75;">{"Sociedad Patrimonial" if c.get("tipo_cuenta")=="sociedad" else "Particular"} · {c["inmuebles"]} inmuebles</span></div></div>' +
                     f'<span style="background:rgba(255,255,255,0.15);color:#FFF;font-size:9px;' +
                     f'font-weight:700;padding:3px 8px;border-radius:6px;">{lbl}</span></div>'
                 )
