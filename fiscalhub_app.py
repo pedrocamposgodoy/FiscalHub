@@ -390,6 +390,16 @@ def construir_cartera(clientes_vinculados):
         medias   = len([a for a in alertas if a["tipo"]=="warn"])
         impacto  = sum(a.get("impacto",0) for a in alertas)
         estado   = "critico" if criticas>0 else "medio" if medias>0 else "ok"
+        # Score medio de la cartera del cliente
+        _scores = []
+        for _, _r in df_inm.iterrows():
+            try:
+                _sd = _calcular_score_fh(_r, df_mov, es_sociedad=(tipo=="sociedad"))
+                _scores.append(_sd["score"])
+            except: pass
+        _score_medio = round(sum(_scores)/len(_scores), 1) if _scores else 0
+        _score_color = "#DC2626" if _score_medio < 4 else "#D97706" if _score_medio < 7 else "#059669"
+
         cartera.append({
             "id": pid, "nombre": nombre,
             "inmuebles": len(df_inm), "criticas": criticas, "medias": medias,
@@ -399,6 +409,8 @@ def construir_cartera(clientes_vinculados):
             "tipo_cuenta": tipo,
             "nombre_sociedad": perfil.get("nombre_sociedad", nombre),
             "cif_sociedad":    perfil.get("cif_sociedad", ""),
+            "score_medio": _score_medio,
+            "score_color": _score_color,
         })
     cartera.sort(key=lambda x:({"critico":0,"medio":1,"ok":2}[x["estado"]],-x["criticas"]))
     return cartera
@@ -810,7 +822,9 @@ def pantalla_cartera():
                     f'<div style="font-size:18px;font-weight:800;color:#FFF;line-height:1.2;' +
                     f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{c["nombre"]}{_badge_soc}</div>' +
                     f'<div style="font-size:10px;color:rgba(255,255,255,0.65);margin-top:2px;">' +
-                    f'<span style="font-size:13px;opacity:0.75;">{"Sociedad Patrimonial" if c.get("tipo_cuenta")=="sociedad" else "Particular"} · {c["inmuebles"]} inmuebles</span></div></div>' +
+                    f'<span style="font-size:13px;opacity:0.75;">{"Sociedad Patrimonial" if c.get("tipo_cuenta")=="sociedad" else "Particular"} · {c["inmuebles"]} inmuebles</span>' +
+                    (f' · <span style="font-weight:700;color:{"#86efac" if c.get("score_medio",0)>=7 else "#fcd34d" if c.get("score_medio",0)>=4 else "#fca5a5"}">Score: {c.get("score_medio",0):.1f}</span>' if c.get("score_medio",0) > 0 else "") +
+                    f'</div></div>' +
                     f'<span style="background:rgba(255,255,255,0.15);color:#FFF;font-size:9px;' +
                     f'font-weight:700;padding:3px 8px;border-radius:6px;">{lbl}</span></div>'
                 )
@@ -1100,6 +1114,99 @@ def pantalla_cliente():
                 st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
 # ── FICHA INMUEBLE ────────────────────────────────────────────────
+
+def _calcular_score_fh(row, df_mov, es_sociedad=False):
+    """Score de salud del activo 1-10 para FiscalHub."""
+    def _sf(v):
+        try: return float(v) if v else 0
+        except: return 0
+
+    nombre        = str(row.get("nombre", row.get("Nombre", "")))
+    renta         = _sf(row.get("renta", row.get("Renta", 0)))
+    renta_mercado = _sf(row.get("renta_mercado", row.get("Renta_Mercado", 0))) or renta
+    vencimiento   = str(row.get("fecha_vencimiento_contrato", row.get("Fecha_Fin_Contrato","")) or "")
+    inquilino     = str(row.get("inquilino", row.get("Inquilino","")) or "")
+    ibi           = _sf(row.get("ibi_anual", row.get("IBI_Anual", 0)))
+    seguro        = _sf(row.get("seguro_anual", row.get("Seguro_Anual", 0)))
+    ref_cat       = str(row.get("ref_catastral", row.get("Ref_Catastral","")) or "")
+    precio_compra = _sf(row.get("precio_compra", row.get("Precio_Compra", 0)))
+    intereses     = _sf(row.get("intereses_hipoteca", row.get("Intereses_Hipoteca", 0)))
+
+    score = 10.0; detalle = []; alertas = []
+
+    # 1. Rentabilidad vs mercado (30%)
+    if renta_mercado > 0 and renta > 0:
+        ratio = renta / renta_mercado
+        if ratio >= 0.95:   pts = 3.0; detalle.append(("Rentabilidad","✅ Renta en línea con mercado",3.0,3.0))
+        elif ratio >= 0.80: pts = 2.0; detalle.append(("Rentabilidad",f"⚠️ Renta {int((1-ratio)*100)}% bajo mercado",2.0,3.0)); alertas.append(f"Renta {int((1-ratio)*100)}% por debajo del mercado")
+        elif ratio >= 0.60: pts = 1.0; detalle.append(("Rentabilidad",f"🔴 Renta {int((1-ratio)*100)}% bajo mercado",1.0,3.0)); alertas.append(f"Renta {int((1-ratio)*100)}% muy por debajo del mercado")
+        else:               pts = 0.0; detalle.append(("Rentabilidad","🔴 Renta crítica vs mercado",0.0,3.0)); alertas.append("Renta crítica — posible infravaloración")
+    else:
+        pts = 1.5; detalle.append(("Rentabilidad","⚪ Sin datos de mercado",1.5,3.0))
+    score -= (3.0 - pts)
+
+    # 2. Vencimiento contrato (25%)
+    dias_venc = 999
+    if vencimiento and len(vencimiento) >= 8:
+        try:
+            import pandas as _pd
+            dias_venc = (_pd.to_datetime(vencimiento) - _pd.Timestamp.now()).days
+        except: pass
+    if not inquilino or inquilino in ("","nan","None"):
+        pts = 0.5; detalle.append(("Ocupación","🔴 Sin inquilino registrado",0.5,2.5)); alertas.append("Sin inquilino — posible vacío")
+    elif dias_venc > 180: pts = 2.5; detalle.append(("Vencimiento",f"✅ Vigente ({dias_venc}d)",2.5,2.5))
+    elif dias_venc > 90:  pts = 1.5; detalle.append(("Vencimiento",f"⚠️ Vence en {dias_venc}d",1.5,2.5)); alertas.append(f"Contrato vence en {dias_venc} días")
+    elif dias_venc > 0:   pts = 0.5; detalle.append(("Vencimiento",f"🔴 Vence en {dias_venc}d",0.5,2.5)); alertas.append(f"⚠️ URGENTE — Contrato vence en {dias_venc} días")
+    else:                 pts = 0.0; detalle.append(("Vencimiento","🔴 Contrato vencido",0.0,2.5)); alertas.append("Contrato vencido")
+    score -= (2.5 - pts)
+
+    # 3. Fatiga / Reparaciones (20%)
+    import pandas as _pd2
+    _hoy = _pd2.Timestamp.now(); _hace_12m = _hoy - _pd2.DateOffset(months=12)
+    _tot_reps = 0; _num_reps = 0
+    if not df_mov.empty:
+        try:
+            _m = df_mov.copy()
+            _ca = "apartamento" if "apartamento" in _m.columns else "Apartamento"
+            _ct = "tipo" if "tipo" in _m.columns else "Tipo"
+            _ci = "importe" if "importe" in _m.columns else "Importe"
+            _cf = "fecha" if "fecha" in _m.columns else "Fecha"
+            _m[_cf] = _pd2.to_datetime(_m[_cf], errors="coerce")
+            _cats = ["Mantenimiento","Reparación","Avería","reparacion","mantenimiento"]
+            _cc = "categoria" if "categoria" in _m.columns else "Categoría"
+            _reps = _m[(_m[_ca]==nombre)&(_m[_cf]>=_hace_12m)&(_m[_ct]=="Gasto")&(_m.get(_cc,_pd2.Series()).isin(_cats))]
+            _tot_reps = float(_reps[_ci].sum()); _num_reps = len(_reps)
+        except: pass
+    _renta_anual = renta * 12
+    if _tot_reps == 0:       pts = 2.0; detalle.append(("Mantenimiento","✅ Sin reparaciones en 12m",2.0,2.0))
+    elif _tot_reps < 1000:   pts = 1.5; detalle.append(("Mantenimiento",f"✅ Normal ({_tot_reps:,.0f}€)",1.5,2.0))
+    elif _tot_reps < 3000:   pts = 1.0; detalle.append(("Mantenimiento",f"⚠️ Elevado ({_tot_reps:,.0f}€)",1.0,2.0)); alertas.append(f"Reparaciones {_tot_reps:,.0f}€ en 12m")
+    else:                    pts = 0.0; detalle.append(("Mantenimiento",f"🔴 FATIGA — {_tot_reps:,.0f}€/{_num_reps} incid.",0.0,2.0)); alertas.append(f"🔴 FATIGA — {_tot_reps:,.0f}€ en reparaciones")
+    score -= (2.0 - pts)
+
+    # 4. Documentación (15%)
+    _docs = sum([ibi>0, seguro>0, bool(ref_cat and ref_cat not in ("","nan","None","N/A")), precio_compra>0])
+    pts = round(_docs/4*1.5, 2); detalle.append(("Documentación",f"{'✅' if _docs==4 else '⚠️'} {_docs}/4 campos",pts,1.5))
+    score -= (1.5 - pts)
+
+    # 5. Cobertura hipoteca (10%)
+    if intereses > 0 and renta > 0:
+        _cob = (renta * 12) / (intereses * 2)  # aprox cuota = intereses * 2
+        if _cob >= 1.5:   pts = 1.0; detalle.append(("Hipoteca",f"✅ Cobertura estimada OK",1.0,1.0))
+        elif _cob >= 1.2: pts = 0.5; detalle.append(("Hipoteca",f"⚠️ Cobertura ajustada",0.5,1.0))
+        else:             pts = 0.0; detalle.append(("Hipoteca",f"🔴 Cobertura insuficiente",0.0,1.0)); alertas.append("Renta no cubre hipoteca estimada")
+        score -= (1.0 - pts)
+
+    score = max(1.0, min(10.0, round(score, 1)))
+    if score >= 8:   color,etiq,suger_asesor = "#059669","Excelente","Activo sólido — cliente fidelizado."
+    elif score >= 6: color,etiq,suger_asesor = "#185FA5","Bueno","Revisar puntos de mejora con el cliente."
+    elif score >= 4: color,etiq,suger_asesor = "#D97706","Atención","Cliente puede estar abierto a renegociar o refinanciar."
+    else:            color,etiq,suger_asesor = "#DC2626","Crítico","Propietario potencialmente receptivo a venta — preparar argumentario."
+
+    return {"score":score,"color":color,"etiq":etiq,"suger_asesor":suger_asesor,
+            "detalle":detalle,"alertas":alertas,"tot_reps_12m":_tot_reps}
+
+
 def pantalla_ficha_inmueble():
     cliente_id  = st.session_state.get("fh_cliente_sel")
     nombre_inm  = st.session_state.get("fh_inmueble_sel","")
@@ -1292,6 +1399,73 @@ def pantalla_ficha_inmueble():
     base_orig  = m_base["rend_final"]
     TIPO_MARG  = _tipo_marginal(base_orig)
     cuota_orig = max(base_orig * TIPO_MARG, 0)
+
+    # ── Score de Salud + Ratios ──────────────────────────────────
+    _sd_fh = _calcular_score_fh(row, df_mov, es_sociedad=es_sociedad)
+
+    # Cabecera score
+    _col_sc_fh, _col_rat_fh = st.columns([1, 2])
+    with _col_sc_fh:
+        st.markdown(
+            f'<div style="background:#fff;border-radius:12px;padding:16px 18px;' +
+            f'border:2px solid {_sd_fh["color"]};box-shadow:0 2px 8px rgba(0,0,0,0.07);' +
+            f'margin:16px 0 10px;">' +
+            f'<div style="font-size:10px;font-weight:700;color:#94A3B8;' +
+            f'text-transform:uppercase;margin-bottom:6px;">Score Salud Activo</div>' +
+            f'<div style="display:flex;align-items:center;gap:10px;">' +
+            f'<div style="background:{_sd_fh["color"]};color:#fff;border-radius:10px;' +
+            f'padding:8px 16px;font-size:2.4rem;font-weight:900;line-height:1;">' +
+            f'{_sd_fh["score"]:.1f}</div>' +
+            f'<div style="font-size:14px;font-weight:700;color:{_sd_fh["color"]};">{_sd_fh["etiq"]}</div>' +
+            f'</div>' +
+            f'<div style="margin-top:10px;font-size:12px;color:#475569;font-style:italic;">' +
+            f'💼 {_sd_fh["suger_asesor"]}</div>' +
+            f'</div>', unsafe_allow_html=True)
+
+    with _col_rat_fh:
+        # Ratios del activo
+        _renta_a   = sf(row.get("renta", row.get("Renta",0))) * 12
+        _precio_c  = sf(row.get("precio_compra", row.get("Precio_Compra",0)))
+        _val_cat   = sf(row.get("valor_catastral", row.get("Valor_Catastral",0)))
+        _int_hip   = sf(row.get("intereses_hipoteca", row.get("Intereses_Hipoteca",0)))
+        _gas_tot   = (sf(row.get("ibi_anual",0)) + sf(row.get("seguro_anual",0)) +
+                      sf(row.get("comunidad",0))*12 + _int_hip +
+                      sf(row.get("amortizacion_fiscal", row.get("Amortizacion_Fiscal",0))))
+        _res_neto  = _renta_a - _gas_tot
+        _roi       = round(_res_neto / _precio_c * 100, 1) if _precio_c > 0 else 0
+        _yield_b   = round(_renta_a / _precio_c * 100, 1) if _precio_c > 0 else 0
+        _tipo_ef   = 25.0 if es_sociedad else round((_res_neto * 0.30 / _res_neto * 100) if _res_neto > 0 else 0, 1)
+
+        st.markdown('<div style="margin-top:16px;"></div>', unsafe_allow_html=True)
+        _r1, _r2 = st.columns(2)
+        for _col_r, _lbl_r, _val_r, _sub_r, _col_v in [
+            (_r1, "Yield bruto", f"{_yield_b:.1f}%" if _precio_c>0 else "Sin precio", "Renta anual / inversión", "#185FA5"),
+            (_r2, "ROI neto", f"{_roi:.1f}%" if _precio_c>0 else "Sin precio", "Resultado / inversión", "#059669" if _roi>4 else "#D97706"),
+        ]:
+            _col_r.markdown(
+                f'<div style="background:#F8FAFC;border-radius:10px;padding:12px 14px;' +
+                f'border:1px solid #E2E8F0;margin-bottom:8px;">' +
+                f'<div style="font-size:10px;font-weight:700;color:#94A3B8;' +
+                f'text-transform:uppercase;">{_lbl_r}</div>' +
+                f'<div style="font-size:1.5rem;font-weight:800;color:{_col_v};">{_val_r}</div>' +
+                f'<div style="font-size:10px;color:#94A3B8;">{_sub_r}</div>' +
+                f'</div>', unsafe_allow_html=True)
+
+        if es_sociedad:
+            _tipo_ef_total = 38.75  # IS 25% + dividendos 19%
+            st.markdown(
+                f'<div style="background:#0d1a0d;border:1px solid #059669;border-radius:8px;' +
+                f'padding:8px 12px;font-size:12px;color:#a7f3d0;">' +
+                f'IS 25% · Tipo efectivo total con dividendos: <b>38.75%</b>' +
+                f'</div>', unsafe_allow_html=True)
+
+    # Desglose score expandible
+    with st.expander("📊 Ver desglose del score"):
+        for _comp, _desc, _pts, _max in _sd_fh["detalle"]:
+            _c1, _c2, _c3 = st.columns([2, 4, 1])
+            _c1.markdown(f"**{_comp}**")
+            _c2.markdown(f"<span style='font-size:12px;'>{_desc}</span>", unsafe_allow_html=True)
+            _c3.markdown(f"**{_pts:.1f}/{_max:.1f}**")
 
     st.markdown(
         '<div class="nc-section" style="margin-top:20px;">📋 Laboratorio Fiscal</div>',
