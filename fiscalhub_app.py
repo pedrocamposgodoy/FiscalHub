@@ -16,14 +16,14 @@ from kpi_renderer import render_kpi_row, render_kpi_grid, ACCENT_F, RED, AMBER, 
 # Paleta determinista por cliente — 8 colores profesionales
 # Siempre el mismo color para el mismo cliente_id
 _PALETA_CLI = [
-    "#1E1A3A",  # índigo noche
-    "#1A3A2A",  # verde bosque
-    "#3A1A1A",  # granate oscuro
-    "#2A1A3A",  # ciruela profunda
-    "#1A2A3A",  # azul petróleo sat.
-    "#3A2A1A",  # cobre oscuro
-    "#1A1A2E",  # pizarra casi negra
-    "#2A3A1A",  # oliva oscuro
+    "#4A3F7A",  # índigo medio
+    "#2D6B4F",  # verde bosque
+    "#7A3030",  # granate medio
+    "#5C3A6E",  # ciruela media
+    "#2A4E6E",  # azul petróleo
+    "#7A5030",  # cobre medio
+    "#3A3A5C",  # pizarra azulada
+    "#4A6830",  # oliva medio
 ]
 
 def _color_cli(cliente_id: str) -> str:
@@ -661,6 +661,11 @@ def render_sidebar():
 # ── LOGIN ─────────────────────────────────────────────────────────
 def pantalla_login():
     inject_global_css("ficahub")
+    st.markdown(
+        "<style>html,body,.stApp,[data-testid=\'stAppViewContainer\'],[data-testid=\'stMain\'],"
+        "[data-testid=\'stMainBlockContainer\'],section.main{background-color:#F0F4F8 !important;}</style>",
+        unsafe_allow_html=True
+    )
     st.markdown("<div style='height:12vh;'></div>", unsafe_allow_html=True)
     _, col, _ = st.columns([1, 1, 1])
     with col:
