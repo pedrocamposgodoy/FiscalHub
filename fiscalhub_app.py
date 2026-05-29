@@ -43,23 +43,23 @@ st.set_page_config(
 
 # ── FONDO GLOBAL — cubre todos los contenedores posibles de Streamlit
 st.markdown("""<style>
-:root { --bg-fiscalhub: #F0F4F8; }
-html, body { background-color: #F0F4F8 !important; }
-.stApp { background-color: #F0F4F8 !important; }
-.stApp > div { background-color: #F0F4F8 !important; }
-[data-testid="stAppViewContainer"] { background-color: #F0F4F8 !important; }
-[data-testid="stAppViewContainer"] > div { background-color: #F0F4F8 !important; }
-[data-testid="stAppViewContainer"] > section { background-color: #F0F4F8 !important; }
-[data-testid="stHeader"] { background-color: #F0F4F8 !important; }
-[data-testid="stMain"] { background-color: #F0F4F8 !important; }
-[data-testid="stMain"] > div { background-color: #F0F4F8 !important; }
-[data-testid="stMainBlockContainer"] { background-color: #F0F4F8 !important; }
-[data-testid="stMainBlockContainer"] > div { background-color: #F0F4F8 !important; }
-section.main { background-color: #F0F4F8 !important; }
-section.main > div { background-color: #F0F4F8 !important; }
-.block-container { background-color: #F0F4F8 !important; }
-div[class*="appview"] { background-color: #F0F4F8 !important; }
-div[class*="main"] { background-color: #F0F4F8 !important; }
+:root { --bg-fiscalhub: #E2E8F0; }
+html, body { background-color: #E2E8F0 !important; }
+.stApp { background-color: #E2E8F0 !important; }
+.stApp > div { background-color: #E2E8F0 !important; }
+[data-testid="stAppViewContainer"] { background-color: #E2E8F0 !important; }
+[data-testid="stAppViewContainer"] > div { background-color: #E2E8F0 !important; }
+[data-testid="stAppViewContainer"] > section { background-color: #E2E8F0 !important; }
+[data-testid="stHeader"] { background-color: #E2E8F0 !important; }
+[data-testid="stMain"] { background-color: #E2E8F0 !important; }
+[data-testid="stMain"] > div { background-color: #E2E8F0 !important; }
+[data-testid="stMainBlockContainer"] { background-color: #E2E8F0 !important; }
+[data-testid="stMainBlockContainer"] > div { background-color: #E2E8F0 !important; }
+section.main { background-color: #E2E8F0 !important; }
+section.main > div { background-color: #E2E8F0 !important; }
+.block-container { background-color: #E2E8F0 !important; }
+div[class*="appview"] { background-color: #E2E8F0 !important; }
+div[class*="main"] { background-color: #E2E8F0 !important; }
 </style>""", unsafe_allow_html=True)
 
 SUPABASE_URL = "https://odxixtgqcyddfqaapqgi.supabase.co"
