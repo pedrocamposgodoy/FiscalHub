@@ -41,17 +41,25 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── FONDO GLOBAL — se inyecta a nivel de módulo para pisar el default de Streamlit
+# ── FONDO GLOBAL — cubre todos los contenedores posibles de Streamlit
 st.markdown("""<style>
-html, body, .stApp,
-[data-testid="stAppViewContainer"],
-[data-testid="stAppViewContainer"] > section,
-[data-testid="stMain"],
-[data-testid="stMainBlockContainer"],
-section.main, section.main > div,
-.block-container {
-    background-color: #F0F4F8 !important;
-}
+:root { --bg-fiscalhub: #F0F4F8; }
+html, body { background-color: #F0F4F8 !important; }
+.stApp { background-color: #F0F4F8 !important; }
+.stApp > div { background-color: #F0F4F8 !important; }
+[data-testid="stAppViewContainer"] { background-color: #F0F4F8 !important; }
+[data-testid="stAppViewContainer"] > div { background-color: #F0F4F8 !important; }
+[data-testid="stAppViewContainer"] > section { background-color: #F0F4F8 !important; }
+[data-testid="stHeader"] { background-color: #F0F4F8 !important; }
+[data-testid="stMain"] { background-color: #F0F4F8 !important; }
+[data-testid="stMain"] > div { background-color: #F0F4F8 !important; }
+[data-testid="stMainBlockContainer"] { background-color: #F0F4F8 !important; }
+[data-testid="stMainBlockContainer"] > div { background-color: #F0F4F8 !important; }
+section.main { background-color: #F0F4F8 !important; }
+section.main > div { background-color: #F0F4F8 !important; }
+.block-container { background-color: #F0F4F8 !important; }
+div[class*="appview"] { background-color: #F0F4F8 !important; }
+div[class*="main"] { background-color: #F0F4F8 !important; }
 </style>""", unsafe_allow_html=True)
 
 SUPABASE_URL = "https://odxixtgqcyddfqaapqgi.supabase.co"
