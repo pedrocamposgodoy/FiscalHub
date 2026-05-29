@@ -16,14 +16,14 @@ from kpi_renderer import render_kpi_row, render_kpi_grid, ACCENT_F, RED, AMBER, 
 # Paleta determinista por cliente — 8 colores profesionales
 # Siempre el mismo color para el mismo cliente_id
 _PALETA_CLI = [
-    "#1E3A5F",  # azul marino
-    "#3D2B6B",  # morado oscuro
-    "#1A4731",  # verde oscuro
-    "#7A2D1A",  # rojo ladrillo
-    "#1A3A4A",  # azul petróleo
-    "#4A3000",  # marrón dorado
-    "#2D1A4A",  # índigo oscuro
-    "#3B3B3B",  # gris antracita
+    "#1E1A3A",  # índigo noche
+    "#1A3A2A",  # verde bosque
+    "#3A1A1A",  # granate oscuro
+    "#2A1A3A",  # ciruela profunda
+    "#1A2A3A",  # azul petróleo sat.
+    "#3A2A1A",  # cobre oscuro
+    "#1A1A2E",  # pizarra casi negra
+    "#2A3A1A",  # oliva oscuro
 ]
 
 def _color_cli(cliente_id: str) -> str:
