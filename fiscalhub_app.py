@@ -41,6 +41,19 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ── FONDO GLOBAL — se inyecta a nivel de módulo para pisar el default de Streamlit
+st.markdown("""<style>
+html, body, .stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stAppViewContainer"] > section,
+[data-testid="stMain"],
+[data-testid="stMainBlockContainer"],
+section.main, section.main > div,
+.block-container {
+    background-color: #F0F4F8 !important;
+}
+</style>""", unsafe_allow_html=True)
+
 SUPABASE_URL = "https://odxixtgqcyddfqaapqgi.supabase.co"
 SUPABASE_KEY = "sb_publishable_Obgti7yMfXw8wCUL2FbTtA_EWeyHuM9"
 
@@ -661,11 +674,6 @@ def render_sidebar():
 # ── LOGIN ─────────────────────────────────────────────────────────
 def pantalla_login():
     inject_global_css("ficahub")
-    st.markdown(
-        "<style>html,body,.stApp,[data-testid=\'stAppViewContainer\'],[data-testid=\'stMain\'],"
-        "[data-testid=\'stMainBlockContainer\'],section.main{background-color:#F0F4F8 !important;}</style>",
-        unsafe_allow_html=True
-    )
     st.markdown("<div style='height:12vh;'></div>", unsafe_allow_html=True)
     _, col, _ = st.columns([1, 1, 1])
     with col:
