@@ -41,25 +41,18 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── FONDO GLOBAL — cubre todos los contenedores posibles de Streamlit
+# ── FONDO GLOBAL — solo área principal, no toca sidebar
 st.markdown("""<style>
-:root { --bg-fiscalhub: #E2E8F0; }
 html, body { background-color: #E2E8F0 !important; }
 .stApp { background-color: #E2E8F0 !important; }
-.stApp > div { background-color: #E2E8F0 !important; }
 [data-testid="stAppViewContainer"] { background-color: #E2E8F0 !important; }
-[data-testid="stAppViewContainer"] > div { background-color: #E2E8F0 !important; }
-[data-testid="stAppViewContainer"] > section { background-color: #E2E8F0 !important; }
 [data-testid="stHeader"] { background-color: #E2E8F0 !important; }
 [data-testid="stMain"] { background-color: #E2E8F0 !important; }
 [data-testid="stMain"] > div { background-color: #E2E8F0 !important; }
 [data-testid="stMainBlockContainer"] { background-color: #E2E8F0 !important; }
-[data-testid="stMainBlockContainer"] > div { background-color: #E2E8F0 !important; }
-section.main { background-color: #E2E8F0 !important; }
-section.main > div { background-color: #E2E8F0 !important; }
 .block-container { background-color: #E2E8F0 !important; }
-div[class*="appview"] { background-color: #E2E8F0 !important; }
-div[class*="main"] { background-color: #E2E8F0 !important; }
+[data-testid="stSidebar"] { background-color: #4A5568 !important; }
+[data-testid="stSidebar"] * { color: #CBD5E0 !important; }
 </style>""", unsafe_allow_html=True)
 
 SUPABASE_URL = "https://odxixtgqcyddfqaapqgi.supabase.co"
