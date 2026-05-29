@@ -161,6 +161,7 @@ def inject_global_css(app: str):
     }}
 
     /* BODY */
+    html, body,
     .stApp,
     .stApp > div,
     .stApp > div > div,
@@ -170,7 +171,9 @@ def inject_global_css(app: str):
     [data-testid="stMain"],
     [data-testid="stMain"] > div,
     section.main,
-    section.main > div {{
+    section.main > div,
+    .css-18e3th9, .css-1d391kg,
+    .main .block-container {{
         background-color: {t['body_bg']} !important;
     }}
 
