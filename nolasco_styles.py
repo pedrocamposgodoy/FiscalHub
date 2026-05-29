@@ -108,7 +108,7 @@ APP_TOKENS = {
         "sidebar_txt":       "#CBD5E0",
         "sidebar_txt_hover": "#FFFFFF",
         "sidebar_bg_hover":  "#536278",
-        "body_bg":           "#F8F9FA",
+        "body_bg":           "#F0F4F8",
         "card_bg":           "#FFFFFF",
         "card_border":       "#E2E8F0",
         "accent":            "#534AB7",
