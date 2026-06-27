@@ -198,17 +198,17 @@ def inject_global_css(app: str):
         color: {t['sidebar_txt']} !important;
     }}
 
-    /* SIDEBAR — botones (+30% tamaño) */
+    /* SIDEBAR — botones nav compactos */
     [data-testid="stSidebar"] .stButton > button,
     [data-testid="stSidebar"] .stButton > button *,
     [data-testid="stSidebar"] .stButton > button span {{
         background: transparent !important;
         color: {t['sidebar_txt']} !important;
         border: none !important;
-        border-radius: 8px !important;
-        font-size: 17px !important;
-        font-weight: 600 !important;
-        padding: 11px 14px !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        padding: 6px 12px !important;
         text-align: left !important;
         width: 100% !important;
         justify-content: flex-start !important;
@@ -223,14 +223,14 @@ def inject_global_css(app: str):
         color: {t['sidebar_txt_hover']} !important;
     }}
 
-    /* SIDEBAR — radio nav (+30%) */
+    /* SIDEBAR — radio nav compacto */
     [data-testid="stSidebar"] .stRadio label,
     [data-testid="stSidebar"] .stRadio label span,
     [data-testid="stSidebar"] .stRadio label * {{
         color: {t['sidebar_txt']} !important;
-        font-size: 17px !important;
-        font-weight: 600 !important;
-        border-radius: 8px !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        border-radius: 6px !important;
         padding: 4px 0 !important;
     }}
 
@@ -532,13 +532,13 @@ def inject_global_css(app: str):
     .sb-tag {{ font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:{t['sidebar_txt']} !important;margin-top:4px;padding-left:38px; }}
     .sb-advisor {{ padding:10px 14px;border-bottom:1px solid {t['sidebar_border']};display:flex;align-items:center;gap:10px; }}
     .sb-avatar {{ width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:{t['sidebar_txt_hover']} !important;flex-shrink:0; }}
-    .sb-advisor-name {{ font-size:17px;font-weight:700;color:{t['sidebar_txt_hover']} !important;line-height:1.2; }}
-    .sb-advisor-desc {{ font-size:13px;color:{t['sidebar_txt']} !important;margin-top:1px; }}
-    /* Nav items — más grandes y compactos */
+    .sb-advisor-name {{ font-size:13px;font-weight:700;color:{t['sidebar_txt_hover']} !important;line-height:1.2; }}
+    .sb-advisor-desc {{ font-size:11px;color:{t['sidebar_txt']} !important;margin-top:1px; }}
+    /* Nav items — compactos y profesionales */
     .sb-nav-item {{ 
         display:flex;align-items:center;gap:10px;
-        padding:11px 14px;border-radius:8px;
-        font-size:14px;font-weight:600;
+        padding:6px 12px;border-radius:6px;
+        font-size:13px;font-weight:500;
         color:{t['sidebar_txt']} !important;
         margin:2px 8px;cursor:pointer;
         transition:background 0.15s,color 0.15s;
